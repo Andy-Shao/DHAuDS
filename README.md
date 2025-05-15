@@ -12,3 +12,36 @@ conda install matplotlib==3.10.0 -y
 conda install jupyter==1.1.1
 pip install wandb==0.19.11
 ```
+
+## Datasets
+### SpeechCommands V2
+The dataset (2.26GB) includes 35 English words speech audio. 
++ Sample size: 105829 (train: 84843, test: 11005, validation: 9981)
++ Sampling rate: 16000
++ Class Number: 35
++ Audio length: 1 second
+[Download link](http://download.tensorflow.org/data/speech_commands_v0.02.tar.gz)
+
+### VocalSound
+VocalSound is a free dataset consisting of 21,024 crowdsourced recordings of laughter, sighs, coughs, throat clearing, sneezes, and sniffs from 3,365 unique subjects. The VocalSound dataset also contains meta-information such as speaker age, gender, native language, country, and health condition.
++ Sample Size: 20977 (Train: 15531, validation: 1855, test: 3591)
++ Sample rate: 16000
++ Audio length: less than 12 seconds
++ Class number: 6
+
+[VocalSound Dataset Link](https://sls.csail.mit.edu/downloads/vocalsound/)<br/>
+Download command:
+```shell
+wget -O vocalsound_16k.zip https://www.dropbox.com/s/c5ace70qh1vbyzb/vs_release_16k.zip?dl=1
+```
+
+### CochlScene
+Cochl Acoustic Scene Dataset, or CochlScene, is a new acoustic scene dataset whose recordings are fully collected from crowdsourcing participants. Most of the initial plans and guidelines for the processes were provided by the researchers in the field of audio signal processing and machine learning including the authors, and the actual process was performed by using the crowdsourcing platform developed by SelectStar, a Korean crowdsourcing data company. During the process, the initial plans were reinforced and modified from the discussion about the actual difficulty in the collection process. After extracting the subset of the total collections considering the purpose of the data, we collected 76,115 10 seconds files in 13 different acoustic scenes from 831 participants.
+
++ Sample rate: 44100
++ Sample size: 76115 (Train: 60855, validation: 7573, test: 7687)
++ Audio length: 10 seconds
++ Class Number: 13
+
+[Github Link](https://github.com/cochlearai/cochlscene)<br/>
+[Dataset Link](https://zenodo.org/records/7080122)
