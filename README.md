@@ -9,7 +9,7 @@ conda install pytorch==2.4.1 torchvision==0.19.1 torchaudio==2.4.1 pytorch-cuda=
 conda install pandas==2.2.3 -y
 conda install tqdm==4.67.1 -y
 conda install matplotlib==3.10.0 -y
-conda install jupyter==1.1.1
+conda install jupyter==1.1.1 -y
 pip install wandb==0.19.11
 ```
 
