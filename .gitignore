@@ -1,5 +1,3 @@
 **/__pycache__
-result/**/*.pt
-result/**/*.pth
-model
+**/*.pt
 wandb
