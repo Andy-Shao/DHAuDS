@@ -21,7 +21,7 @@ from lib.spdataset import SpeechCommandsV2
 def build_model(args:argparse.Namespace) -> tuple[torchaudio.models.Wav2Vec2Model, Classifier]:
     bundle = torchaudio.pipelines.HUBERT_BASE
     hubert = bundle.get_model().to(device=args.device)
-    classifier = Classifier(class_num=args.class_num, embed_size=768).to(device=args.device)
+    classifier = Classifier(class_num=args.class_num, embed_size=bundle._params['encoder_embed_dim']).to(device=args.device)
     return hubert, classifier
 
 if __name__ == '__main__':
@@ -35,6 +35,7 @@ if __name__ == '__main__':
     ap.add_argument('--output_path', type=str, default='./result')
     ap.add_argument('--wandb', action='store_true')
     ap.add_argument('--seed', type=int, default='2025')
+    ap.add_argument('--model_level', type=str, default='base', choices=['base', 'large', 'x-large'])
 
     args = ap.parse_args()
     args.device = 'cuda' if torch.cuda.is_available() else 'cpu'
@@ -134,7 +135,7 @@ if __name__ == '__main__':
             'Train/loss': train_loss / len(train_loader),
             'Train/accuracy': train_accu,
             'Val/accuracy': val_accu
-        }, step=epoch, commit=True, sync=True)
+        }, step=epoch, commit=True)
 
         if max_accu <= val_accu:
             max_accu == val_accu
