@@ -20,7 +20,9 @@ The dataset (2.26GB) includes 35 English words speech audio.
 + Sampling rate: 16000
 + Class Number: 35
 + Audio length: 1 second
-[Download link](http://download.tensorflow.org/data/speech_commands_v0.02.tar.gz)
+  
+[Speech Commands Dataset Link](https://research.google/blog/launching-the-speech-commands-dataset/)<br/>
+[Pytorch Document](https://pytorch.org/audio/main/generated/torchaudio.datasets.SPEECHCOMMANDS.html)
 
 ### VocalSound
 VocalSound is a free dataset consisting of 21,024 crowdsourced recordings of laughter, sighs, coughs, throat clearing, sneezes, and sniffs from 3,365 unique subjects. The VocalSound dataset also contains meta-information such as speaker age, gender, native language, country, and health condition.
@@ -45,3 +47,5 @@ Cochl Acoustic Scene Dataset, or CochlScene, is a new acoustic scene dataset who
 
 [Github Link](https://github.com/cochlearai/cochlscene)<br/>
 [Dataset Link](https://zenodo.org/records/7080122)
+
+## Code Reference
