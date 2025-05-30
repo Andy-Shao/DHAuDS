@@ -17,6 +17,7 @@ from lib.utils import print_argparse, store_model_structure_to_txt, make_unless_
 from lib.component import AudioPadding, ReduceChannel, time_shift
 from lib.dataset import dataset_tag
 from lib.spdataset import SpeechCommandsV2
+from lib import constants
 
 def build_model(args:argparse.Namespace) -> tuple[torchaudio.models.Wav2Vec2Model, Classifier]:
     bundle = torchaudio.pipelines.HUBERT_BASE
@@ -56,7 +57,7 @@ if __name__ == '__main__':
     make_unless_exits(args.dataset_root_path)
 
     wandb_run = wandb.init(
-        project='NTTA-Train', name=f'HuB-{dataset_tag(dataset=args.dataset)}', mode='online' if args.wandb else 'disabled', config=args, 
+        project=f'{constants.PROJECT_TITLE}-{constants.TRAIN_TAG}', name=f'HuB-{dataset_tag(dataset=args.dataset)}', mode='online' if args.wandb else 'disabled', config=args, 
         tags=['Audio Classification', 'Test-time Adaptation', args.dataset]
     )
 
@@ -91,6 +92,7 @@ if __name__ == '__main__':
     ttl_corr = 0.
     ttl_size = 0.
     train_loss = 0.
+    max_accu = 0.
     for epoch in range(args.max_epoch):
         print(f'Epoch:{epoch+1}/{args.max_epoch}')
         print('Training...')
@@ -115,7 +117,6 @@ if __name__ == '__main__':
         print('Validating...')
         hubert.eval()
         clsModel.eval()
-        max_accu = 0.
         ttl_corr = 0.
         ttl_size = 0.
         for features, labels in tqdm(val_loader):

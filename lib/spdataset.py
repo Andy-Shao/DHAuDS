@@ -1,7 +1,9 @@
 import os
+from typing import Any
 
 from torch.utils.data import Dataset
 import torch 
+import torchaudio
 
 class SpeechCommandsV2(Dataset):
     label_dict = {
@@ -12,7 +14,7 @@ class SpeechCommandsV2(Dataset):
         'wow': 29., 'backward': 30., 'forward': 31., 'follow': 32., 'learn': 33., 'visual': 34.
     }
     def __init__(
-            self, root_path:str, folder_in_archive:str, mode:str=None, download:bool = True, 
+            self, root_path:str, folder_in_archive:str='speech_commands_v0.02', mode:str=None, download:bool = True, 
             data_tf:torch.nn.Module=None, label_tf:torch.nn.Module=None
         ):
         from torchaudio.datasets import SPEECHCOMMANDS
@@ -39,3 +41,33 @@ class SpeechCommandsV2(Dataset):
         if self.label_tf is not None:
             label = self.label_tf(label)
         return wavform, label
+
+class BackgroundNoiseDataset(Dataset):
+    base_path = '_background_noise_'
+
+    def __init__(self, root_path: str, data_tf=None, label_tf=None) -> None:
+        super().__init__()
+        self.root_path = root_path 
+        self.data_list = self.__cal_data_list__()
+        self.data_tf = data_tf
+        self.label_tf = label_tf
+
+    def __cal_data_list__(self) -> list[str]:
+        data_list = []
+        for it in os.listdir(os.path.join(self.root_path, self.base_path)):
+            if it.endswith('.wav'):
+                data_list.append(it)
+        return data_list
+
+    def __len__(self):
+        return len(self.data_list)
+    
+    def __getitem__(self, index) -> Any:
+        noise_path = os.path.join(self.root_path, self.base_path, self.data_list[index])
+        noise, sample_rate = torchaudio.load(noise_path)
+        noise_type = self.data_list[index][:-(len('.wav'))]
+        if self.data_tf is not None:
+            noise = self.data_tf(noise)
+        if self.label_tf is not None:
+            sample_rate = self.label_tf(sample_rate)
+        return noise_type, noise, sample_rate

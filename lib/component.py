@@ -1,4 +1,5 @@
 import random
+import numpy as np
 
 import torch 
 from torch import nn
@@ -49,3 +50,79 @@ class AudioPadding(nn.Module):
                 tail = l - head
             x = pad(x, (head, tail), mode='constant', value=0.)
         return x
+
+class Components(nn.Module):
+    def __init__(self, transforms: list) -> None:
+        super().__init__()
+        assert transforms is not None, 'No support'
+        self.transforms = nn.ModuleList(transforms)
+
+    def forward(self, wavform: torch.Tensor) -> torch.Tensor:
+        for transform in self.transforms:
+            wavform = transform(wavform)
+        return wavform
+
+class AmplitudeToDB(nn.Module):
+    def __init__(self, top_db:float, max_out:float) -> None:
+        from torchaudio import transforms
+        super(AmplitudeToDB, self).__init__()
+        self.model = transforms.AmplitudeToDB(top_db=top_db)
+        self.max_out = max_out
+        self.top_db = top_db
+
+    def forward(self, x:torch.Tensor) -> torch.Tensor:
+        return self.model(x) / (self.top_db // self.max_out)
+
+class MelSpectrogramPadding(nn.Module):
+    def __init__(self, target_length):
+        super(MelSpectrogramPadding, self).__init__()
+        self.target_length = target_length
+
+    def forward(self, x:torch.Tensor) -> torch.Tensor:
+        from torch.nn.functional import pad
+        p = self.target_length - x.shape[2]
+        if p > 0:
+            # padding = nn.ZeroPad1d((0, p, 0, 0))
+            # x = padding(x)
+            x = pad(x, (0, p, 0, 0), mode='constant', value=0.)
+        elif p < 0:
+            x = x[:, :, 0:self.target_length]
+        return x
+
+class FrequenceTokenTransformer(nn.Module):
+    def __init__(self):
+        super().__init__()
+
+    def forward(self, x:torch.Tensor) -> torch.Tensor:
+        c, token_num, token_len = x.size()
+        x = x.reshape(-1, token_len)
+        return x
+
+class GuassianNoise(nn.Module):
+    def __init__(self, noise_level=.05):
+        super().__init__()
+        self.noise_level = noise_level
+    
+    def forward(self, wavform: torch.Tensor) -> torch.Tensor:
+        ## Guassian Noise
+        noise = torch.rand_like(wavform) * self.noise_level
+        noise_wavform = wavform + noise
+        return noise_wavform
+
+class BackgroundNoise(nn.Module):
+    def __init__(self, noise_level: float, noise: torch.Tensor, is_random=False):
+        super().__init__()
+        self.noise_level = noise_level
+        self.noise = noise
+        self.is_random = is_random
+
+    def forward(self, wavform: torch.Tensor) -> torch.Tensor:
+        import torchaudio.functional as ta_f
+        wav_len = wavform.shape[1]
+        if self.is_random:
+            start_point = np.random.randint(low=0, high=self.noise.shape[1]-wav_len)
+            noise_period = self.noise[:, start_point:start_point+wav_len]
+        else:
+            noise_period = self.noise[:, 0:wav_len]
+        noised_wavform = ta_f.add_noise(waveform=wavform, noise=noise_period, snr=torch.tensor([self.noise_level]))
+        return noised_wavform

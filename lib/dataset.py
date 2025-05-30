@@ -36,3 +36,22 @@ class TransferDataset(Dataset):
             return feature.cpu(), label.cpu() if isinstance(label, torch.Tensor) else label
         else:
             return feature, label
+
+class MultiTFDataset(Dataset):
+    def __init__(self, dataset:Dataset, tfs:list[nn.Module]):
+        super(MultiTFDataset, self).__init__()
+        assert tfs is not None, 'No support'
+        self.dataset = dataset
+        self.tfs = tfs
+
+    def __len__(self):
+        return len(self.dataset)
+    
+    def __getitem__(self, index):
+        item, label = self.dataset[index]
+        ret = [item.clone() for _ in range(len(self.tfs))]
+        for i, tf in enumerate(self.tfs):
+            if tf is not None:
+                ret[i] = tf(ret[i])
+        ret.append(label)
+        return tuple(ret)
