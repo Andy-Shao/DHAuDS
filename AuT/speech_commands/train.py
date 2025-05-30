@@ -10,7 +10,7 @@ import torchaudio.transforms as a_transforms
 from torch.utils.data import DataLoader
 from torch import nn, optim
 
-from lib.utils import print_argparse, store_model_structure_to_txt
+from lib.utils import print_argparse, store_model_structure_to_txt, make_unless_exits
 from lib import constants
 from lib.dataset import dataset_tag, MultiTFDataset
 from lib.spdataset import SpeechCommandsV2, BackgroundNoiseDataset
@@ -28,15 +28,14 @@ def background_noise(args:argparse.Namespace) -> dict[str, torch.Tensor]:
     return ret
 
 def build_model(args:argparse.Namespace) -> tuple[FCETransform, AudioClassifier]:
-    if args.arch_level == 'base':
-        config = AuT_base(class_num=args.class_num, n_mels=args.n_mels)
-        config.embedding.in_shape = [args.n_mels, args.target_length]
-        config.embedding.num_layers = [6, 12]
-        config.embedding.width = 128
-        config.embedding.embed_num = 13
-        config.classifier.in_embed_num = 15
-        clsmodel = AudioClassifier(config=config).to(device=args.device)
-        auTmodel = FCETransform(config=config).to(device=args.device)
+    config = AuT_base(class_num=args.class_num, n_mels=args.n_mels)
+    config.embedding.in_shape = [args.n_mels, args.target_length]
+    config.embedding.num_layers = [6, 12]
+    config.embedding.width = 128
+    config.embedding.embed_num = 13
+    config.classifier.in_embed_num = 15
+    clsmodel = AudioClassifier(config=config).to(device=args.device)
+    auTmodel = FCETransform(config=config).to(device=args.device)
 
     return auTmodel, clsmodel
 
@@ -95,10 +94,7 @@ if __name__ == '__main__':
         raise Exception('No support!')
     args.device = 'cuda' if torch.cuda.is_available() else 'cpu'
     args.output_path = os.path.join(args.output_path, args.dataset, 'AuT', 'train')
-    try:
-        os.makedirs(args.full_output_path)
-    except:
-        pass
+    make_unless_exits(args.output_path)
     torch.backends.cudnn.benchmark = True
 
     torch.manual_seed(args.seed)
