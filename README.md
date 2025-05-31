@@ -15,7 +15,7 @@ pip install wandb==0.19.11
 
 ## Datasets
 ### SpeechCommands V2
-The dataset (2.26GB) includes 35 English words speech audio. 
+The SpeechCommands V2 (2.26GB) is a speech audio set which includes 35 English words. 
 + Sample size: 105829 (train: 84843, test: 11005, validation: 9981)
 + Sampling rate: 16000
 + Class Number: 35
