@@ -1,0 +1,3 @@
+,dataset,module,param_num,corruption_type,corruption_level,accuracy,error_rate
+0,SpeechCommandsV2,AuT,103072070,CochlScene,10.0,95.55656519763744,4.44343480236256
+1,SpeechCommandsV2,AuT,103072070,CochlScene,10.0,92.23080417991822,7.769195820081777

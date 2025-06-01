@@ -1,6 +1,7 @@
 import argparse
 import os
 from tqdm import tqdm
+import pandas as pd
 
 import torch 
 from torch.utils.data import DataLoader
@@ -56,13 +57,14 @@ if __name__ == '__main__':
     else:
         raise Exception('No support!')
     args.device = 'cuda' if torch.cuda.is_available() else 'cpu'
-    arch = 'AuT'
+    arch = 'HuBERT'
     args.output_path = os.path.join(args.output_path, args.dataset, arch, 'analysis')
     make_unless_exits(args.output_path)
     torch.backends.cudnn.benchmark = True
 
     print_argparse(args)
     ###########################################################
+    records = pd.DataFrame(columns=['dataset', 'module', 'param_num', 'corruption_type', 'corruption_level', 'accuracy', 'error_rate'])
 
     print('Original')
     test_set = SpeechCommandsV2(
@@ -78,6 +80,7 @@ if __name__ == '__main__':
     load_weight(args=args, mode='origin', auT=hubert, auC=clsModel)
     accuracy = inference(args=args, auT=hubert, auC=clsModel, data_loader=test_loader)
     print(f'Original test set: accuracy is {accuracy:.4f}%, sample size is {len(test_set)}, number of params is {param_num}')
+    records.loc[len(records)] = [args.dataset, arch, param_num, args.background_type, args.corruption_level, accuracy, 100.-accuracy]
 
     print('Corrupted')
     corrupted_set = SpeechCommandsV2(
@@ -91,3 +94,6 @@ if __name__ == '__main__':
     corrupted_loader = DataLoader(dataset=corrupted_set, batch_size=args.batch_size, shuffle=False, drop_last=False, pin_memory=True, num_workers=args.num_workers)
     accuracy = inference(args=args, auT=hubert, auC=clsModel, data_loader=corrupted_loader)
     print(f'Corrupted testing: accuracy is {accuracy:.4f}%, number of parameters is {param_num}, sample size is {len(corrupted_set)}')
+    records.loc[len(records)] = [args.dataset, arch, param_num, args.background_type, args.corruption_level, accuracy, 100.-accuracy]
+
+    records.to_csv(os.path.join(args.output_path, f'{args.background_type}-{args.corruption_level}.csv'))

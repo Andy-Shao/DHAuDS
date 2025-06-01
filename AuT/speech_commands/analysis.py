@@ -1,6 +1,7 @@
 import argparse
 import os
 from tqdm import tqdm
+import pandas as pd
 
 import torch 
 import torchaudio.transforms as a_transforms
@@ -82,6 +83,8 @@ if __name__ == '__main__':
     print_argparse(args)
     ###########################################################
 
+    records = pd.DataFrame(columns=['dataset', 'module', 'param_num', 'corruption_type', 'corruption_level', 'accuracy', 'error_rate'])
+
     sample_rate=16000
     args.n_mels=80
     n_fft=1024
@@ -110,6 +113,7 @@ if __name__ == '__main__':
     param_num = count_ttl_params(model=auTmodel) + count_ttl_params(model=clsmodel)
     accuracy = inference(args=args, auT=auTmodel, auC=clsmodel, data_loader=test_loader)
     print(f'Original testing: accuracy is {accuracy:.4f}%, number of parameters is {param_num}, sample size is {len(test_set)}')
+    records.loc[len(records)] = [args.dataset, arch, param_num, args.background_type, args.corruption_level, accuracy, 100.-accuracy]
 
     print('Corrupted')
     corrupted_set = SpeechCommandsV2(
@@ -129,3 +133,6 @@ if __name__ == '__main__':
     corrupted_loader = DataLoader(dataset=corrupted_set, batch_size=args.batch_size, shuffle=False, drop_last=False, pin_memory=True, num_workers=args.num_workers)
     accuracy = inference(args=args, auT=auTmodel, auC=clsmodel, data_loader=corrupted_loader)
     print(f'Corrupted testing: accuracy is {accuracy:.4f}%, number of parameters is {param_num}, sample size is {len(corrupted_set)}')
+    records.loc[len(records)] = [args.dataset, arch, param_num, args.background_type, args.corruption_level, accuracy, 100.-accuracy]
+
+    records.to_csv(os.path.join(args.output_path, f'{args.background_type}-{args.corruption_level}.csv'))

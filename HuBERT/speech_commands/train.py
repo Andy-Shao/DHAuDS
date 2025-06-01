@@ -43,7 +43,7 @@ if __name__ == '__main__':
     args.class_num = 35
     args.sample_rate = 16000
     arch = 'HuBERT'
-    args.output_path = os.path.join(args.output_path, args.dataset, arch)
+    args.output_path = os.path.join(args.output_path, args.dataset, arch, 'train')
 
     torch.backends.cudnn.benchmark == True
     torch.manual_seed(seed=args.seed)
