@@ -55,3 +55,24 @@ class MultiTFDataset(Dataset):
                 ret[i] = tf(ret[i])
         ret.append(label)
         return tuple(ret)
+
+class RandomChoiceSet(Dataset):
+    def __init__(self, dataset:Dataset, include_lables:list=[]):
+        super(RandomChoiceSet, self).__init__()
+        self.dataset = dataset
+        self.include_labels = include_lables
+        self.data_list = self.__cal_data_list__()
+
+    def __cal_data_list__(self) -> list[int]:
+        if len(self.include_labels) == 0:
+            return [i for i in range(len(self.dataset))]
+        else:
+            return [i for i, (_, label) in enumerate(self.dataset) if label in self.include_labels]
+
+    def __len__(self):
+        return len(self.data_list)
+    
+    def __getitem__(self, index):
+        import random
+        i = random.randint(0, len(self.data_list)-1)
+        return self.dataset[self.data_list[i]]

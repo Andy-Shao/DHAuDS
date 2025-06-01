@@ -126,3 +126,27 @@ class BackgroundNoise(nn.Module):
             noise_period = self.noise[:, 0:wav_len]
         noised_wavform = ta_f.add_noise(waveform=wavform, noise=noise_period, snr=torch.tensor([self.noise_level]))
         return noised_wavform
+    
+class BackgroundNoiseByFunc(nn.Module):
+    def __init__(self, noise_level:float, noise_func, is_random:bool=False):
+        super().__init__()
+        self.noise_level = noise_level
+        self.noise_func = noise_func
+        self.is_random = is_random
+
+    def forward(self, waveform: torch.Tensor) -> torch.Tensor:
+        import torchaudio.functional as ta_f
+        wav_len = waveform.shape[1]
+        noise = self.noise_func()
+        noise_len = noise.shape[1]
+        if wav_len == noise_len:
+            noise_period = noise
+        elif wav_len > noise_len:
+            raise Exception(f'wav_len({wav_len}) is greater than noise_len({noise_len})')
+        elif self.is_random:
+            start_point = np.random.randint(low=0, high=noise.shape[1]-wav_len)
+            noise_period = noise[:, start_point:start_point+wav_len]
+        else:
+            noise_period = noise[:, 0:wav_len]
+        corrupted_waveform = ta_f.add_noise(waveform=waveform, noise=noise_period, snr=torch.tensor([self.noise_level]))
+        return corrupted_waveform
