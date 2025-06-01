@@ -11,6 +11,7 @@ from lib.spdataset import SpeechCommandsV2, VocalSound, BackgroundNoiseDataset
 from lib.dataset import RandomChoiceSet
 from lib.component import Components, AudioPadding, AmplitudeToDB, MelSpectrogramPadding, FrequenceTokenTransformer
 from lib.component import BackgroundNoiseByFunc
+from lib.acousticDataset import CochlScene
 from AuT.speech_commands.train import build_model
 from AuT.lib.model import FCETransform, AudioClassifier
 
@@ -48,6 +49,8 @@ def noise_source(args:argparse):
         noise_set = VocalSound(root_path=args.background_path, mode='train', include_rate=False, version='16k')
     elif args.background_type == 'SCV2-BG':
         noise_set = BackgroundNoiseDataset(root_path=args.background_path, include_rate=False)
+    elif args.background_type == 'CochlScene':
+        noise_set = CochlScene(root_path=args.background_path, mode='train', include_rate=False)
 
     source = RandomChoiceSet(dataset=noise_set)
     return lambda: expanding(source[0][0])
@@ -57,7 +60,7 @@ if __name__ == '__main__':
     ap.add_argument('--dataset', type=str, default='SpeechCommandsV2', choices=['SpeechCommandsV2'])
     ap.add_argument('--dataset_root_path', type=str)
     ap.add_argument('--background_path', type=str)
-    ap.add_argument('--background_type', default='VocalSound', choices=['VocalSound', 'SCV2-BG'])
+    ap.add_argument('--background_type', default='VocalSound', choices=['VocalSound', 'SCV2-BG', 'CochlScene'])
     ap.add_argument('--corruption_level', type=float)
     ap.add_argument('--num_workers', type=int, default=16)
     ap.add_argument('--output_path', type=str, default='./result')
