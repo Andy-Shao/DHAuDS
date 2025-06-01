@@ -42,7 +42,8 @@ if __name__ == '__main__':
     args.device = 'cuda' if torch.cuda.is_available() else 'cpu'
     args.class_num = 35
     args.sample_rate = 16000
-    args.output_path = os.path.join(args.output_path, 'HuBERT', args.dataset)
+    arch = 'HuBERT'
+    args.output_path = os.path.join(args.output_path, args.dataset, arch)
 
     torch.backends.cudnn.benchmark == True
     torch.manual_seed(seed=args.seed)
@@ -56,14 +57,18 @@ if __name__ == '__main__':
     make_unless_exits(args.output_path)
     make_unless_exits(args.dataset_root_path)
 
+    model_level_dic = {
+        'base': 'B', 'large': 'L', 'x-large': 'XL'
+    }
     wandb_run = wandb.init(
-        project=f'{constants.PROJECT_TITLE}-{constants.TRAIN_TAG}', name=f'HuB-{dataset_tag(dataset=args.dataset)}', mode='online' if args.wandb else 'disabled', config=args, 
-        tags=['Audio Classification', 'Test-time Adaptation', args.dataset]
+        project=f'{constants.PROJECT_TITLE}-{constants.TRAIN_TAG}', 
+        name=f'HuB-{model_level_dic[args.model_level]}-{dataset_tag(dataset=args.dataset)}', mode='online' if args.wandb else 'disabled', 
+        config=args, tags=['Audio Classification', 'Test-time Adaptation', args.dataset]
     )
 
     max_length = args.sample_rate
     train_set = SpeechCommandsV2(
-        root_path=args.dataset_root_path, folder_in_archive='speech_commands_v0.02', mode='training', 
+        root_path=args.dataset_root_path, mode='training', 
         data_tf=Compose(transforms=[
             time_shift(shift_limit=.17, is_random=True, is_bidirection=True),
             AudioPadding(max_length=max_length, sample_rate=args.sample_rate, random_shift=True),
@@ -73,7 +78,7 @@ if __name__ == '__main__':
     train_loader = DataLoader(dataset=train_set, batch_size=args.batch_size, shuffle=True, drop_last=False, num_workers=args.num_workers)
 
     val_set = SpeechCommandsV2(
-        root_path=args.dataset_root_path, folder_in_archive='speech_commands_v0.02', mode='validation', 
+        root_path=args.dataset_root_path, mode='validation', 
         data_tf=Compose(transforms=[
             AudioPadding(max_length=max_length, sample_rate=args.sample_rate, random_shift=False),
             ReduceChannel()
@@ -82,12 +87,12 @@ if __name__ == '__main__':
     val_loader = DataLoader(dataset=val_set, batch_size=args.batch_size, shuffle=False, drop_last=False, num_workers=args.num_workers)
 
     hubert, clsModel = build_model(args=args)
-    store_model_structure_to_txt(model=hubert, output_path=os.path.join(args.output_path, 'hubert.txt'))
-    store_model_structure_to_txt(model=clsModel, output_path=os.path.join(args.output_path, 'clsModel.txt'))
+    store_model_structure_to_txt(model=hubert, output_path=os.path.join(args.output_path, f'hubert-{args.model_level}.txt'))
+    store_model_structure_to_txt(model=clsModel, output_path=os.path.join(args.output_path, f'clsModel-{args.model_level}.txt'))
     optimizer = optim.SGD(lr=args.lr, params=clsModel.parameters())
     loss_fn = nn.CrossEntropyLoss().to(device=args.device)
 
-    hubert.eval()
+    hubert.train()
     clsModel.train()
     ttl_corr = 0.
     ttl_size = 0.
@@ -133,12 +138,12 @@ if __name__ == '__main__':
         print(f'Validation accuracy is: {val_accu:.4f}%, sample size is: {len(val_set)}')
 
         wandb_run.log(data={
-            'Train/loss': train_loss / len(train_loader),
-            'Train/accuracy': train_accu,
-            'Val/accuracy': val_accu
+            'Train/Loss': train_loss / len(train_loader),
+            'Train/Accu': train_accu,
+            'Val/Accu': val_accu
         }, step=epoch, commit=True)
 
         if max_accu <= val_accu:
             max_accu == val_accu
-            torch.save(obj=clsModel.state_dict(), f=os.path.join(args.output_path, 'clsModel.pt'))
-            torch.save(obj=hubert.state_dict(), f=os.path.join(args.output_path, 'hubert.pt'))
+            torch.save(obj=clsModel.state_dict(), f=os.path.join(args.output_path, f'clsModel-{args.model_level}.pt'))
+            torch.save(obj=hubert.state_dict(), f=os.path.join(args.output_path, f'hubert-{args.model_level}.pt'))
