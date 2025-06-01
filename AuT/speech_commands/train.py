@@ -21,9 +21,9 @@ from AuT.lib.model import FCETransform, AudioClassifier
 from AuT.lib.loss import CrossEntropyLabelSmooth
 
 def background_noise(args:argparse.Namespace) -> dict[str, torch.Tensor]:
-    dataset = BackgroundNoiseDataset(root_path=args.background_path)
+    dataset = BackgroundNoiseDataset(root_path=args.background_path, include_rate=False)
     ret = {}
-    for noise_type, noise, sample_rate in dataset:
+    for noise, noise_type in dataset:
         ret[noise_type] = noise
     return ret
 

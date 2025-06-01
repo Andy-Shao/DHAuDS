@@ -47,12 +47,13 @@ class SpeechCommandsV2(Dataset):
 class BackgroundNoiseDataset(Dataset):
     base_path = '_background_noise_'
 
-    def __init__(self, root_path: str, data_tf=None, label_tf=None) -> None:
+    def __init__(self, root_path: str, data_tf=None, label_tf=None, include_rate=False) -> None:
         super().__init__()
         self.root_path = root_path 
         self.data_list = self.__cal_data_list__()
         self.data_tf = data_tf
         self.label_tf = label_tf
+        self.include_rate = include_rate
 
     def __cal_data_list__(self) -> list[str]:
         data_list = []
@@ -72,7 +73,9 @@ class BackgroundNoiseDataset(Dataset):
             noise = self.data_tf(noise)
         if self.label_tf is not None:
             sample_rate = self.label_tf(sample_rate)
-        return noise_type, noise, sample_rate
+        if self.include_rate:
+            return noise, noise_type, sample_rate
+        else: return noise, noise_type
 
 class VocalSound(Dataset):
     @dataclass
