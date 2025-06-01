@@ -105,8 +105,7 @@ if __name__ == '__main__':
             features, labels = features.to(args.device), labels.to(args.device)
 
             optimizer.zero_grad()
-            hiddent_fs = hubert.extract_features(features)[0]
-            hiddent_fs = hiddent_fs[-1]
+            hiddent_fs, _ = hubert(features)
             outputs = clsModel(hiddent_fs)
             loss = loss_fn(outputs, labels)
             loss.backward()
@@ -128,8 +127,7 @@ if __name__ == '__main__':
             features, labels = features.to(args.device), labels.to(args.device)
 
             with torch.no_grad():
-                hiddent_fs = hubert.extract_features(features)[0]
-                hiddent_fs = hiddent_fs[-1]
+                hiddent_fs, _ = hubert(features)
                 outputs = clsModel(hiddent_fs)
             ttl_size += labels.shape[0]
             _, preds = torch.max(input=outputs.detach(), dim=1)
