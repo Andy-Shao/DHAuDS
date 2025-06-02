@@ -108,13 +108,13 @@ if __name__ == '__main__':
 
     hubert.train()
     clsModel.train()
-    ttl_corr = 0.
-    ttl_size = 0.
-    train_loss = 0.
     max_accu = 0.
     for epoch in range(args.max_epoch):
         print(f'Epoch:{epoch+1}/{args.max_epoch}')
         print('Training...')
+        ttl_corr = 0.
+        ttl_size = 0.
+        train_loss = 0.
         for features, labels in tqdm(train_loader):
             features, labels = features.to(args.device), labels.to(args.device)
 
