@@ -11,10 +11,10 @@ from lib.utils import make_unless_exits, print_argparse, count_ttl_params
 from lib.spdataset import SpeechCommandsV2
 from lib.component import Components, AudioPadding, ReduceChannel, BackgroundNoiseByFunc
 from HuBERT.speech_commands.train import build_model
-from HuBERT.lib.model import Classifier
 from AuT.speech_commands.analysis import noise_source
+from AuT.lib.model import AudioClassifier
 
-def inference(args:argparse, auT:torchaudio.models.Wav2Vec2Model, auC:Classifier, data_loader:DataLoader) -> float:
+def inference(args:argparse, auT:torchaudio.models.Wav2Vec2Model, auC:AudioClassifier, data_loader:DataLoader) -> float:
     auT.eval()
     auC.eval()
     ttl_corr = 0.
@@ -30,7 +30,7 @@ def inference(args:argparse, auT:torchaudio.models.Wav2Vec2Model, auC:Classifier
     ttl_accu = ttl_corr / ttl_size * 100.
     return ttl_accu
 
-def load_weight(args:argparse, mode:str, auT:torchaudio.models.Wav2Vec2Model, auC:Classifier) -> None:
+def load_weight(args:argparse, mode:str, auT:torchaudio.models.Wav2Vec2Model, auC:AudioClassifier) -> None:
     if mode == 'origin':
         auT_weight_path = args.origin_auT_weight
         cls_weight_path = args.origin_cls_weight
