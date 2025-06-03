@@ -23,7 +23,7 @@ def inference(args:argparse, auT:torchaudio.models.Wav2Vec2Model, auC:AudioClass
         features, labels = features.to(args.device), labels.to(args.device)
 
         with torch.no_grad():
-            outputs = auC(auT(features)[0])
+            outputs, _ = auC(auT(features)[0])
             _, preds = torch.max(outputs, dim=1)
         ttl_size += labels.shape[0]
         ttl_corr += (preds == labels).sum().cpu().item()
@@ -68,7 +68,7 @@ if __name__ == '__main__':
 
     print('Original')
     test_set = SpeechCommandsV2(
-        root_path=args.dataset_root_path, mode='training', download=True,
+        root_path=args.dataset_root_path, mode='testing', download=True,
         data_tf=Components(transforms=[
             AudioPadding(sample_rate=args.sample_rate, max_length=args.sample_rate, random_shift=False),
             ReduceChannel()
