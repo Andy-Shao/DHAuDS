@@ -135,4 +135,7 @@ if __name__ == '__main__':
     print(f'Corrupted testing: accuracy is {accuracy:.4f}%, number of parameters is {param_num}, sample size is {len(corrupted_set)}')
     records.loc[len(records)] = [args.dataset, arch, param_num, args.background_type, args.corruption_level, accuracy, 100.-accuracy]
 
+    for noise_type in ['doing_the_dishes', 'exercise_bike', 'running_tap']:
+        pass
+
     records.to_csv(os.path.join(args.output_path, f'{args.background_type}-{args.corruption_level}.csv'))
