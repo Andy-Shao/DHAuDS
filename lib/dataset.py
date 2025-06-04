@@ -1,4 +1,9 @@
 import argparse
+import os
+import pandas as pd
+from typing import Any
+from tqdm import tqdm
+import shutil
 
 from torch.utils.data import Dataset
 from torch import nn
@@ -76,3 +81,44 @@ class RandomChoiceSet(Dataset):
         import random
         i = random.randint(0, len(self.data_list)-1)
         return self.dataset[self.data_list[i]]
+
+def store_to(dataset: Dataset, root_path: str, index_file_name: str, data_transf=None, label_transf=None) -> None:
+    print(f'Store dataset into {root_path}, meta file is: {index_file_name}')
+    data_index = pd.DataFrame(columns=['data_path', 'label'])
+    try: 
+        if os.path.exists(root_path): shutil.rmtree(root_path)
+        os.makedirs(root_path)
+    except:
+        print('remove directory has an error.')
+    for index, (feature, label) in tqdm(enumerate(dataset), total=len(dataset)):
+        if data_transf is not None:
+            feature = data_transf(feature)
+        if label_transf is not None:
+            label = data_transf(feature)
+        data_path = f'{index}_{label}.dt'
+        data_index.loc[len(data_index)] = [data_path, label]
+        torch.save(feature, os.path.join(root_path, data_path))
+    data_index.to_csv(os.path.join(root_path, index_file_name))
+
+def load_from(root_path: str, index_file_name: str, data_tf=None, label_tf=None) -> Dataset:
+    class LoadDs(Dataset):
+        def __init__(self) -> None:
+            super().__init__()
+            data_index = pd.read_csv(os.path.join(root_path, index_file_name))
+            self.data_meta = []
+            for idx in range(len(data_index)):
+                self.data_meta.append([data_index['data_path'][idx], data_index['label'][idx]]) 
+        
+        def __len__(self):
+            return len(self.data_meta)
+        
+        def __getitem__(self, index) -> Any:
+            data_path = self.data_meta[index][0]
+            feature = torch.load(os.path.join(root_path, data_path), weights_only=False)
+            label = int(self.data_meta[index][1])
+            if data_tf is not None:
+                feature = data_tf(feature)
+            if label_tf is not None:
+                label = label_tf(label)
+            return feature, label
+    return LoadDs()
