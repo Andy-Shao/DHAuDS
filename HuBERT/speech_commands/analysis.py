@@ -2,6 +2,7 @@ import argparse
 import os
 from tqdm import tqdm
 import pandas as pd
+import numpy as np
 
 import torch 
 from torch.utils.data import DataLoader
@@ -42,11 +43,13 @@ if __name__ == '__main__':
     ap.add_argument('--dataset', type=str, default='SpeechCommandsV2', choices=['SpeechCommandsV2'])
     ap.add_argument('--dataset_root_path', type=str)
     ap.add_argument('--background_path', type=str)
-    ap.add_argument('--background_type', default='VocalSound', choices=['VocalSound', 'SCV2-BG', 'CochlScene'])
+    ap.add_argument('--vocalsound_path', type=str)
+    ap.add_argument('--cochlscene_path', type=str)
     ap.add_argument('--corruption_level', type=float)
     ap.add_argument('--num_workers', type=int, default=16)
     ap.add_argument('--output_path', type=str, default='./result')
-    ap.add_argument('--batch_size', type=int, default=64, help='batch size')
+    ap.add_argument('--analysis_file', type=str, default='analysis.csv')
+    ap.add_argument('--batch_size', type=int, default=64)
     ap.add_argument('--origin_auT_weight', type=str)
     ap.add_argument('--origin_cls_weight', type=str)
 
@@ -64,7 +67,7 @@ if __name__ == '__main__':
 
     print_argparse(args)
     ###########################################################
-    records = pd.DataFrame(columns=['dataset', 'module', 'param_num', 'corruption_type', 'corruption_level', 'accuracy', 'error_rate'])
+    records = pd.DataFrame(columns=['dataset', 'module', 'param_num', 'corruption_type', 'corruption_level', 'adaptation', 'accuracy', 'error_rate'])
 
     print('Original')
     test_set = SpeechCommandsV2(
@@ -80,20 +83,22 @@ if __name__ == '__main__':
     load_weight(args=args, mode='origin', auT=hubert, auC=clsModel)
     accuracy = inference(args=args, auT=hubert, auC=clsModel, data_loader=test_loader)
     print(f'Original test set: accuracy is {accuracy:.4f}%, sample size is {len(test_set)}, number of params is {param_num}')
-    records.loc[len(records)] = [args.dataset, arch, param_num, args.background_type, args.corruption_level, accuracy, 100.-accuracy]
+    records.loc[len(records)] = [args.dataset, arch, param_num, np.nan, np.nan, np.nan, accuracy, 100.-accuracy]
 
     print('Corrupted')
-    corrupted_set = SpeechCommandsV2(
-        root_path=args.dataset_root_path, mode='testing', download=True,
-        data_tf=Components(transforms=[
-            BackgroundNoiseByFunc(noise_level=args.corruption_level, noise_func=noise_source(args), is_random=True),
-            AudioPadding(sample_rate=args.sample_rate, max_length=args.sample_rate, random_shift=False),
-            ReduceChannel()
-        ])
-    )
-    corrupted_loader = DataLoader(dataset=corrupted_set, batch_size=args.batch_size, shuffle=False, drop_last=False, pin_memory=True, num_workers=args.num_workers)
-    accuracy = inference(args=args, auT=hubert, auC=clsModel, data_loader=corrupted_loader)
-    print(f'Corrupted testing: accuracy is {accuracy:.4f}%, number of parameters is {param_num}, sample size is {len(corrupted_set)}')
-    records.loc[len(records)] = [args.dataset, arch, param_num, args.background_type, args.corruption_level, accuracy, 100.-accuracy]
+    for noise_type in ['doing_the_dishes', 'exercise_bike', 'running_tap', 'VocalSound', 'CochlScene']:
+        print(f'Process {noise_type}...')
+        corrupted_set = SpeechCommandsV2(
+            root_path=args.dataset_root_path, mode='testing', download=True,
+            data_tf=Components(transforms=[
+                BackgroundNoiseByFunc(noise_level=args.corruption_level, noise_func=noise_source(args, source_type=noise_type), is_random=True),
+                AudioPadding(sample_rate=args.sample_rate, max_length=args.sample_rate, random_shift=False),
+                ReduceChannel()
+            ])
+        )
+        corrupted_loader = DataLoader(dataset=corrupted_set, batch_size=args.batch_size, shuffle=False, drop_last=False, pin_memory=True, num_workers=args.num_workers)
+        accuracy = inference(args=args, auT=hubert, auC=clsModel, data_loader=corrupted_loader)
+        print(f'Corrupted testing: accuracy is {accuracy:.4f}%, number of parameters is {param_num}, sample size is {len(corrupted_set)}')
+        records.loc[len(records)] = [args.dataset, arch, param_num, noise_type, args.corruption_level, np.nan, accuracy, 100.-accuracy]
 
-    records.to_csv(os.path.join(args.output_path, f'{args.background_type}-{args.corruption_level}.csv'))
+    records.to_csv(os.path.join(args.output_path, args.analysis_file))

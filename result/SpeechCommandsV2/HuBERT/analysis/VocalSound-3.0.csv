@@ -1,3 +1,0 @@
-,dataset,module,param_num,corruption_type,corruption_level,accuracy,error_rate
-0,SpeechCommandsV2,HuBERT,96479942,VocalSound,3.0,97.51022262607906,2.489777373920944
-1,SpeechCommandsV2,HuBERT,96479942,VocalSound,3.0,82.68968650613357,17.31031349386643
