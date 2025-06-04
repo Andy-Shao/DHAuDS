@@ -76,10 +76,11 @@ class MgDataset(Dataset):
         return torch.cat(ret, dim=0), label
 
 class SplitDataset(Dataset):
-    def __init__(self, dataset:Dataset, num:int=1):
+    def __init__(self, dataset:Dataset, num:int, tfs:list[nn.Module]):
         assert num > 0, 'No support'
         self.dataset = dataset
         self.num = num
+        self.tfs = tfs
 
     def __len__(self):
         return len(self.dataset)
@@ -89,9 +90,12 @@ class SplitDataset(Dataset):
         if self.num == 1:
             return fs, label
         ret = []
+        items = torch.split(fs, 1, dim=0)
         for i in range(self.num):
-            item = fs[i]
-            item = torch.squeeze(input=item, dim=0)
+            item = items[i]
+            item = torch.squeeze(item, dim=0)
+            item = torch.from_numpy(item.detach().numpy())
+            item = self.tfs[i](item)
             ret.append(item)
         ret.append(label)
         return tuple(ret)
