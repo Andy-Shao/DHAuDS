@@ -130,8 +130,8 @@ if __name__ == '__main__':
         corrupted_set = SpeechCommandsV2(
             root_path=args.dataset_root_path, mode='testing', download=True,
             data_tf=Components(transforms=[
-                BackgroundNoiseByFunc(noise_level=args.corruption_level, noise_func=noise_source(args, source_type=noise_type), is_random=True),
                 AudioPadding(sample_rate=sample_rate, random_shift=False, max_length=sample_rate),
+                BackgroundNoiseByFunc(noise_level=args.corruption_level, noise_func=noise_source(args, source_type=noise_type), is_random=True),
                 a_transforms.MelSpectrogram(
                     sample_rate=sample_rate, n_mels=args.n_mels, n_fft=n_fft, hop_length=hop_length, win_length=win_length,
                     mel_scale=mel_scale

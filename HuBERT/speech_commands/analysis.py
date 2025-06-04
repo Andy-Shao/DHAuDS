@@ -91,8 +91,8 @@ if __name__ == '__main__':
         corrupted_set = SpeechCommandsV2(
             root_path=args.dataset_root_path, mode='testing', download=True,
             data_tf=Components(transforms=[
-                BackgroundNoiseByFunc(noise_level=args.corruption_level, noise_func=noise_source(args, source_type=noise_type), is_random=True),
                 AudioPadding(sample_rate=args.sample_rate, max_length=args.sample_rate, random_shift=False),
+                BackgroundNoiseByFunc(noise_level=args.corruption_level, noise_func=noise_source(args, source_type=noise_type), is_random=True),
                 ReduceChannel()
             ])
         )

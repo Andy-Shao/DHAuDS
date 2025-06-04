@@ -12,7 +12,7 @@ from torch.utils.data import DataLoader
 
 from lib import constants
 from lib.utils import make_unless_exits, print_argparse
-from lib.dataset import dataset_tag
+from lib.dataset import dataset_tag, store_to, load_from
 from lib.spdataset import SpeechCommandsV2
 from lib.component import Components, BackgroundNoiseByFunc, AudioPadding, AmplitudeToDB, MelSpectrogramPadding
 from lib.component import FrequenceTokenTransformer
@@ -82,7 +82,8 @@ if __name__ == '__main__':
 
     arch = 'AuT'
     wandb_run = wandb.init(
-        project=f'{constants.PROJECT_TITLE}-{constants.TTA_TAG}', name=f'{arch}-{dataset_tag(args.dataset)}', 
+        project=f'{constants.PROJECT_TITLE}-{constants.TTA_TAG}', 
+        name=f'{arch}-{dataset_tag(args.dataset)}-{constants.corruption_dic[args.corruption_type]}-{args.corruption_level}', 
         mode='online' if args.wandb else 'disabled', config=args, tags=['Audio Classification', args.dataset, 'Test-time Adaptation'])
 
     sample_rate=16000
@@ -95,8 +96,17 @@ if __name__ == '__main__':
     corrupted_set = SpeechCommandsV2(
         root_path=args.dataset_root_path, mode='testing', download=True, 
         data_tf=Components(transforms=[
-            BackgroundNoiseByFunc(noise_level=args.corruption_level, noise_func=noise_source(args, source_type=args.corruption_type), is_random=False),
             AudioPadding(sample_rate=sample_rate, random_shift=False, max_length=sample_rate),
+            BackgroundNoiseByFunc(noise_level=args.corruption_level, noise_func=noise_source(args, source_type=args.corruption_type), is_random=True),
+        ])
+    )
+    dataset_root_path = f'/root/tmp/{args.corruption_type}/{args.corruption_level}'
+    index_file_name = 'metaInfo.csv'
+    store_to(dataset=corrupted_set, root_path=dataset_root_path, index_file_name=index_file_name)
+    corrupted_set = load_from(
+        root_path=dataset_root_path, 
+        index_file_name=index_file_name,
+        data_tf=Components(transforms=[
             a_transforms.MelSpectrogram(
                 sample_rate=sample_rate, n_mels=args.n_mels, n_fft=n_fft, hop_length=hop_length, win_length=win_length,
                 mel_scale=mel_scale
@@ -106,6 +116,7 @@ if __name__ == '__main__':
             FrequenceTokenTransformer()
         ])
     )
+
     corrupted_loader = DataLoader(dataset=corrupted_set, batch_size=args.batch_size, shuffle=False, drop_last=False, pin_memory=True, num_workers=args.num_workers)
 
     auTmodel, clsmodel = build_model(args)
@@ -120,7 +131,7 @@ if __name__ == '__main__':
     for epoch in range(args.max_epoch):
         print(f'Epoch {epoch+1}/{args.max_epoch}')
         print('Adaptating...')
-        auTmodel.eval()
+        auTmodel.train()
         clsmodel.train()
         ttl_size = 0.
         ttl_loss = 0.
@@ -142,12 +153,12 @@ if __name__ == '__main__':
             else:
                 fbnm_loss = torch.tensor(.0).cuda()
 
-            ttl_loss = fbnm_loss
-            ttl_loss.backward()
+            loss = fbnm_loss
+            loss.backward()
             optimizer.step()
 
             ttl_size += features.shape[0]
-            ttl_loss += ttl_loss.cpu().item()
+            ttl_loss += loss.cpu().item()
             ttl_fbnm_loss += fbnm_loss.cpu().item()
 
         learning_rate = optimizer.param_groups[0]['lr']
@@ -162,10 +173,11 @@ if __name__ == '__main__':
         #     torch.save(auTmodel.state_dict(), os.path.join(args.output_path, f'{arch}-{dataset_tag(args.dataset)}-auT-{args.corruption_type}-{args.corruption_level}.pt'))
         #     torch.save(clsmodel.state_dict(), os.path.join(args.output_path, f'{arch}-{dataset_tag(args.dataset)}-cls-{args.corruption_type}-{args.corruption_level}.pt'))
 
-    #     wandb_run.log(
-    #         data={
-    #             'Loss/ttl_loss': ttl_loss / ttl_size,
-    #             'Loss/Nuclear-norm loss': ttl_fbnm_loss / ttl_size,
-    #             'Adaptation/accuracy': accuracy
-    #         }, step=epoch, commit=True
-    #     )
+        wandb_run.log(
+            data={
+                'Loss/ttl_loss': ttl_loss / ttl_size,
+                'Loss/Nuclear-norm loss': ttl_fbnm_loss / ttl_size,
+                'Adaptation/accuracy': accuracy,
+                'Adaptation/LR': learning_rate
+            }, step=epoch, commit=True
+        )
