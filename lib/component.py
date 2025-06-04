@@ -150,3 +150,10 @@ class BackgroundNoiseByFunc(nn.Module):
             noise_period = noise[:, 0:wav_len]
         corrupted_waveform = ta_f.add_noise(waveform=waveform, noise=noise_period, snr=torch.tensor([self.noise_level]))
         return corrupted_waveform
+
+class DoNothing(nn.Module):
+    def __init__(self):
+        super().__init__()
+
+    def forward(self, x:torch.Tensor) -> torch.Tensor:
+        return x

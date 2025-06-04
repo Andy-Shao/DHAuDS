@@ -61,6 +61,41 @@ class MultiTFDataset(Dataset):
         ret.append(label)
         return tuple(ret)
 
+class MgDataset(Dataset):
+    def __init__(self, dataset:Dataset):
+        super(MgDataset, self).__init__()
+        self.dataset = dataset
+
+    def __len__(self):
+        return len(self.dataset)
+
+    def __getitem__(self, index):
+        tuple = self.dataset[index]
+        label = tuple[-1]
+        ret = [torch.unsqueeze(input=tuple[i], dim=0) for i in range(len(tuple)-1)]
+        return torch.cat(ret, dim=0), label
+
+class SplitDataset(Dataset):
+    def __init__(self, dataset:Dataset, num:int=1):
+        assert num > 0, 'No support'
+        self.dataset = dataset
+        self.num = num
+
+    def __len__(self):
+        return len(self.dataset)
+    
+    def __getitem__(self, index):
+        fs, label = self.dataset[index]
+        if self.num == 1:
+            return fs, label
+        ret = []
+        for i in range(self.num):
+            item = fs[i]
+            item = torch.squeeze(input=item, dim=0)
+            ret.append(item)
+        ret.append(label)
+        return tuple(ret)
+
 class RandomChoiceSet(Dataset):
     def __init__(self, dataset:Dataset, include_lables:list=[]):
         super(RandomChoiceSet, self).__init__()
