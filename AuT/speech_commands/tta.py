@@ -52,10 +52,11 @@ if __name__ == '__main__':
     ap.add_argument('--batch_size', type=int, default=64)
     ap.add_argument('--max_epoch', type=int, default=200, help='max epoch')
     ap.add_argument('--lr', type=float, default=1e-2, help='learning rate')
+    ap.add_argument('--lr_cardinality', type=int, default=40)
+    ap.add_argument('--lr_gamma', type=int, default=10)
     ap.add_argument('--auT_lr_decay', type=float, default=1.)
     ap.add_argument('--auC_lr_decay', type=float, default=1.)
     ap.add_argument('--fbnm_rate', type=float, default=1.)
-    ap.add_argument('--lr_cardinality', type=int, default=40)
     ap.add_argument('--interval', type=int, default=1, help='interval number')
     ap.add_argument('--origin_auT_weight', type=str)
     ap.add_argument('--origin_cls_weight', type=str)
@@ -146,9 +147,9 @@ if __name__ == '__main__':
             if args.fbnm_rate > 0:
                 from torch.nn import functional as F
                 softmax_outputs = F.softmax(input=outputs, dim=1)
-                list_svd,_ = torch.sort(torch.sqrt(torch.sum(torch.pow(softmax_outputs,2),dim=0)), descending=True)
-                fbnm_loss = - torch.mean(list_svd)
-                # fbnm_loss = - torch.mean(list_svd[:min(softmax_outputs.shape[0], softmax_outputs.shape[1])])
+                list_svd, _ = torch.sort(torch.sqrt(torch.sum(torch.pow(softmax_outputs,2),dim=0)), descending=True)
+                # require top class_num items, but if last batch size is lower than class_num, take batch size.
+                fbnm_loss = - torch.mean(list_svd[:min(softmax_outputs.shape[0], args.class_num)]) 
                 fbnm_loss = args.fbnm_rate * fbnm_loss
             else:
                 fbnm_loss = torch.tensor(.0).cuda()
@@ -163,7 +164,7 @@ if __name__ == '__main__':
 
         learning_rate = optimizer.param_groups[0]['lr']
         if epoch % args.interval == 0:
-            lr_scheduler(optimizer=optimizer, epoch=epoch, lr_cardinality=args.lr_cardinality)
+            lr_scheduler(optimizer=optimizer, epoch=epoch, lr_cardinality=args.lr_cardinality, gamma=args.lr_gamma)
 
         print('Inferencing...')
         accuracy = inference(args=args, auT=auTmodel, auC=clsmodel, data_loader=corrupted_loader)
