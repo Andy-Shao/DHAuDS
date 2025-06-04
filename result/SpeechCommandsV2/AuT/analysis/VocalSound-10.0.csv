@@ -1,3 +1,0 @@
-,dataset,module,param_num,corruption_type,corruption_level,accuracy,error_rate
-0,SpeechCommandsV2,AuT,103072070,VocalSound,10.0,95.55656519763744,4.44343480236256
-1,SpeechCommandsV2,AuT,103072070,VocalSound,10.0,86.33348477964562,13.666515220354384

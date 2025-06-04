@@ -2,6 +2,7 @@ import argparse
 import os
 from tqdm import tqdm
 import pandas as pd
+import numpy as np
 
 import torch 
 import torchaudio.transforms as a_transforms
@@ -38,7 +39,7 @@ def load_weight(args:argparse, mode:str, auT:FCETransform, auC:AudioClassifier) 
     auT.load_state_dict(state_dict=torch.load(auT_weight_path, weights_only=True))
     auC.load_state_dict(state_dict=torch.load(cls_weight_path, weights_only=True))
 
-def noise_source(args:argparse):
+def noise_source(args:argparse, source_type:str):
     def expanding(noise: torch.Tensor, target_length=16000) -> torch.Tensor:
         noise_len = noise.shape[1]
         i = 1
@@ -46,26 +47,34 @@ def noise_source(args:argparse):
         if i == 1: return noise
         else: return noise.repeat([1, i])
 
-    if args.background_type == 'VocalSound':
-        noise_set = VocalSound(root_path=args.background_path, mode='train', include_rate=False, version='16k')
-    elif args.background_type == 'SCV2-BG':
+    if source_type == 'VocalSound':
+        noise_set = VocalSound(root_path=args.vocalsound_path, mode='train', include_rate=False, version='16k')
+        source = RandomChoiceSet(dataset=noise_set)
+        return lambda: expanding(source[0][0])
+    elif source_type in ['doing_the_dishes', 'exercise_bike', 'running_tap']:
         noise_set = BackgroundNoiseDataset(root_path=args.background_path, include_rate=False)
-    elif args.background_type == 'CochlScene':
-        noise_set = CochlScene(root_path=args.background_path, mode='train', include_rate=False)
-
-    source = RandomChoiceSet(dataset=noise_set)
-    return lambda: expanding(source[0][0])
+        for noise, noise_type in noise_set:
+            if noise_type == source_type:
+                source = noise
+                break
+        return lambda: source
+    elif source_type == 'CochlScene':
+        noise_set = CochlScene(root_path=args.cochlscene_path, mode='train', include_rate=False)
+        source = RandomChoiceSet(dataset=noise_set)
+        return lambda: expanding(source[0][0])
 
 if __name__ == '__main__':
     ap = argparse.ArgumentParser()
     ap.add_argument('--dataset', type=str, default='SpeechCommandsV2', choices=['SpeechCommandsV2'])
     ap.add_argument('--dataset_root_path', type=str)
     ap.add_argument('--background_path', type=str)
-    ap.add_argument('--background_type', default='VocalSound', choices=['VocalSound', 'SCV2-BG', 'CochlScene'])
+    ap.add_argument('--vocalsound_path', type=str)
+    ap.add_argument('--cochlscene_path', type=str)
     ap.add_argument('--corruption_level', type=float)
     ap.add_argument('--num_workers', type=int, default=16)
     ap.add_argument('--output_path', type=str, default='./result')
-    ap.add_argument('--batch_size', type=int, default=64, help='batch size')
+    ap.add_argument('--analysis_file', type=str, default='analysis.csv')
+    ap.add_argument('--batch_size', type=int, default=64)
     ap.add_argument('--origin_auT_weight', type=str)
     ap.add_argument('--origin_cls_weight', type=str)
 
@@ -83,7 +92,7 @@ if __name__ == '__main__':
     print_argparse(args)
     ###########################################################
 
-    records = pd.DataFrame(columns=['dataset', 'module', 'param_num', 'corruption_type', 'corruption_level', 'accuracy', 'error_rate'])
+    records = pd.DataFrame(columns=['dataset', 'module', 'param_num', 'corruption_type', 'corruption_level', 'adaptation', 'accuracy', 'error_rate'])
 
     sample_rate=16000
     args.n_mels=80
@@ -113,29 +122,28 @@ if __name__ == '__main__':
     param_num = count_ttl_params(model=auTmodel) + count_ttl_params(model=clsmodel)
     accuracy = inference(args=args, auT=auTmodel, auC=clsmodel, data_loader=test_loader)
     print(f'Original testing: accuracy is {accuracy:.4f}%, number of parameters is {param_num}, sample size is {len(test_set)}')
-    records.loc[len(records)] = [args.dataset, arch, param_num, args.background_type, args.corruption_level, accuracy, 100.-accuracy]
+    records.loc[len(records)] = [args.dataset, arch, param_num, np.nan, np.nan, np.nan, accuracy, 100.-accuracy]
 
     print('Corrupted')
-    corrupted_set = SpeechCommandsV2(
-        root_path=args.dataset_root_path, mode='testing', download=True,
-        data_tf=Components(transforms=[
-            BackgroundNoiseByFunc(noise_level=args.corruption_level, noise_func=noise_source(args), is_random=True),
-            AudioPadding(sample_rate=sample_rate, random_shift=False, max_length=sample_rate),
-            a_transforms.MelSpectrogram(
-                sample_rate=sample_rate, n_mels=args.n_mels, n_fft=n_fft, hop_length=hop_length, win_length=win_length,
-                mel_scale=mel_scale
-            ), # 80 x 104
-            AmplitudeToDB(top_db=80., max_out=2.),
-            MelSpectrogramPadding(target_length=args.target_length),
-            FrequenceTokenTransformer()
-        ])
-    )
-    corrupted_loader = DataLoader(dataset=corrupted_set, batch_size=args.batch_size, shuffle=False, drop_last=False, pin_memory=True, num_workers=args.num_workers)
-    accuracy = inference(args=args, auT=auTmodel, auC=clsmodel, data_loader=corrupted_loader)
-    print(f'Corrupted testing: accuracy is {accuracy:.4f}%, number of parameters is {param_num}, sample size is {len(corrupted_set)}')
-    records.loc[len(records)] = [args.dataset, arch, param_num, args.background_type, args.corruption_level, accuracy, 100.-accuracy]
+    for noise_type in ['doing_the_dishes', 'exercise_bike', 'running_tap', 'VocalSound', 'CochlScene']:
+        print(f'Process {noise_type}...')
+        corrupted_set = SpeechCommandsV2(
+            root_path=args.dataset_root_path, mode='testing', download=True,
+            data_tf=Components(transforms=[
+                BackgroundNoiseByFunc(noise_level=args.corruption_level, noise_func=noise_source(args, source_type=noise_type), is_random=True),
+                AudioPadding(sample_rate=sample_rate, random_shift=False, max_length=sample_rate),
+                a_transforms.MelSpectrogram(
+                    sample_rate=sample_rate, n_mels=args.n_mels, n_fft=n_fft, hop_length=hop_length, win_length=win_length,
+                    mel_scale=mel_scale
+                ), # 80 x 104
+                AmplitudeToDB(top_db=80., max_out=2.),
+                MelSpectrogramPadding(target_length=args.target_length),
+                FrequenceTokenTransformer()
+            ])
+        )
+        corrupted_loader = DataLoader(dataset=corrupted_set, batch_size=args.batch_size, shuffle=False, drop_last=False, pin_memory=True, num_workers=args.num_workers)
+        accuracy = inference(args=args, auT=auTmodel, auC=clsmodel, data_loader=corrupted_loader)
+        print(f'Corrupted testing: accuracy is {accuracy:.4f}%, number of parameters is {param_num}, sample size is {len(corrupted_set)}')
+        records.loc[len(records)] = [args.dataset, arch, param_num, noise_type, args.corruption_level, np.nan, accuracy, 100.-accuracy]
 
-    for noise_type in ['doing_the_dishes', 'exercise_bike', 'running_tap']:
-        pass
-
-    records.to_csv(os.path.join(args.output_path, f'{args.background_type}-{args.corruption_level}.csv'))
+    records.to_csv(os.path.join(args.output_path, args.analysis_file))
