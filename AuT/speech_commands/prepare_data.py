@@ -1,15 +1,16 @@
 import argparse
 import os
+from tqdm import tqdm
 
 import torch
 from torch import nn
 from torchaudio import transforms as a_transforms
-from torch.utils.data import Dataset
+from torch.utils.data import Dataset, DataLoader
 
 from lib.utils import make_unless_exits, print_argparse
 from lib.spdataset import SpeechCommandsV2
 from lib.component import Components, AudioPadding, BackgroundNoiseByFunc, time_shift, DoNothing
-from lib.dataset import MgDataset, store_to
+from lib.dataset import mlt_store_to, mlt_load_from
 from AuT.speech_commands.analysis import noise_source
 
 class GpuMultiTFDataset(Dataset):
@@ -63,8 +64,9 @@ if __name__ == '__main__':
     hop_length=155
     mel_scale='slaney'
     args.target_length=104
+    SpeechCommandsV2(root_path=args.dataset_root_path, mode='testing', download=True) # for correctness
     corrupted_set = SpeechCommandsV2(
-        root_path=args.dataset_root_path, mode='testing', download=True, 
+        root_path=args.dataset_root_path, mode='testing', download=False, 
         data_tf=Components(transforms=[
             AudioPadding(sample_rate=sample_rate, random_shift=False, max_length=sample_rate),
             BackgroundNoiseByFunc(noise_level=args.corruption_level, noise_func=noise_source(args, source_type=args.corruption_type), is_random=True),
@@ -80,8 +82,17 @@ if __name__ == '__main__':
             ]).to('cuda')
         ]
     )
-    store_to(
-        dataset=MgDataset(dataset=wk_str_set), 
-        root_path=os.path.join(args.output_path, args.corruption_type, str(args.corruption_level)), 
-        index_file_name=args.index_file_name
+    mlt_store_to(
+        dataset=wk_str_set, 
+        root_path=os.path.join(args.output_path, args.corruption_type, str(args.corruption_level)),
+        index_file_name=args.index_file_name,
+        data_tfs=[DoNothing(), DoNothing()]
     )
+    load_set = mlt_load_from(
+        root_path=os.path.join(args.output_path, args.corruption_type, str(args.corruption_level)),
+        index_file_name=args.index_file_name,
+    )
+    print('Load checking')
+    loader = DataLoader(dataset=load_set, batch_size=32, shuffle=True, drop_last=False, num_workers=16)
+    for data in tqdm(loader):
+        pass
