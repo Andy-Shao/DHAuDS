@@ -15,7 +15,7 @@ from lib.utils import make_unless_exits, print_argparse
 from lib.dataset import dataset_tag, store_to, load_from
 from lib.spdataset import SpeechCommandsV2
 from lib.component import Components, BackgroundNoiseByFunc, AudioPadding, AmplitudeToDB, MelSpectrogramPadding
-from lib.component import FrequenceTokenTransformer
+from lib.component import FrequenceTokenTransformer, time_shift
 from AuT.speech_commands.analysis import noise_source, load_weight, inference
 from AuT.speech_commands.train import build_model, op_copy, lr_scheduler
 from AuT.lib.model import FCETransform, AudioClassifier
@@ -108,6 +108,7 @@ if __name__ == '__main__':
         root_path=dataset_root_path, 
         index_file_name=index_file_name,
         data_tf=Components(transforms=[
+            time_shift(shift_limit=.17, is_random=True, is_bidirection=True),
             a_transforms.MelSpectrogram(
                 sample_rate=sample_rate, n_mels=args.n_mels, n_fft=n_fft, hop_length=hop_length, win_length=win_length,
                 mel_scale=mel_scale
@@ -119,7 +120,21 @@ if __name__ == '__main__':
     )
 
     corrupted_loader = DataLoader(dataset=corrupted_set, batch_size=args.batch_size, shuffle=True, drop_last=False, pin_memory=True, num_workers=args.num_workers)
-    test_loader = DataLoader(dataset=corrupted_set, batch_size=args.batch_size, shuffle=False, drop_last=False, pin_memory=True, num_workers=args.num_workers)
+
+    test_set = load_from(
+        root_path=dataset_root_path, 
+        index_file_name=index_file_name,
+        data_tf=Components(transforms=[
+            a_transforms.MelSpectrogram(
+                sample_rate=sample_rate, n_mels=args.n_mels, n_fft=n_fft, hop_length=hop_length, win_length=win_length,
+                mel_scale=mel_scale
+            ), # 80 x 104
+            AmplitudeToDB(top_db=80., max_out=2.),
+            MelSpectrogramPadding(target_length=args.target_length),
+            FrequenceTokenTransformer()
+        ])
+    )
+    test_loader = DataLoader(dataset=test_set, batch_size=args.batch_size, shuffle=False, drop_last=False, pin_memory=True, num_workers=args.num_workers)
 
     auTmodel, clsmodel = build_model(args)
     load_weight(args=args, mode='origin', auT=auTmodel, auC=clsmodel)
