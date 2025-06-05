@@ -118,14 +118,15 @@ if __name__ == '__main__':
         ])
     )
 
-    corrupted_loader = DataLoader(dataset=corrupted_set, batch_size=args.batch_size, shuffle=False, drop_last=False, pin_memory=True, num_workers=args.num_workers)
+    corrupted_loader = DataLoader(dataset=corrupted_set, batch_size=args.batch_size, shuffle=True, drop_last=False, pin_memory=True, num_workers=args.num_workers)
+    test_loader = DataLoader(dataset=corrupted_set, batch_size=args.batch_size, shuffle=False, drop_last=False, pin_memory=True, num_workers=args.num_workers)
 
     auTmodel, clsmodel = build_model(args)
     load_weight(args=args, mode='origin', auT=auTmodel, auC=clsmodel)
     optimizer = build_optimizer(args=args, auT=auTmodel, auC=clsmodel)
 
     print('Pre-adaptation')
-    accuracy = inference(args=args, auT=auTmodel, auC=clsmodel, data_loader=corrupted_loader)
+    accuracy = inference(args=args, auT=auTmodel, auC=clsmodel, data_loader=test_loader)
     print(f'Accurayc is: {accuracy:.4f}%, sample size is: {len(corrupted_set)}')
 
     max_accu = 0.
@@ -167,7 +168,7 @@ if __name__ == '__main__':
             lr_scheduler(optimizer=optimizer, epoch=epoch, lr_cardinality=args.lr_cardinality, gamma=args.lr_gamma)
 
         print('Inferencing...')
-        accuracy = inference(args=args, auT=auTmodel, auC=clsmodel, data_loader=corrupted_loader)
+        accuracy = inference(args=args, auT=auTmodel, auC=clsmodel, data_loader=test_loader)
         print(f'Accuracy is: {accuracy:.4f}%, sample size is: {len(corrupted_set)}')
         # if accuracy >= max_accu:
         #     max_accu = accuracy
