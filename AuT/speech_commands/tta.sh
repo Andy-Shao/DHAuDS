@@ -2,7 +2,7 @@
 export BASE_PATH=${BASE_PATH:-'/root'}
 
 python -m AuT.speech_commands.tta --dataset 'SpeechCommandsV2' --dataset_root_path $BASE_PATH'/data' \
-    --max_epoch 20 --lr_cardinality 50 --batch_size 70 --lr '1e-4' --num_workers 16 --auT_lr_decay 0.1 \
+    --max_epoch 30 --lr_cardinality 50 --batch_size 70 --lr '1e-4' --num_workers 16 --auT_lr_decay 0.25 \
     --background_path $BASE_PATH'/data/speech_commands_v0.02/speech_commands_v0.02' \
     --vocalsound_path $BASE_PATH'/data/vocalsound_16k' \
     --cochlscene_path $BASE_PATH'/data/CochlScene' \
