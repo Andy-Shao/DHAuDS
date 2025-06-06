@@ -125,7 +125,7 @@ if __name__ == '__main__':
     records.loc[len(records)] = [args.dataset, arch, param_num, np.nan, np.nan, np.nan, accuracy, 100.-accuracy]
 
     print('Corrupted')
-    for noise_type in ['doing_the_dishes', 'exercise_bike', 'running_tap', 'VocalSound', 'CochlScene']:
+    for noise_type in ['doing_the_dishes', 'exercise_bike', 'running_tap']:
         print(f'Process {noise_type}...')
         corrupted_set = SpeechCommandsV2(
             root_path=args.dataset_root_path, mode='testing', download=True,
