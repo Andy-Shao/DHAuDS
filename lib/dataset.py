@@ -13,6 +13,8 @@ import torch
 def dataset_tag(dataset:str) -> str:
     if dataset == 'SpeechCommandsV2':
         return 'SC2'
+    elif dataset == 'SpeechCommandsV1':
+        return 'SC1'
     else:
         raise Exception('No support')
 

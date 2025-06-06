@@ -13,7 +13,7 @@ from torch import nn, optim
 from lib.utils import print_argparse, store_model_structure_to_txt, make_unless_exits
 from lib import constants
 from lib.dataset import dataset_tag, MultiTFDataset
-from lib.spdataset import SpeechCommandsV2, BackgroundNoiseDataset
+from lib.spdataset import SpeechCommandsV2, BackgroundNoiseDataset, SpeechCommandsV1
 from lib.component import Components, AudioPadding, time_shift, AmplitudeToDB, MelSpectrogramPadding, FrequenceTokenTransformer
 from lib.component import GuassianNoise, BackgroundNoise
 from AuT.lib.config import AuT_base
@@ -68,13 +68,13 @@ def lr_scheduler(optimizer: torch.optim.Optimizer, epoch:int, lr_cardinality:int
 
 if __name__ == '__main__':
     ap = argparse.ArgumentParser()
-    ap.add_argument('--dataset', type=str, default='SpeechCommandsV2', choices=['SpeechCommandsV2'])
+    ap.add_argument('--dataset', type=str, default='SpeechCommandsV2', choices=['SpeechCommandsV2', 'SpeechCommandsV1'])
     ap.add_argument('--dataset_root_path', type=str)
     ap.add_argument('--background_path', type=str)
     ap.add_argument('--num_workers', type=int, default=16)
     ap.add_argument('--output_path', type=str, default='./result')
     ap.add_argument('--file_name_suffix', type=str, default='')
-    ap.add_argument('--validation_mode', type=str, default='validation', choices=['validation', 'testing'])
+    ap.add_argument('--validation_mode', type=str, default='validation', choices=['validation', 'testing', 'test'])
 
     ap.add_argument('--wandb', action='store_true')
     ap.add_argument('--seed', type=int, default=2025, help='random seed')
@@ -90,6 +90,8 @@ if __name__ == '__main__':
     args = ap.parse_args()
     if args.dataset == 'SpeechCommandsV2':
         args.class_num = 35
+    elif args.dataset == 'SpeechCommandsV1':
+        args.class_num = 30
     else:
         raise Exception('No support!')
     args.device = 'cuda' if torch.cuda.is_available() else 'cpu'
@@ -117,7 +119,10 @@ if __name__ == '__main__':
     hop_length=155
     mel_scale='slaney'
     args.target_length=104
-    train_dataset = SpeechCommandsV2(root_path=args.dataset_root_path, mode='training', data_tf=None, download=True)
+    if args.dataset == 'SpeechCommandsV2':
+        train_dataset = SpeechCommandsV2(root_path=args.dataset_root_path, mode='training', data_tf=None, download=True)
+    elif args.dataset == 'SpeechCommandsV1':
+        train_dateset = SpeechCommandsV1(root_path=args.dataset_root_path, mode='train', data_tfs=None, include_rate=True)
     background_noises = background_noise(args=args)
     train_dataset = MultiTFDataset(
         dataset=train_dataset,
@@ -183,7 +188,10 @@ if __name__ == '__main__':
         MelSpectrogramPadding(target_length=args.target_length),
         FrequenceTokenTransformer()
     ])
-    val_dataset = SpeechCommandsV2(root_path=args.dataset_root_path, mode=args.validation_mode, download=True, data_tf=tf_array)
+    if args.dataset == 'SpeechCommandsV2':
+        val_dataset = SpeechCommandsV2(root_path=args.dataset_root_path, mode=args.validation_mode, download=True, data_tf=tf_array)
+    elif args.dataset == 'SpeechCommandsV1':
+        val_dataset = SpeechCommandsV1(root_path=args.dataset_root_path, mode=args.validation_mode, data_tfs=tf_array)
     val_loader = DataLoader(dataset=val_dataset, batch_size=args.batch_size, shuffle=False, drop_last=False, num_workers=4)
 
     auTmodel, clsmodel = build_model(args)
