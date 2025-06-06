@@ -216,3 +216,40 @@ def mlt_load_from(root_path:str, index_file_name:str, data_tfs:list[nn.Module]=N
             ret.append(label)
             return tuple(ret)
     return MltLoadDs()
+
+class GpuMultiTFDataset(Dataset):
+    def __init__(self, dataset:Dataset, tfs:list[nn.Module], device:str='cuda', maintain_cpu:bool=True):
+        super(GpuMultiTFDataset, self).__init__()
+        assert tfs is not None, 'No support'
+        self.dataset = dataset
+        self.tfs = [tf.to(device) for tf in tfs]
+        self.device = device
+        self.maintain_cpu = maintain_cpu
+
+    def __len__(self):
+        return len(self.dataset)
+    
+    def __getitem__(self, index):
+        item, label = self.dataset[index]
+        item = item.to(self.device)
+        ret = [item.clone() for _ in range(len(self.tfs))]
+        for i, tf in enumerate(self.tfs):
+            if tf is not None:
+                ret[i] = tf(ret[i])
+                if self.maintain_cpu:
+                    ret[i] = ret[i].to('cpu')
+        ret.append(label)
+        return tuple(ret)
+
+class IdxSet(Dataset):
+    def __init__(self, dataset:Dataset, idx:int=0):
+        super().__init__()
+        self.dataset = dataset
+        self.idx = idx
+    
+    def __len__(self):
+        return len(self.dataset)
+
+    def __getitem__(self, index):
+        data = self.dataset[index]
+        return data[self.idx], data[-1]
