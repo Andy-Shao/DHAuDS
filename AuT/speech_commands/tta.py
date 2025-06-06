@@ -12,7 +12,7 @@ from torch.utils.data import DataLoader
 
 from lib import constants
 from lib.utils import make_unless_exits, print_argparse
-from lib.dataset import dataset_tag, mlt_load_from, mlt_store_to, GpuMultiTFDataset, IdxSet
+from lib.dataset import dataset_tag, mlt_load_from, mlt_store_to
 from lib.spdataset import SpeechCommandsV2
 from lib.component import Components, BackgroundNoiseByFunc, AudioPadding, AmplitudeToDB, MelSpectrogramPadding
 from lib.component import FrequenceTokenTransformer, time_shift, DoNothing
@@ -104,18 +104,9 @@ if __name__ == '__main__':
     dataset_root_path = f'/root/tmp/{args.corruption_type}/{args.corruption_level}'
     index_file_name = 'metaInfo.csv'
     mlt_store_to(
-        dataset=GpuMultiTFDataset(
-            dataset=corrupted_set, device='cuda', maintain_cpu=True,
-            tfs=[
-                DoNothing(),
-                Components(transforms=[
-                    a_transforms.PitchShift(sample_rate=sample_rate, n_steps=4, n_fft=512),
-                    time_shift(shift_limit=.25, is_random=True, is_bidirection=True),
-                ])
-            ]
-        ), 
+        dataset=corrupted_set, 
         index_file_name=index_file_name, root_path=dataset_root_path,
-        data_tfs=[DoNothing(), DoNothing()]
+        data_tfs=[DoNothing()]
     )
 
     corrupted_set = mlt_load_from(
@@ -131,7 +122,15 @@ if __name__ == '__main__':
                 AmplitudeToDB(top_db=80., max_out=2.),
                 MelSpectrogramPadding(target_length=args.target_length),
                 FrequenceTokenTransformer()
-            ]),
+            ])
+        ]
+    )
+
+    corrupted_loader = DataLoader(dataset=corrupted_set, batch_size=args.batch_size, shuffle=True, drop_last=False, pin_memory=True, num_workers=args.num_workers)
+
+    test_set = mlt_load_from(
+        root_path=dataset_root_path, index_file_name=index_file_name,
+        data_tfs=[
             Components(transforms=[
                 a_transforms.MelSpectrogram(
                     sample_rate=sample_rate, n_mels=args.n_mels, n_fft=n_fft, hop_length=hop_length, win_length=win_length,
@@ -140,38 +139,8 @@ if __name__ == '__main__':
                 AmplitudeToDB(top_db=80., max_out=2.),
                 MelSpectrogramPadding(target_length=args.target_length),
                 FrequenceTokenTransformer()
-            ]),
+            ])
         ]
-    )
-
-    corrupted_loader = DataLoader(dataset=corrupted_set, batch_size=args.batch_size, shuffle=True, drop_last=False, pin_memory=True, num_workers=args.num_workers)
-
-    test_set = IdxSet(
-        dataset=mlt_load_from(
-            root_path=dataset_root_path,
-            index_file_name=index_file_name,
-            data_tfs=[
-                Components(transforms=[
-                    a_transforms.MelSpectrogram(
-                        sample_rate=sample_rate, n_mels=args.n_mels, n_fft=n_fft, hop_length=hop_length, win_length=win_length,
-                        mel_scale=mel_scale
-                    ), # 80 x 104
-                    AmplitudeToDB(top_db=80., max_out=2.),
-                    MelSpectrogramPadding(target_length=args.target_length),
-                    FrequenceTokenTransformer()
-                ]),
-                Components(transforms=[
-                    a_transforms.MelSpectrogram(
-                        sample_rate=sample_rate, n_mels=args.n_mels, n_fft=n_fft, hop_length=hop_length, win_length=win_length,
-                        mel_scale=mel_scale
-                    ), # 80 x 104
-                    AmplitudeToDB(top_db=80., max_out=2.),
-                    MelSpectrogramPadding(target_length=args.target_length),
-                    FrequenceTokenTransformer()
-                ]),
-            ]
-        ),
-        idx=0
     )
     test_loader = DataLoader(dataset=test_set, batch_size=args.batch_size, shuffle=False, drop_last=False, pin_memory=True, num_workers=args.num_workers)
 
@@ -192,7 +161,7 @@ if __name__ == '__main__':
         ttl_size = 0.
         ttl_loss = 0.
         ttl_fbnm_loss = 0.
-        for features, _, _ in tqdm(corrupted_loader):
+        for features, _ in tqdm(corrupted_loader):
             features = features.to(args.device)
 
             optimizer.zero_grad()
