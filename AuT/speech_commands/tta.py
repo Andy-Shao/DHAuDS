@@ -13,7 +13,7 @@ from torch.utils.data import DataLoader
 from lib import constants
 from lib.utils import make_unless_exits, print_argparse
 from lib.dataset import dataset_tag, mlt_load_from, mlt_store_to
-from lib.spdataset import SpeechCommandsV2
+from lib.spdataset import SpeechCommandsV2, SpeechCommandsV1
 from lib.component import Components, BackgroundNoiseByFunc, AudioPadding, AmplitudeToDB, MelSpectrogramPadding
 from lib.component import FrequenceTokenTransformer, time_shift, DoNothing
 from AuT.speech_commands.analysis import noise_source, load_weight, inference
@@ -40,7 +40,7 @@ def build_optimizer(args: argparse.Namespace, auT:FCETransform, auC:AudioClassif
 
 if __name__ == '__main__':
     ap = argparse.ArgumentParser()
-    ap.add_argument('--dataset', type=str, default='SpeechCommandsV2', choices=['SpeechCommandsV2'])
+    ap.add_argument('--dataset', type=str, default='SpeechCommandsV2', choices=['SpeechCommandsV2', 'SpeechCommandsV1'])
     ap.add_argument('--dataset_root_path', type=str)
     ap.add_argument('--background_path', type=str)
     ap.add_argument('--vocalsound_path', type=str)
@@ -66,6 +66,8 @@ if __name__ == '__main__':
     args = ap.parse_args()
     if args.dataset == 'SpeechCommandsV2':
         args.class_num = 35
+    elif args.dataset == 'SpeechCommandsV1':
+        args.class_num = 30
     else:
         raise Exception('No support!')
     args.device = 'cuda' if torch.cuda.is_available() else 'cpu'
@@ -94,14 +96,24 @@ if __name__ == '__main__':
     hop_length=155
     mel_scale='slaney'
     args.target_length=104
-    corrupted_set = SpeechCommandsV2(
-        root_path=args.dataset_root_path, mode='testing', download=True, 
-        data_tf=Components(transforms=[
-            AudioPadding(sample_rate=sample_rate, random_shift=False, max_length=sample_rate),
-            BackgroundNoiseByFunc(noise_level=args.corruption_level, noise_func=noise_source(args, source_type=args.corruption_type), is_random=True),
-        ])
-    )
-    dataset_root_path = f'/root/tmp/{args.corruption_type}/{args.corruption_level}'
+    if args.dataset == 'SpeechCommandsV2':
+        SpeechCommandsV2(root_path=args.dataset_root_path, mode='testing', download=True)
+        corrupted_set = SpeechCommandsV2(
+            root_path=args.dataset_root_path, mode='testing', download=False, 
+            data_tf=Components(transforms=[
+                AudioPadding(sample_rate=sample_rate, random_shift=False, max_length=sample_rate),
+                BackgroundNoiseByFunc(noise_level=args.corruption_level, noise_func=noise_source(args, source_type=args.corruption_type), is_random=True),
+            ])
+        )
+    elif args.dataset == 'SpeechCommandsV1':
+        corrupted_set = SpeechCommandsV1(
+            root_path=args.dataset_root_path, mode='test',  include_rate=False,
+            data_tfs=Components(transforms=[
+                AudioPadding(sample_rate=sample_rate, random_shift=False, max_length=sample_rate),
+                BackgroundNoiseByFunc(noise_level=args.corruption_level, noise_func=noise_source(args, source_type=args.corruption_type), is_random=True)
+            ])
+        )
+    dataset_root_path = f'/root/tmp/{args.dataset}/{args.corruption_type}/{args.corruption_level}'
     index_file_name = 'metaInfo.csv'
     mlt_store_to(
         dataset=corrupted_set, 
