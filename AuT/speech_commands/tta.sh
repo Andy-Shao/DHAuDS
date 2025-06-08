@@ -15,6 +15,6 @@ python -m AuT.speech_commands.tta --dataset 'SpeechCommandsV1' --dataset_root_pa
     --background_path $BASE_PATH'/data/speech_commands_v0.01' \
     --vocalsound_path $BASE_PATH'/data/vocalsound_16k' \
     --cochlscene_path $BASE_PATH'/data/CochlScene' \
-    --corruption_level 3.0 --corruption_type 'doing_the_dishes' --fbnm_rate 1.0 --lr_gamma 30 --lr_threshold 20 \
+    --corruption_level 3.0 --corruption_type 'doing_the_dishes' --fbnm_rate 1.0 --lr_gamma 30 --lr_threshold 35 \
     --origin_auT_weight './result/SpeechCommandsV1/AuT/train/AuT-SC1-auT0.pt' \
     --origin_cls_weight './result/SpeechCommandsV1/AuT/train/AuT-SC1-cls0.pt' --wandb
