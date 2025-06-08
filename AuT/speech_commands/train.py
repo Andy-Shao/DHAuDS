@@ -195,8 +195,8 @@ if __name__ == '__main__':
     val_loader = DataLoader(dataset=val_dataset, batch_size=args.batch_size, shuffle=False, drop_last=False, num_workers=4)
 
     auTmodel, clsmodel = build_model(args)
-    store_model_structure_to_txt(model=auTmodel, output_path=os.path.join(args.output_path, f'{arch}-{dataset_tag(args.dataset)}-auT{args.file_name_suffix}.txt'))
-    store_model_structure_to_txt(model=clsmodel, output_path=os.path.join(args.output_path, f'{arch}-{dataset_tag(args.dataset)}-cls{args.file_name_suffix}.txt'))
+    store_model_structure_to_txt(model=auTmodel, output_path=os.path.join(args.output_path, f'{arch}-{constants.dataset_dic[args.dataset]}-auT{args.file_name_suffix}.txt'))
+    store_model_structure_to_txt(model=clsmodel, output_path=os.path.join(args.output_path, f'{arch}-{constants.dataset_dic[args.dataset]}-cls{args.file_name_suffix}.txt'))
     optimizer = build_optimizer(args=args, auT=auTmodel, auC=clsmodel)
     loss_fn = CrossEntropyLabelSmooth(num_classes=args.class_num, use_gpu=torch.cuda.is_available(), epsilon=args.smooth)
 
@@ -249,8 +249,8 @@ if __name__ == '__main__':
         print(f'Validation size:{ttl_val_size:.0f}, accuracy:{ttl_val_accu:.2f}%')
         if ttl_val_accu >= max_accu:
             max_accu = ttl_val_accu
-            torch.save(auTmodel.state_dict(), os.path.join(args.output_path, f'{arch}-{dataset_tag(args.dataset)}-auT{args.file_name_suffix}.pt'))
-            torch.save(clsmodel.state_dict(), os.path.join(args.output_path, f'{arch}-{dataset_tag(args.dataset)}-cls{args.file_name_suffix}.pt'))
+            torch.save(auTmodel.state_dict(), os.path.join(args.output_path, f'{arch}-{constants.dataset_dic[args.dataset]}-auT{args.file_name_suffix}.pt'))
+            torch.save(clsmodel.state_dict(), os.path.join(args.output_path, f'{arch}-{constants.dataset_dic[args.dataset]}-cls{args.file_name_suffix}.pt'))
 
         wandb.log({
             'Train/Accu': ttl_train_corr/ttl_train_size * 100.,
