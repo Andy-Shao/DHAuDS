@@ -9,7 +9,7 @@ import torchaudio.transforms as a_transforms
 from torch.utils.data import DataLoader
 
 from lib.utils import make_unless_exits, print_argparse, count_ttl_params
-from lib.spdataset import SpeechCommandsV2, VocalSound, BackgroundNoiseDataset
+from lib.spdataset import SpeechCommandsV2, VocalSound, BackgroundNoiseDataset, SpeechCommandsV1
 from lib.dataset import RandomChoiceSet
 from lib.component import Components, AudioPadding, AmplitudeToDB, MelSpectrogramPadding, FrequenceTokenTransformer
 from lib.component import BackgroundNoiseByFunc
@@ -65,7 +65,7 @@ def noise_source(args:argparse, source_type:str):
 
 if __name__ == '__main__':
     ap = argparse.ArgumentParser()
-    ap.add_argument('--dataset', type=str, default='SpeechCommandsV2', choices=['SpeechCommandsV2'])
+    ap.add_argument('--dataset', type=str, default='SpeechCommandsV2', choices=['SpeechCommandsV2', 'SpeechCommandsV1'])
     ap.add_argument('--dataset_root_path', type=str)
     ap.add_argument('--background_path', type=str)
     ap.add_argument('--vocalsound_path', type=str)
@@ -81,6 +81,8 @@ if __name__ == '__main__':
     args = ap.parse_args()
     if args.dataset == 'SpeechCommandsV2':
         args.class_num = 35
+    elif args.dataset == 'SpeechCommandsV1':
+        args.class_num = 30
     else:
         raise Exception('No support!')
     args.device = 'cuda' if torch.cuda.is_available() else 'cpu'
@@ -101,19 +103,34 @@ if __name__ == '__main__':
     hop_length=155
     mel_scale='slaney'
     args.target_length=104
-    test_set = SpeechCommandsV2(
-        root_path=args.dataset_root_path, mode='testing', download=True, 
-        data_tf=Components(transforms=[
-            AudioPadding(sample_rate=sample_rate, random_shift=False, max_length=sample_rate),
-            a_transforms.MelSpectrogram(
-                sample_rate=sample_rate, n_mels=args.n_mels, n_fft=n_fft, hop_length=hop_length, win_length=win_length,
-                mel_scale=mel_scale
-            ), # 80 x 104
-            AmplitudeToDB(top_db=80., max_out=2.),
-            MelSpectrogramPadding(target_length=args.target_length),
-            FrequenceTokenTransformer()
-        ])
-    )
+    if args.dataset == 'SpeechCommandsV2':
+        test_set = SpeechCommandsV2(
+            root_path=args.dataset_root_path, mode='testing', download=True, 
+            data_tf=Components(transforms=[
+                AudioPadding(sample_rate=sample_rate, random_shift=False, max_length=sample_rate),
+                a_transforms.MelSpectrogram(
+                    sample_rate=sample_rate, n_mels=args.n_mels, n_fft=n_fft, hop_length=hop_length, win_length=win_length,
+                    mel_scale=mel_scale
+                ), # 80 x 104
+                AmplitudeToDB(top_db=80., max_out=2.),
+                MelSpectrogramPadding(target_length=args.target_length),
+                FrequenceTokenTransformer()
+            ])
+        )
+    elif args.dataset == 'SpeechCommandsV1':
+        test_set = SpeechCommandsV1(
+            root_path=args.dataset_root_path, mode='test', include_rate=False,
+            data_tfs=Components(transforms=[
+                AudioPadding(sample_rate=sample_rate, random_shift=False, max_length=sample_rate),
+                a_transforms.MelSpectrogram(
+                    sample_rate=sample_rate, n_mels=args.n_mels, n_fft=n_fft, hop_length=hop_length, win_length=win_length,
+                    mel_scale=mel_scale
+                ), # 80 x 104
+                AmplitudeToDB(top_db=80., max_out=2.),
+                MelSpectrogramPadding(target_length=args.target_length),
+                FrequenceTokenTransformer()
+            ])
+        )
     test_loader = DataLoader(dataset=test_set, batch_size=args.batch_size, shuffle=False, drop_last=False, pin_memory=True, num_workers=args.num_workers)
 
     print('Original')
@@ -127,20 +144,36 @@ if __name__ == '__main__':
     print('Corrupted')
     for noise_type in ['doing_the_dishes', 'exercise_bike', 'running_tap']:
         print(f'Process {noise_type}...')
-        corrupted_set = SpeechCommandsV2(
-            root_path=args.dataset_root_path, mode='testing', download=True,
-            data_tf=Components(transforms=[
-                AudioPadding(sample_rate=sample_rate, random_shift=False, max_length=sample_rate),
-                BackgroundNoiseByFunc(noise_level=args.corruption_level, noise_func=noise_source(args, source_type=noise_type), is_random=True),
-                a_transforms.MelSpectrogram(
-                    sample_rate=sample_rate, n_mels=args.n_mels, n_fft=n_fft, hop_length=hop_length, win_length=win_length,
-                    mel_scale=mel_scale
-                ), # 80 x 104
-                AmplitudeToDB(top_db=80., max_out=2.),
-                MelSpectrogramPadding(target_length=args.target_length),
-                FrequenceTokenTransformer()
-            ])
-        )
+        if args.dataset == 'SpeechCommandsV2':
+            corrupted_set = SpeechCommandsV2(
+                root_path=args.dataset_root_path, mode='testing', download=True,
+                data_tf=Components(transforms=[
+                    AudioPadding(sample_rate=sample_rate, random_shift=False, max_length=sample_rate),
+                    BackgroundNoiseByFunc(noise_level=args.corruption_level, noise_func=noise_source(args, source_type=noise_type), is_random=True),
+                    a_transforms.MelSpectrogram(
+                        sample_rate=sample_rate, n_mels=args.n_mels, n_fft=n_fft, hop_length=hop_length, win_length=win_length,
+                        mel_scale=mel_scale
+                    ), # 80 x 104
+                    AmplitudeToDB(top_db=80., max_out=2.),
+                    MelSpectrogramPadding(target_length=args.target_length),
+                    FrequenceTokenTransformer()
+                ])
+            )
+        elif args.dataset == 'SpeechCommandsV1':
+            corrupted_set = SpeechCommandsV1(
+                root_path=args.dataset_root_path, mode='test', include_rate=False,
+                data_tfs=Components(transforms=[
+                    AudioPadding(sample_rate=sample_rate, random_shift=False, max_length=sample_rate),
+                    BackgroundNoiseByFunc(noise_level=args.corruption_level, noise_func=noise_source(args, source_type=noise_type), is_random=True),
+                    a_transforms.MelSpectrogram(
+                        sample_rate=sample_rate, n_mels=args.n_mels, n_fft=n_fft, hop_length=hop_length, win_length=win_length,
+                        mel_scale=mel_scale
+                    ), # 80 x 104
+                    AmplitudeToDB(top_db=80., max_out=2.),
+                    MelSpectrogramPadding(target_length=args.target_length),
+                    FrequenceTokenTransformer()
+                ])
+            )
         corrupted_loader = DataLoader(dataset=corrupted_set, batch_size=args.batch_size, shuffle=False, drop_last=False, pin_memory=True, num_workers=args.num_workers)
         accuracy = inference(args=args, auT=auTmodel, auC=clsmodel, data_loader=corrupted_loader)
         print(f'Corrupted testing: accuracy is {accuracy:.4f}%, number of parameters is {param_num}, sample size is {len(corrupted_set)}')
