@@ -11,7 +11,7 @@ export BASE_PATH=${BASE_PATH:-'/root'}
 #     --origin_cls_weight './result/SpeechCommandsV2/AuT/train/AuT-SC2-cls0.pt' --wandb
 
 python -m AuT.speech_commands.tta --dataset 'SpeechCommandsV1' --dataset_root_path $BASE_PATH'/data/speech_commands_v0.01' \
-    --max_epoch 30 --lr_cardinality 50 --batch_size 70 --lr '1e-4' --num_workers 16 --auT_lr_decay 0.5 \
+    --max_epoch 80 --lr_cardinality 50 --batch_size 70 --lr '1e-4' --num_workers 16 --auT_lr_decay 0.55 \
     --background_path $BASE_PATH'/data/speech_commands_v0.01' \
     --vocalsound_path $BASE_PATH'/data/vocalsound_16k' \
     --cochlscene_path $BASE_PATH'/data/CochlScene' \
