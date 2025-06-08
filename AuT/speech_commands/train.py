@@ -122,7 +122,7 @@ if __name__ == '__main__':
     if args.dataset == 'SpeechCommandsV2':
         train_dataset = SpeechCommandsV2(root_path=args.dataset_root_path, mode='training', data_tf=None, download=True)
     elif args.dataset == 'SpeechCommandsV1':
-        train_dateset = SpeechCommandsV1(root_path=args.dataset_root_path, mode='train', data_tfs=None, include_rate=True)
+        train_dataset = SpeechCommandsV1(root_path=args.dataset_root_path, mode='train', data_tfs=None, include_rate=False)
     background_noises = background_noise(args=args)
     train_dataset = MultiTFDataset(
         dataset=train_dataset,
@@ -191,7 +191,7 @@ if __name__ == '__main__':
     if args.dataset == 'SpeechCommandsV2':
         val_dataset = SpeechCommandsV2(root_path=args.dataset_root_path, mode=args.validation_mode, download=True, data_tf=tf_array)
     elif args.dataset == 'SpeechCommandsV1':
-        val_dataset = SpeechCommandsV1(root_path=args.dataset_root_path, mode=args.validation_mode, data_tfs=tf_array)
+        val_dataset = SpeechCommandsV1(root_path=args.dataset_root_path, mode=args.validation_mode, data_tfs=tf_array, include_rate=False)
     val_loader = DataLoader(dataset=val_dataset, batch_size=args.batch_size, shuffle=False, drop_last=False, num_workers=4)
 
     auTmodel, clsmodel = build_model(args)
