@@ -10,14 +10,6 @@ from torch.utils.data import Dataset
 from torch import nn
 import torch
 
-def dataset_tag(dataset:str) -> str:
-    if dataset == 'SpeechCommandsV2':
-        return 'SC2'
-    elif dataset == 'SpeechCommandsV1':
-        return 'SC1'
-    else:
-        raise Exception('No support')
-
 class TransferDataset(Dataset):
     def __init__(self, dataset: Dataset, data_tf:nn.Module=None, label_tf:nn.Module=None, device='cpu', keep_cpu=True) -> None:
         super().__init__()
@@ -63,45 +55,6 @@ class MultiTFDataset(Dataset):
                 ret[i] = tf(ret[i])
         ret.append(label)
         return tuple(ret)
-
-# class MgDataset(Dataset):
-#     def __init__(self, dataset:Dataset):
-#         super(MgDataset, self).__init__()
-#         self.dataset = dataset
-
-#     def __len__(self):
-#         return len(self.dataset)
-
-#     def __getitem__(self, index):
-#         tuple = self.dataset[index]
-#         label = tuple[-1]
-#         ret = [torch.unsqueeze(input=tuple[i], dim=0) for i in range(len(tuple)-1)]
-#         return torch.cat(ret, dim=0), label
-
-# class SplitDataset(Dataset):
-#     def __init__(self, dataset:Dataset, num:int, tfs:list[nn.Module]):
-#         assert num > 0, 'No support'
-#         self.dataset = dataset
-#         self.num = num
-#         self.tfs = tfs
-
-#     def __len__(self):
-#         return len(self.dataset)
-    
-#     def __getitem__(self, index):
-#         fs, label = self.dataset[index]
-#         if self.num == 1:
-#             return fs, label
-#         ret = []
-#         items = torch.split(fs, 1, dim=0)
-#         for i in range(self.num):
-#             item = items[i]
-#             item = torch.squeeze(item, dim=0)
-#             item = torch.from_numpy(item.detach().numpy())
-#             item = self.tfs[i](item)
-#             ret.append(item)
-#         ret.append(label)
-#         return tuple(ret)
 
 class RandomChoiceSet(Dataset):
     def __init__(self, dataset:Dataset, include_lables:list=[]):

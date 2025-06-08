@@ -12,7 +12,7 @@ from torch.utils.data import DataLoader
 
 from lib import constants
 from lib.utils import make_unless_exits, print_argparse
-from lib.dataset import dataset_tag, mlt_load_from, mlt_store_to
+from lib.dataset import mlt_load_from, mlt_store_to
 from lib.spdataset import SpeechCommandsV2, SpeechCommandsV1
 from lib.component import Components, BackgroundNoiseByFunc, AudioPadding, AmplitudeToDB, MelSpectrogramPadding
 from lib.component import FrequenceTokenTransformer, time_shift, DoNothing
@@ -87,7 +87,7 @@ if __name__ == '__main__':
     arch = 'AuT'
     wandb_run = wandb.init(
         project=f'{constants.PROJECT_TITLE}-{constants.TTA_TAG}', 
-        name=f'{arch}-{dataset_tag(args.dataset)}-{constants.corruption_dic[args.corruption_type]}-{args.corruption_level}', 
+        name=f'{arch}-{constants.dataset_dic[args.dataset]}-{constants.corruption_dic[args.corruption_type]}-{args.corruption_level}', 
         mode='online' if args.wandb else 'disabled', config=args, tags=['Audio Classification', args.dataset, 'Test-time Adaptation'])
 
     sample_rate=16000

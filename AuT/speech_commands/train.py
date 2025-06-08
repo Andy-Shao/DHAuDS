@@ -12,7 +12,7 @@ from torch import nn, optim
 
 from lib.utils import print_argparse, store_model_structure_to_txt, make_unless_exits
 from lib import constants
-from lib.dataset import dataset_tag, MultiTFDataset
+from lib.dataset import MultiTFDataset
 from lib.spdataset import SpeechCommandsV2, BackgroundNoiseDataset, SpeechCommandsV1
 from lib.component import Components, AudioPadding, time_shift, AmplitudeToDB, MelSpectrogramPadding, FrequenceTokenTransformer
 from lib.component import GuassianNoise, BackgroundNoise
@@ -109,7 +109,7 @@ if __name__ == '__main__':
 
     arch = 'AuT'
     wandb_run = wandb.init(
-        project=f'{constants.PROJECT_TITLE}-{constants.TRAIN_TAG}', name=f'{arch}-{dataset_tag(args.dataset)}', 
+        project=f'{constants.PROJECT_TITLE}-{constants.TRAIN_TAG}', name=f'{arch}-{constants.dataset_dic[args.dataset]}', 
         mode='online' if args.wandb else 'disabled', config=args, tags=['Audio Classification', args.dataset, 'Test-time Adaptation'])
 
     sample_rate=16000

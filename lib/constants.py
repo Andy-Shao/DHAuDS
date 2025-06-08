@@ -9,3 +9,8 @@ corruption_dic = {
     'VocalSound': 'VS',
     'CochlScene': 'CS'
 }
+
+dataset_dic = {
+    'SpeechCommandsV2': 'SC2',
+    'SpeechCommandsV1': 'SC1'
+}
