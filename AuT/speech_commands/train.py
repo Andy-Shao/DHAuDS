@@ -55,8 +55,8 @@ def op_copy(optimizer: optim.Optimizer) -> optim.Optimizer:
         param_group['lr0'] = param_group['lr']
     return optimizer
 
-def lr_scheduler(optimizer: torch.optim.Optimizer, epoch:int, lr_cardinality:int, gamma=10, power=0.75) -> optim.Optimizer:
-    if epoch >= lr_cardinality-1:
+def lr_scheduler(optimizer: torch.optim.Optimizer, epoch:int, lr_cardinality:int, gamma=10, power=0.75, threshold=1) -> optim.Optimizer:
+    if epoch >= lr_cardinality-threshold:
         return optimizer
     decay = (1 + gamma * epoch / lr_cardinality) ** (-power)
     for param_group in optimizer.param_groups:
