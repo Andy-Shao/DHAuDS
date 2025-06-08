@@ -184,9 +184,10 @@ if __name__ == '__main__':
             if args.fbnm_rate > 0:
                 from torch.nn import functional as F
                 softmax_outputs = F.softmax(input=outputs, dim=1)
-                list_svd, _ = torch.sort(torch.sqrt(torch.sum(torch.pow(softmax_outputs,2),dim=0)), descending=True)
-                # require top class_num items, but if last batch size is lower than class_num, take batch size.
-                fbnm_loss = - torch.mean(list_svd[:min(softmax_outputs.shape[0], args.class_num)]) 
+                # list_svd, _ = torch.sort(torch.sqrt(torch.sum(torch.pow(softmax_outputs,2),dim=0)), descending=True)
+                # # require top class_num items, but if last batch size is lower than class_num, take batch size.
+                # fbnm_loss = - torch.mean(list_svd[:min(softmax_outputs.shape[0], args.class_num)]) 
+                fbnm_loss = - torch.mean(torch.sqrt(torch.sum(torch.pow(softmax_outputs,2),dim=0)))
                 fbnm_loss = args.fbnm_rate * fbnm_loss
             else:
                 fbnm_loss = torch.tensor(.0).cuda()
