@@ -207,8 +207,8 @@ if __name__ == '__main__':
         print('Inferencing...')
         accuracy = inference(args=args, auT=auTmodel, auC=clsmodel, data_loader=test_loader)
         print(f'Accuracy is: {accuracy:.4f}%, sample size is: {len(corrupted_set)}')
-        # if accuracy >= max_accu:
-        #     max_accu = accuracy
+        if accuracy >= max_accu:
+            max_accu = accuracy
         #     torch.save(auTmodel.state_dict(), os.path.join(args.output_path, f'{arch}-{constants.dataset_dic[args.dataset]}-auT-{args.corruption_type}-{args.corruption_level}.pt'))
         #     torch.save(clsmodel.state_dict(), os.path.join(args.output_path, f'{arch}-{constants.dataset_dic[args.dataset]}-cls-{args.corruption_type}-{args.corruption_level}.pt'))
 
@@ -217,6 +217,7 @@ if __name__ == '__main__':
                 'Loss/ttl_loss': ttl_loss / ttl_size,
                 'Loss/Nuclear-norm loss': ttl_fbnm_loss / ttl_size,
                 'Adaptation/accuracy': accuracy,
-                'Adaptation/LR': learning_rate
+                'Adaptation/LR': learning_rate,
+                'Adaptation/max_accu': max_accu,
             }, step=epoch, commit=True
         )
