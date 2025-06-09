@@ -12,13 +12,26 @@ from torch.utils.data import DataLoader
 
 from lib import constants
 from lib.utils import make_unless_exits, print_argparse
-from lib.dataset import mlt_load_from, mlt_store_to
+from lib.dataset import mlt_load_from, mlt_store_to, MultiTFDataset
 from lib.spdataset import SpeechCommandsV2, SpeechCommandsV1
 from lib.component import Components, BackgroundNoiseByFunc, AudioPadding, AmplitudeToDB, MelSpectrogramPadding
 from lib.component import FrequenceTokenTransformer, time_shift, DoNothing
 from AuT.speech_commands.analysis import noise_source, load_weight, inference
 from AuT.speech_commands.train import build_model, op_copy, lr_scheduler
 from AuT.lib.model import FCETransform, AudioClassifier
+
+def fbnm(args:argparse.Namespace, outputs:torch.Tensor) -> torch.Tensor:
+    """
+    " Nuclear-norm Maximization loss
+    """
+    if args.fbnm_rate > 0:
+        from torch.nn import functional as F
+        softmax_outputs = F.softmax(input=outputs, dim=1)
+        fbnm_loss = - torch.mean(torch.sqrt(torch.sum(torch.pow(softmax_outputs,2),dim=0)))
+        fbnm_loss = args.fbnm_rate * fbnm_loss
+    else:
+        fbnm_loss = torch.tensor(.0).cuda()
+    return fbnm_loss
 
 def build_optimizer(args: argparse.Namespace, auT:FCETransform, auC:AudioClassifier) -> optim.Optimizer:
     param_group = []
@@ -125,9 +138,12 @@ if __name__ == '__main__':
     corrupted_set = mlt_load_from(
         root_path=dataset_root_path, 
         index_file_name=index_file_name,
-        data_tfs=[
+    )
+    corrupted_set = MultiTFDataset(
+        dataset=corrupted_set,
+        tfs=[
             Components(transforms=[
-                time_shift(shift_limit=.17, is_random=True, is_bidirection=True),
+                time_shift(shift_limit=.17, is_random=True, is_bidirection=False),
                 a_transforms.MelSpectrogram(
                     sample_rate=sample_rate, n_mels=args.n_mels, n_fft=n_fft, hop_length=hop_length, win_length=win_length,
                     mel_scale=mel_scale
@@ -135,7 +151,17 @@ if __name__ == '__main__':
                 AmplitudeToDB(top_db=80., max_out=2.),
                 MelSpectrogramPadding(target_length=args.target_length),
                 FrequenceTokenTransformer()
-            ])
+            ]),
+            Components(transforms=[
+                time_shift(shift_limit=-.17, is_random=True, is_bidirection=False),
+                a_transforms.MelSpectrogram(
+                    sample_rate=sample_rate, n_mels=args.n_mels, n_fft=n_fft, hop_length=hop_length, win_length=win_length,
+                    mel_scale=mel_scale
+                ), # 80 x 104
+                AmplitudeToDB(top_db=80., max_out=2.),
+                MelSpectrogramPadding(target_length=args.target_length),
+                FrequenceTokenTransformer()
+            ]),
         ]
     )
 
@@ -174,29 +200,20 @@ if __name__ == '__main__':
         ttl_size = 0.
         ttl_loss = 0.
         ttl_fbnm_loss = 0.
-        for features, _ in tqdm(corrupted_loader):
-            features = features.to(args.device)
+        for fs1, fs2, _ in tqdm(corrupted_loader):
+            fs1, fs2 = fs1.to(args.device), fs2.to(args.device)
 
             optimizer.zero_grad()
-            outputs, _ = clsmodel(auTmodel(features)[0])
+            os1, _ = clsmodel(auTmodel(fs1)[0])
+            os2, _ = clsmodel(auTmodel(fs2)[0])
 
-            # Nuclear-norm Maximization loss
-            if args.fbnm_rate > 0:
-                from torch.nn import functional as F
-                softmax_outputs = F.softmax(input=outputs, dim=1)
-                # list_svd, _ = torch.sort(torch.sqrt(torch.sum(torch.pow(softmax_outputs,2),dim=0)), descending=True)
-                # # require top class_num items, but if last batch size is lower than class_num, take batch size.
-                # fbnm_loss = - torch.mean(list_svd[:min(softmax_outputs.shape[0], args.class_num)]) 
-                fbnm_loss = - torch.mean(torch.sqrt(torch.sum(torch.pow(softmax_outputs,2),dim=0)))
-                fbnm_loss = args.fbnm_rate * fbnm_loss
-            else:
-                fbnm_loss = torch.tensor(.0).cuda()
+            fbnm_loss = fbnm(args, os1) + fbnm(args, os2)
 
             loss = fbnm_loss
             loss.backward()
             optimizer.step()
 
-            ttl_size += features.shape[0]
+            ttl_size += fs1.shape[0]
             ttl_loss += loss.cpu().item()
             ttl_fbnm_loss += fbnm_loss.cpu().item()
 
