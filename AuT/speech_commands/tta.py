@@ -20,18 +20,18 @@ from AuT.speech_commands.analysis import noise_source, load_weight, inference
 from AuT.speech_commands.train import build_model, op_copy, lr_scheduler
 from AuT.lib.model import FCETransform, AudioClassifier
 
-def fbnm(args:argparse.Namespace, outputs:torch.Tensor) -> torch.Tensor:
+def nucnm(args:argparse.Namespace, outputs:torch.Tensor) -> torch.Tensor:
     """
-    " Nuclear-norm Maximization loss
+    " Nuclear-norm Maximization loss with Frobenius Norm
     """
-    if args.fbnm_rate > 0:
+    if args.nucnm_rate > 0:
         from torch.nn import functional as F
         softmax_outputs = F.softmax(input=outputs, dim=1)
-        fbnm_loss = - torch.mean(torch.sqrt(torch.sum(torch.pow(softmax_outputs,2),dim=0)))
-        fbnm_loss = args.fbnm_rate * fbnm_loss
+        nucnm_loss = - torch.mean(torch.sqrt(torch.sum(torch.pow(softmax_outputs,2),dim=0)))
+        nucnm_loss = args.nucnm_rate * nucnm_loss
     else:
-        fbnm_loss = torch.tensor(.0).cuda()
-    return fbnm_loss
+        nucnm_loss = torch.tensor(.0).cuda()
+    return nucnm_loss
 
 def build_optimizer(args: argparse.Namespace, auT:FCETransform, auC:AudioClassifier) -> optim.Optimizer:
     param_group = []
@@ -70,7 +70,7 @@ if __name__ == '__main__':
     ap.add_argument('--lr_threshold', type=int, default=1)
     ap.add_argument('--auT_lr_decay', type=float, default=1.)
     ap.add_argument('--auC_lr_decay', type=float, default=1.)
-    ap.add_argument('--fbnm_rate', type=float, default=1.)
+    ap.add_argument('--nucnm_rate', type=float, default=1.)
     ap.add_argument('--interval', type=int, default=1, help='interval number')
     ap.add_argument('--origin_auT_weight', type=str)
     ap.add_argument('--origin_cls_weight', type=str)
@@ -199,7 +199,7 @@ if __name__ == '__main__':
         clsmodel.train()
         ttl_size = 0.
         ttl_loss = 0.
-        ttl_fbnm_loss = 0.
+        ttl_nucnm_loss = 0.
         for fs1, fs2, _ in tqdm(corrupted_loader):
             fs1, fs2 = fs1.to(args.device), fs2.to(args.device)
 
@@ -207,15 +207,15 @@ if __name__ == '__main__':
             os1, _ = clsmodel(auTmodel(fs1)[0])
             os2, _ = clsmodel(auTmodel(fs2)[0])
 
-            fbnm_loss = fbnm(args, os1) + fbnm(args, os2)
+            nucnm_loss = nucnm(args, os1) + nucnm(args, os2)
 
-            loss = fbnm_loss
+            loss = nucnm_loss
             loss.backward()
             optimizer.step()
 
             ttl_size += fs1.shape[0]
             ttl_loss += loss.cpu().item()
-            ttl_fbnm_loss += fbnm_loss.cpu().item()
+            ttl_nucnm_loss += nucnm_loss.cpu().item()
 
         learning_rate = optimizer.param_groups[0]['lr']
         if epoch % args.interval == 0:
@@ -232,7 +232,7 @@ if __name__ == '__main__':
         wandb_run.log(
             data={
                 'Loss/ttl_loss': ttl_loss / ttl_size,
-                'Loss/Nuclear-norm loss': ttl_fbnm_loss / ttl_size,
+                'Loss/Nuclear-norm loss': ttl_nucnm_loss / ttl_size,
                 'Adaptation/accuracy': accuracy,
                 'Adaptation/LR': learning_rate,
                 'Adaptation/max_accu': max_accu,
