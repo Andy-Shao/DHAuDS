@@ -51,12 +51,12 @@ Cochl Acoustic Scene Dataset, or CochlScene, is a new acoustic scene dataset who
 
 ## Loss Function
 ### Nuclear-norm Maximization Loss
-$
+$$
 \begin{align}
     \mathcal{L}_{nuc-max} = - ||A||_{F} \\
     ||A||_{F} = \sqrt{\sum_i^m \sum_j^n |A_{ij}|^2}
 \end{align}
-$
+$$
 ## Generalized Entropy Loss
 $$
 \begin{equation}
