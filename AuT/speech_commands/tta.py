@@ -20,6 +20,20 @@ from AuT.speech_commands.analysis import noise_source, load_weight, inference
 from AuT.speech_commands.train import build_model, op_copy, lr_scheduler
 from AuT.lib.model import FCETransform, AudioClassifier
 
+def entropy(args:argparse.Namespace, outputs:torch.Tensor, epsilon:float=1e-6) -> torch.Tensor:
+    """
+    " Entropy loss
+    """
+    if args.ent_rate > 0:
+        from torch.nn import functional as F
+        softmax_outputs = F.softmax(input=outputs, dim=1)
+        ent_loss = - softmax_outputs * torch.log(softmax_outputs + epsilon)
+        ent_loss = torch.mean(torch.sum(ent_loss, dim=1), dim=0)
+        ent_loss = args.ent_rate * ent_loss
+    else:
+        ent_loss = torch.tensor(.0).cuda()
+    return ent_loss
+
 def nucnm(args:argparse.Namespace, outputs:torch.Tensor) -> torch.Tensor:
     """
     " Nuclear-norm Maximization loss with Frobenius Norm
@@ -71,6 +85,7 @@ if __name__ == '__main__':
     ap.add_argument('--auT_lr_decay', type=float, default=1.)
     ap.add_argument('--auC_lr_decay', type=float, default=1.)
     ap.add_argument('--nucnm_rate', type=float, default=1.)
+    ap.add_argument('--ent_rate', type=float, default=1.)
     ap.add_argument('--interval', type=int, default=1, help='interval number')
     ap.add_argument('--origin_auT_weight', type=str)
     ap.add_argument('--origin_cls_weight', type=str)
@@ -200,6 +215,7 @@ if __name__ == '__main__':
         ttl_size = 0.
         ttl_loss = 0.
         ttl_nucnm_loss = 0.
+        ttl_ent_loss = 0.
         for fs1, fs2, _ in tqdm(corrupted_loader):
             fs1, fs2 = fs1.to(args.device), fs2.to(args.device)
 
@@ -208,14 +224,16 @@ if __name__ == '__main__':
             os2, _ = clsmodel(auTmodel(fs2)[0])
 
             nucnm_loss = nucnm(args, os1) + nucnm(args, os2)
+            ent_loss = entropy(args, os1) + entropy(args, os2)
 
-            loss = nucnm_loss
+            loss = nucnm_loss + ent_loss
             loss.backward()
             optimizer.step()
 
             ttl_size += fs1.shape[0]
             ttl_loss += loss.cpu().item()
             ttl_nucnm_loss += nucnm_loss.cpu().item()
+            ttl_ent_loss += ent_loss.cpu().item()
 
         learning_rate = optimizer.param_groups[0]['lr']
         if epoch % args.interval == 0:
@@ -233,6 +251,7 @@ if __name__ == '__main__':
             data={
                 'Loss/ttl_loss': ttl_loss / ttl_size,
                 'Loss/Nuclear-norm loss': ttl_nucnm_loss / ttl_size,
+                'Loss/Entropy loss': ttl_ent_loss / ttl_size,
                 'Adaptation/accuracy': accuracy,
                 'Adaptation/LR': learning_rate,
                 'Adaptation/max_accu': max_accu,
