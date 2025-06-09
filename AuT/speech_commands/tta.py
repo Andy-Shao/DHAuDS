@@ -100,6 +100,8 @@ if __name__ == '__main__':
     ap.add_argument('--auC_lr_decay', type=float, default=1.)
     ap.add_argument('--nucnm_rate', type=float, default=1.)
     ap.add_argument('--ent_rate', type=float, default=1.)
+    ap.add_argument('--gent_rate', type=float, default=1.)
+    ap.add_argument('--gent_q', type=float, default=.9)
     ap.add_argument('--interval', type=int, default=1, help='interval number')
     ap.add_argument('--origin_auT_weight', type=str)
     ap.add_argument('--origin_cls_weight', type=str)
@@ -230,6 +232,7 @@ if __name__ == '__main__':
         ttl_loss = 0.
         ttl_nucnm_loss = 0.
         ttl_ent_loss = 0.
+        ttl_gent_loss = 0.
         for fs1, fs2, _ in tqdm(corrupted_loader):
             fs1, fs2 = fs1.to(args.device), fs2.to(args.device)
 
@@ -239,8 +242,9 @@ if __name__ == '__main__':
 
             nucnm_loss = nucnm(args, os1) + nucnm(args, os2)
             ent_loss = entropy(args, os1) + entropy(args, os2)
+            gent_loss = g_entropy(args, os1, q=args.gent_q) + g_entropy(args, os2, q=args.gent_q)
 
-            loss = nucnm_loss + ent_loss
+            loss = nucnm_loss + ent_loss + gent_loss
             loss.backward()
             optimizer.step()
 
@@ -248,6 +252,7 @@ if __name__ == '__main__':
             ttl_loss += loss.cpu().item()
             ttl_nucnm_loss += nucnm_loss.cpu().item()
             ttl_ent_loss += ent_loss.cpu().item()
+            ttl_gent_loss += gent_loss.cpu().item()
 
         learning_rate = optimizer.param_groups[0]['lr']
         if epoch % args.interval == 0:
@@ -266,6 +271,7 @@ if __name__ == '__main__':
                 'Loss/ttl_loss': ttl_loss / ttl_size,
                 'Loss/Nuclear-norm loss': ttl_nucnm_loss / ttl_size,
                 'Loss/Entropy loss': ttl_ent_loss / ttl_size,
+                'Loss/G-entropy loss': ttl_gent_loss / ttl_size,
                 'Adaptation/accuracy': accuracy,
                 'Adaptation/LR': learning_rate,
                 'Adaptation/max_accu': max_accu,
