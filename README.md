@@ -49,5 +49,33 @@ Cochl Acoustic Scene Dataset, or CochlScene, is a new acoustic scene dataset who
 [Github Link](https://github.com/cochlearai/cochlscene)<br/>
 [Dataset Link](https://zenodo.org/records/7080122)
 
+## Loss Function
+### Nuclear-norm Maximization Loss
+$$
+\begin{align}
+    \mathcal{L}_{nuc-max} = - ||A||_{F} \\
+    ||A||_{F} = \sqrt{\sum_i^m \sum_j^n |A_{ij}|^2}
+\end{align}
+$$
+## Generalized Entropy Loss
+$$
+\begin{equation}
+    \mathcal{L}_{G-entropy} = \frac{1-\sum_{i=1}^C \hat{p}_i^q}{q-1}
+\end{equation}
+$$
+where:
++ Shannon entropy (usual cross-entropy) when $q \rightarrow 1$
++ More robust to noisy labels when $q < 1$
++ More sensitive to confident predictions when $q > 1$
++ $C$ is the number of classes
++ $y_i \in [0,1]$ is the true label (one-hot encoded)
++ $\hat{p}_i \in [0,1]$ is the predicted probability for class $i$
+## Entropy Loss
+$$
+\begin{equation}
+    \mathcal{L}_{entropy} = -\sum_{i=1}^C y_i \log(\hat{p}_i)
+\end{equation}
+$$
+
 ## Code Reference
 [MMAuT](https://github.com/Andy-Shao/MMAuT)
