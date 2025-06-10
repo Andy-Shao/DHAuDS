@@ -1,5 +1,0 @@
-,dataset,module,param_num,corruption_type,corruption_level,adaptation,accuracy,error_rate
-0,SpeechCommandsV1,AuT,103070780,,,,95.91806876371616,4.081931236283836
-1,SpeechCommandsV1,AuT,103070780,doing_the_dishes,3.0,,76.63496708119972,23.36503291880028
-2,SpeechCommandsV1,AuT,103070780,exercise_bike,3.0,,82.64813460131674,17.35186539868326
-3,SpeechCommandsV1,AuT,103070780,running_tap,3.0,,84.53547915142649,15.464520848573514

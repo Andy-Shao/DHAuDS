@@ -17,6 +17,36 @@ from lib.acousticDataset import CochlScene
 from AuT.speech_commands.train import build_model
 from AuT.lib.model import FCETransform, AudioClassifier
 
+def multi_train_elect(
+        args:argparse.Namespace, softmax:bool, loader:DataLoader,
+        auT1:FCETransform, auC1:AudioClassifier, 
+        auT2:FCETransform, auC2:AudioClassifier,
+        auT3:FCETransform, auC3:AudioClassifier
+    ) -> float:
+    auT1.eval(); auC1.eval()
+    auT2.eval(); auC2.eval()
+    auT3.eval(); auC2.eval()
+    ttl_curr = 0.
+    ttl_size = 0.
+    for features, labels, in tqdm(loader):
+        features, labels = features.to(args.device), labels.to(args.device)
+
+        with torch.no_grad():
+            o1, _ = auC1(auT1(features)[0])
+            o2, _ = auC2(auT2(features)[0])
+            o3, _ = auC3(auT3(features)[0])
+            outputs = merge_outs(o1, o2, o3, softmax=softmax)
+            _, preds = torch.max(outputs.detach(), dim=1)
+        ttl_size += labels.shape[0]
+        ttl_curr += (preds == labels).sum().cpu().item()
+    return ttl_curr / ttl_size * 100.
+
+def merge_outs(o1:torch.Tensor, o2:torch.Tensor, o3:torch.Tensor, softmax:bool=False) -> torch.Tensor:
+    if softmax:
+        from torch.nn import functional as F
+        return (F.softmax(o1, dim=1) + F.softmax(o2, dim=1) + F.softmax(o3, dim=1)) / 3.
+    else: return (o1 + o2 + o3) / 3.
+
 def inference(args:argparse, auT:FCETransform, auC:AudioClassifier, data_loader:DataLoader) -> float:
     auT.eval()
     auC.eval()
@@ -36,6 +66,17 @@ def load_weight(args:argparse, mode:str, auT:FCETransform, auC:AudioClassifier) 
     if mode == 'origin':
         auT_weight_path = args.origin_auT_weight
         cls_weight_path = args.origin_cls_weight
+    elif mode == 'adaption1':
+        auT_weight_path = args.adapted_auT_weight1
+        cls_weight_path = args.adapted_cls_weight1
+    elif mode == 'adaption2':
+        auT_weight_path = args.adapted_auT_weight2
+        cls_weight_path = args.adapted_cls_weight2
+    elif mode == 'adaption3':
+        auT_weight_path = args.adapted_auT_weight3
+        cls_weight_path = args.adapted_cls_weight3
+    else:
+        raise Exception('No support')
     auT.load_state_dict(state_dict=torch.load(auT_weight_path, weights_only=True))
     auC.load_state_dict(state_dict=torch.load(cls_weight_path, weights_only=True))
 
@@ -77,6 +118,14 @@ if __name__ == '__main__':
     ap.add_argument('--batch_size', type=int, default=64)
     ap.add_argument('--origin_auT_weight', type=str)
     ap.add_argument('--origin_cls_weight', type=str)
+    ap.add_argument('--adapted_auT_weight1', type=str)
+    ap.add_argument('--adapted_cls_weight1', type=str)
+    ap.add_argument('--adapted_auT_weight2', type=str)
+    ap.add_argument('--adapted_cls_weight2', type=str)
+    ap.add_argument('--adapted_auT_weight3', type=str)
+    ap.add_argument('--adapted_cls_weight3', type=str)
+    ap.add_argument('--noise_types', type=str)
+    ap.add_argument('--softmax', action='store_true')
 
     args = ap.parse_args()
     if args.dataset == 'SpeechCommandsV2':
@@ -90,6 +139,7 @@ if __name__ == '__main__':
     args.output_path = os.path.join(args.output_path, args.dataset, arch, 'analysis')
     make_unless_exits(args.output_path)
     torch.backends.cudnn.benchmark = True
+    args.noise_types = [it.strip() for it in str(args.noise_types).split(',')]
 
     print_argparse(args)
     ###########################################################
@@ -142,7 +192,7 @@ if __name__ == '__main__':
     records.loc[len(records)] = [args.dataset, arch, param_num, np.nan, np.nan, np.nan, accuracy, 100.-accuracy]
 
     print('Corrupted')
-    for noise_type in ['doing_the_dishes', 'exercise_bike', 'running_tap']:
+    for noise_type in args.noise_types:
         print(f'Process {noise_type}...')
         if args.dataset == 'SpeechCommandsV2':
             corrupted_set = SpeechCommandsV2(
@@ -178,5 +228,22 @@ if __name__ == '__main__':
         accuracy = inference(args=args, auT=auTmodel, auC=clsmodel, data_loader=corrupted_loader)
         print(f'Corrupted testing: accuracy is {accuracy:.4f}%, number of parameters is {param_num}, sample size is {len(corrupted_set)}')
         records.loc[len(records)] = [args.dataset, arch, param_num, noise_type, args.corruption_level, np.nan, accuracy, 100.-accuracy]
+
+        print('Adapted')
+        auT1, cls1 = build_model(args)
+        load_weight(args, mode='adaption1', auT=auT1, auC=cls1)
+        auT2, cls2 = build_model(args)
+        load_weight(args, mode='adaption2', auT=auT2, auC=cls2)
+        auT3, cls3 = build_model(args)
+        load_weight(args, mode='adaption3', auT=auT3, auC=cls3)
+        accuracy = inference(args=args, auT=auT1, auC=cls1, data_loader=corrupted_loader)
+        print(f'accuracy is: {accuracy:.4f}%')
+        accuracy = multi_train_elect(
+            args=args, softmax=args.softmax, loader=corrupted_loader,
+            auT1=auT1, auC1=cls1, auT2=auT2, auC2=cls2,
+            auT3=auT3, auC3=cls3
+        )
+        print(f'Adapted corruption testing: accuracy is {accuracy:.4f}%, number of parameters is {param_num}, sample size is {len(corrupted_set)}')
+        records.loc[len(records)] = [args.dataset, arch, param_num, noise_type, args.corruption_level, 'MLT-TrE', accuracy, 100.-accuracy]
 
     records.to_csv(os.path.join(args.output_path, args.analysis_file))
