@@ -238,6 +238,7 @@ if __name__ == '__main__':
         load_weight(args, mode='adaption3', auT=auT3, auC=cls3)
         accuracy = inference(args=args, auT=auT1, auC=cls1, data_loader=corrupted_loader)
         print(f'accuracy is: {accuracy:.4f}%')
+        records.loc[len(records)] = [args.dataset, arch, param_num, noise_type, args.corruption_level, 'CEG', accuracy, 100.-accuracy]
         accuracy = multi_train_elect(
             args=args, softmax=args.softmax, loader=corrupted_loader,
             auT1=auT1, auC1=cls1, auT2=auT2, auC2=cls2,
