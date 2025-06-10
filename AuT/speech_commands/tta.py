@@ -90,6 +90,7 @@ if __name__ == '__main__':
     ap.add_argument('--corruption_type', type=str, choices=['doing_the_dishes', 'exercise_bike', 'running_tap', 'VocalSound', 'CochlScene'])
     ap.add_argument('--num_workers', type=int, default=16)
     ap.add_argument('--output_path', type=str, default='./result')
+    ap.add_argument('--file_suffix', type=str, default='')
     ap.add_argument('--batch_size', type=int, default=64)
     ap.add_argument('--max_epoch', type=int, default=200, help='max epoch')
     ap.add_argument('--lr', type=float, default=1e-2, help='learning rate')
@@ -131,7 +132,7 @@ if __name__ == '__main__':
     arch = 'AuT'
     wandb_run = wandb.init(
         project=f'{constants.PROJECT_TITLE}-{constants.TTA_TAG}', 
-        name=f'{arch}-{constants.dataset_dic[args.dataset]}-{constants.corruption_dic[args.corruption_type]}-{args.corruption_level}', 
+        name=f'{arch}-{constants.dataset_dic[args.dataset]}-{constants.corruption_dic[args.corruption_type]}-{args.corruption_level}{args.file_suffix}', 
         mode='online' if args.wandb else 'disabled', config=args, tags=['Audio Classification', args.dataset, 'Test-time Adaptation'])
 
     sample_rate=16000
@@ -263,8 +264,8 @@ if __name__ == '__main__':
         print(f'Accuracy is: {accuracy:.4f}%, sample size is: {len(corrupted_set)}')
         if accuracy >= max_accu:
             max_accu = accuracy
-        #     torch.save(auTmodel.state_dict(), os.path.join(args.output_path, f'{arch}-{constants.dataset_dic[args.dataset]}-auT-{args.corruption_type}-{args.corruption_level}.pt'))
-        #     torch.save(clsmodel.state_dict(), os.path.join(args.output_path, f'{arch}-{constants.dataset_dic[args.dataset]}-cls-{args.corruption_type}-{args.corruption_level}.pt'))
+            torch.save(auTmodel.state_dict(), os.path.join(args.output_path, f'{arch}-{constants.dataset_dic[args.dataset]}-auT-{args.corruption_type}-{args.corruption_level}{args.file_suffix}.pt'))
+            torch.save(clsmodel.state_dict(), os.path.join(args.output_path, f'{arch}-{constants.dataset_dic[args.dataset]}-cls-{args.corruption_type}-{args.corruption_level}{args.file_suffix}.pt'))
 
         wandb_run.log(
             data={
