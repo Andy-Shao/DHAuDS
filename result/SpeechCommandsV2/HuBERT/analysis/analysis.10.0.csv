@@ -1,5 +1,0 @@
-,dataset,module,param_num,corruption_type,corruption_level,adaptation,accuracy,error_rate
-0,SpeechCommandsV2,HuBERT,96479942,,,,97.60109041344843,2.398909586551568
-1,SpeechCommandsV2,HuBERT,96479942,doing_the_dishes,10.0,,92.90322580645162,7.096774193548384
-2,SpeechCommandsV2,HuBERT,96479942,exercise_bike,10.0,,91.81281235801907,8.187187641980927
-3,SpeechCommandsV2,HuBERT,96479942,running_tap,10.0,,92.4670604270786,7.532939572921407
