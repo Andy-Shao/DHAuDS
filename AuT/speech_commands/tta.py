@@ -132,7 +132,7 @@ if __name__ == '__main__':
     arch = 'AuT'
     wandb_run = wandb.init(
         project=f'{constants.PROJECT_TITLE}-{constants.TTA_TAG}', 
-        name=f'{arch}-{constants.dataset_dic[args.dataset]}-{constants.corruption_dic[args.corruption_type]}-{args.corruption_level}{args.file_suffix}', 
+        name=f'{arch}-{constants.dataset_dic[args.dataset]}-{constants.corruption_dic[args.corruption_type]}-{args.corruption_level}', 
         mode='online' if args.wandb else 'disabled', config=args, tags=['Audio Classification', args.dataset, 'Test-time Adaptation'])
 
     sample_rate=16000
