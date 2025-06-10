@@ -264,8 +264,8 @@ if __name__ == '__main__':
         print(f'Accuracy is: {accuracy:.4f}%, sample size is: {len(corrupted_set)}')
         if accuracy >= max_accu:
             max_accu = accuracy
-            torch.save(auTmodel.state_dict(), os.path.join(args.output_path, f'{arch}-{constants.dataset_dic[args.dataset]}-auT-{args.corruption_type}-{args.corruption_level}{args.file_suffix}.pt'))
-            torch.save(clsmodel.state_dict(), os.path.join(args.output_path, f'{arch}-{constants.dataset_dic[args.dataset]}-cls-{args.corruption_type}-{args.corruption_level}{args.file_suffix}.pt'))
+            torch.save(auTmodel.state_dict(), os.path.join(args.output_path, f'{arch}-{constants.dataset_dic[args.dataset]}-auT-{constants.corruption_dic[args.corruption_type]}-{args.corruption_level}{args.file_suffix}.pt'))
+            torch.save(clsmodel.state_dict(), os.path.join(args.output_path, f'{arch}-{constants.dataset_dic[args.dataset]}-cls-{constants.corruption_dic[args.corruption_type]}-{args.corruption_level}{args.file_suffix}.pt'))
 
         wandb_run.log(
             data={
