@@ -15,7 +15,7 @@ pip install wandb==0.19.11
 ```
 
 ## Datasets
-### Speech Commands Dataset v2
+### Speech Commands Dataset v1
 The dataset (1.4 GB) has 65,000 one-second long utterances of 30 short words by thousands of different people, contributed by public members through the AIY website. This is a set of one-second .wav audio files, each containing a single spoken English word.
 
 In both versions, ten of them are used as commands by convention: "Yes", "No", "Up", "Down", "Left",
