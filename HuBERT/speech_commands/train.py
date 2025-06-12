@@ -15,8 +15,7 @@ from AuT.speech_commands.train import build_optimizer, lr_scheduler
 from AuT.lib.loss import CrossEntropyLabelSmooth
 from lib.utils import print_argparse, store_model_structure_to_txt, make_unless_exits, ConfigDict
 from lib.component import AudioPadding, ReduceChannel, time_shift
-from lib.dataset import dataset_tag
-from lib.spdataset import SpeechCommandsV2
+from lib.spdataset import SpeechCommandsV2, SpeechCommandsV1
 from lib import constants
 
 def build_model(args:argparse.Namespace, pre_weight:bool=True) -> tuple[torchaudio.models.Wav2Vec2Model, AudioClassifier]:
@@ -37,7 +36,7 @@ def build_model(args:argparse.Namespace, pre_weight:bool=True) -> tuple[torchaud
 
 if __name__ == '__main__':
     ap = argparse.ArgumentParser()
-    ap.add_argument('--dataset', type=str, default='SpeechCommandsV2', choices=['SpeechCommandsV2'])
+    ap.add_argument('--dataset', type=str, default='SpeechCommandsV2', choices=['SpeechCommandsV2', 'SpeechCommandsV1'])
     ap.add_argument('--dataset_root_path', type=str)
     ap.add_argument('--batch_size', type=int, default=32)
     ap.add_argument('--lr', type=float, default=1e-3)
@@ -54,7 +53,12 @@ if __name__ == '__main__':
 
     args = ap.parse_args()
     args.device = 'cuda' if torch.cuda.is_available() else 'cpu'
-    args.class_num = 35
+    if args.dataset == 'SpeechCommandsV2':
+        args.class_num = 35
+    elif args.dataset == 'SpeechCommandsV1':
+        args.class_num = 30
+    else:
+        raise Exception('No support!')
     args.sample_rate = 16000
     arch = 'HuBERT'
     args.output_path = os.path.join(args.output_path, args.dataset, arch, 'train')
@@ -71,33 +75,50 @@ if __name__ == '__main__':
     make_unless_exits(args.output_path)
     make_unless_exits(args.dataset_root_path)
 
-    model_level_dic = {
-        'base': 'B', 'large': 'L', 'x-large': 'XL'
-    }
     wandb_run = wandb.init(
         project=f'{constants.PROJECT_TITLE}-{constants.TRAIN_TAG}', 
-        name=f'HuB-{model_level_dic[args.model_level]}-{dataset_tag(dataset=args.dataset)}', mode='online' if args.wandb else 'disabled', 
+        name=f'HuB-{constants.hubert_level_dic[args.model_level]}-{constants.dataset_dic[args.dataset]}', mode='online' if args.wandb else 'disabled', 
         config=args, tags=['Audio Classification', 'Test-time Adaptation', args.dataset]
     )
 
     max_length = args.sample_rate
-    train_set = SpeechCommandsV2(
-        root_path=args.dataset_root_path, mode='training', 
-        data_tf=Compose(transforms=[
-            time_shift(shift_limit=.17, is_random=True, is_bidirection=True),
-            AudioPadding(max_length=max_length, sample_rate=args.sample_rate, random_shift=True),
-            ReduceChannel()
-        ])
-    )
+    if args.dataset == 'SpeechCommandsV2':
+        train_set = SpeechCommandsV2(
+            root_path=args.dataset_root_path, mode='training', 
+            data_tf=Compose(transforms=[
+                time_shift(shift_limit=.17, is_random=True, is_bidirection=True),
+                AudioPadding(max_length=max_length, sample_rate=args.sample_rate, random_shift=True),
+                ReduceChannel()
+            ])
+        )
+    elif args.dataset == 'SpeechCommandsV1':
+        train_set = SpeechCommandsV1(
+            root_path=args.dataset_root_path, mode='train', include_rate=False,
+            data_tfs=Compose(transforms=[
+                time_shift(shift_limit=.17, is_random=True, is_bidirection=True),
+                AudioPadding(max_length=max_length, sample_rate=args.sample_rate, random_shift=True),
+                ReduceChannel()
+            ])
+        )
+
     train_loader = DataLoader(dataset=train_set, batch_size=args.batch_size, shuffle=True, drop_last=False, num_workers=args.num_workers)
 
-    val_set = SpeechCommandsV2(
-        root_path=args.dataset_root_path, mode='validation', 
-        data_tf=Compose(transforms=[
-            AudioPadding(max_length=max_length, sample_rate=args.sample_rate, random_shift=False),
-            ReduceChannel()
-        ])
-    )
+    if args.dataset == 'SpeechCommandsV2':
+        val_set = SpeechCommandsV2(
+            root_path=args.dataset_root_path, mode='validation', 
+            data_tf=Compose(transforms=[
+                AudioPadding(max_length=max_length, sample_rate=args.sample_rate, random_shift=False),
+                ReduceChannel()
+            ])
+        )
+    elif args.dataset == 'SpeechCommandsV1':
+        val_set = SpeechCommandsV1(
+            root_path=args.dataset_root_path, mode='validation', include_rate=False,
+            data_tfs=Compose(transforms=[
+                AudioPadding(max_length=max_length, sample_rate=args.sample_rate, random_shift=False),
+                ReduceChannel()
+            ])
+        )
     val_loader = DataLoader(dataset=val_set, batch_size=args.batch_size, shuffle=False, drop_last=False, num_workers=args.num_workers)
 
     hubert, clsModel = build_model(args=args, pre_weight=args.use_pre_trained_weigth)
