@@ -41,6 +41,7 @@ if __name__ == '__main__':
     ap.add_argument('--batch_size', type=int, default=32)
     ap.add_argument('--lr', type=float, default=1e-3)
     ap.add_argument('--lr_cardinality', type=int, default=40)
+    ap.add_argument('--lr_gamma', type=float, default=10)
     ap.add_argument('--num_workers', type=int, default=16)
     ap.add_argument('--max_epoch', type=int, default=30)
     ap.add_argument('--interval', type=int, default=1, help='interval number')
@@ -154,7 +155,7 @@ if __name__ == '__main__':
 
         learning_rate = optimizer.param_groups[0]['lr']
         if epoch % args.interval == 0:
-            lr_scheduler(optimizer=optimizer, epoch=epoch, lr_cardinality=args.lr_cardinality)
+            lr_scheduler(optimizer=optimizer, epoch=epoch, lr_cardinality=args.lr_cardinality, gamma=args.lr_gamma)
 
         print('Validating...')
         hubert.eval()
