@@ -12,5 +12,17 @@ corruption_dic = {
 
 dataset_dic = {
     'SpeechCommandsV2': 'SC2',
-    'SpeechCommandsV1': 'SC1'
+    'SpeechCommandsV1': 'SC1',
+    'VocalSound': 'VS',
+    'CochlScene': 'CS'
+}
+
+architecture_dic = {
+    'AuT': 'AuT',
+    'HuBERT': 'HuB',
+    'VGGish': "VGG"
+}
+
+hubert_level_dic = {
+    'base': 'B', 'large': 'L', 'x-large': 'XL'
 }
