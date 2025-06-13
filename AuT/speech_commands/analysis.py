@@ -7,6 +7,7 @@ import numpy as np
 import torch 
 import torchaudio.transforms as a_transforms
 from torch.utils.data import DataLoader
+import torch.nn as nn
 
 from lib.utils import make_unless_exits, print_argparse, count_ttl_params
 from lib.spdataset import SpeechCommandsV2, VocalSound, BackgroundNoiseDataset, SpeechCommandsV1
@@ -43,7 +44,7 @@ def inference(args:argparse, auT:FCETransform, auC:AudioClassifier, data_loader:
         ttl_corr += (preds == labels).sum().cpu().item()
     return ttl_corr / ttl_size * 100.
 
-def load_weight(args:argparse, mode:str, auT:FCETransform, auC:AudioClassifier) -> None:
+def load_weight(args:argparse, mode:str, auT:nn.Module, auC:nn.Module) -> None:
     if mode == 'origin':
         auT_weight_path = args.origin_auT_weight
         cls_weight_path = args.origin_cls_weight
@@ -258,7 +259,7 @@ if __name__ == '__main__':
                 o1, _ = cls1(auT1(f1)[0])
                 o2, _ = cls1(auT1(f2)[0])
                 o3, _ = cls1(auT1(f3)[0])
-                outputs = merge_outs(o1, o2, o3, softmax=True)
+                outputs = merge_outs(o1, o2, o3, softmax=args.softmax)
                 _, preds = torch.max(outputs.detach(), dim=1)
             ttl_corr += (preds == labels).sum().cpu().item()
             ttl_size += labels.shape[0]
