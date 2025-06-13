@@ -11,7 +11,8 @@ from torch.utils.data import DataLoader
 from lib.utils import make_unless_exits, print_argparse
 from lib import constants
 from lib.spdataset import SpeechCommandsV1, SpeechCommandsV2
-from lib.component import Components, AudioPadding, ReduceChannel, BackgroundNoiseByFunc, DoNothing
+from lib.dataset import MultiTFDataset
+from lib.component import Components, AudioPadding, ReduceChannel, BackgroundNoiseByFunc, DoNothing, time_shift
 from lib.dataset import mlt_load_from, mlt_store_to
 from AuT.speech_commands.analysis import noise_source, load_weight
 from AuT.speech_commands.tta import build_optimizer, nucnm, entropy, g_entropy
@@ -106,8 +107,16 @@ if __name__ == '__main__':
     corrupted_set = mlt_load_from(
         root_path=dataset_root_path, 
         index_file_name=index_file_name,
-        data_tfs=[
+    )
+    corrupted_set = MultiTFDataset(
+        dataset=corrupted_set, 
+        tfs=[
             Components(transforms=[
+                time_shift(shift_limit=.17, is_random=True, is_bidirection=False),
+                ReduceChannel()
+            ]),
+            Components(transforms=[
+                time_shift(shift_limit=-.17, is_random=True, is_bidirection=False),
                 ReduceChannel()
             ])
         ]
@@ -140,21 +149,22 @@ if __name__ == '__main__':
         hubert.train(); clsf.train()
         ttl_size = 0.; ttl_loss = 0.
         ttl_nucnm_loss = 0.; ttl_ent_loss = 0.; ttl_gent_loss = 0.
-        for fs, _ in tqdm(corrupted_loader):
-            fs = fs.to(args.device)
+        for fs1, fs2, _ in tqdm(corrupted_loader):
+            fs1, fs2 = fs1.to(args.device), fs2.to(args.device)
 
             optimizer.zero_grad()
-            os1, _ = clsf(hubert(fs)[0])
+            os1, _ = clsf(hubert(fs1)[0])
+            os2, _ = clsf(hubert(fs2)[0])
 
-            nucnm_loss = nucnm(args, os1)
-            ent_loss = entropy(args, os1)
-            gent_loss = g_entropy(args, os1, q=args.gent_q)
+            nucnm_loss = nucnm(args, os1) + nucnm(args, os2)
+            ent_loss = entropy(args, os1) + entropy(args, os2)
+            gent_loss = g_entropy(args, os1, q=args.gent_q) + g_entropy(args, os2, q=args.gent_q)
 
             loss = nucnm_loss + ent_loss + gent_loss
             loss.backward()
             optimizer.step()
 
-            ttl_size += fs.shape[0]
+            ttl_size += fs1.shape[0]
             ttl_loss += loss.cpu().item()
             ttl_nucnm_loss += nucnm_loss.cpu().item()
             ttl_ent_loss += ent_loss.cpu().item()
