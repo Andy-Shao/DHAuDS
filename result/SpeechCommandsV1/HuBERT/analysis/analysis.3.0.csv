@@ -1,0 +1,3 @@
+,dataset,module,param_num,corruption_type,corruption_level,adaptation,accuracy,error_rate
+0,SpeechCommandsV1,HuBERT,96478652,,,,97.61521580102414,2.384784198975865
+1,SpeechCommandsV1,HuBERT,96478652,doing_the_dishes,3.0,,86.3643013899049,13.635698610095105
