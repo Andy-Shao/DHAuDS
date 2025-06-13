@@ -10,12 +10,18 @@ from torch.utils.data import DataLoader
 
 from lib.utils import make_unless_exits, print_argparse, count_ttl_params
 from lib.spdataset import SpeechCommandsV2, VocalSound, BackgroundNoiseDataset, SpeechCommandsV1
-from lib.dataset import RandomChoiceSet, mlt_store_to, mlt_load_from
+from lib.dataset import RandomChoiceSet, mlt_store_to, mlt_load_from, MultiTFDataset
 from lib.component import Components, AudioPadding, AmplitudeToDB, MelSpectrogramPadding, FrequenceTokenTransformer
-from lib.component import BackgroundNoiseByFunc, DoNothing
+from lib.component import BackgroundNoiseByFunc, DoNothing, time_shift
 from lib.acousticDataset import CochlScene
 from AuT.speech_commands.train import build_model
 from AuT.lib.model import FCETransform, AudioClassifier
+
+def merge_outs(o1:torch.Tensor, o2:torch.Tensor, o3:torch.Tensor, softmax:bool=False) -> torch.Tensor:
+    if softmax:
+        from torch.nn import functional as F
+        return (F.softmax(o1, dim=1) + F.softmax(o2, dim=1) + F.softmax(o3, dim=1)) / 3.
+    else: return (o1 + o2 + o3) / 3.
 
 def clean_cache(cache_path) -> None:
     import shutil
@@ -204,6 +210,61 @@ if __name__ == '__main__':
         accuracy = inference(args=args, auT=auT1, auC=cls1, data_loader=corrupted_loader)
         print(f'accuracy is: {accuracy:.4f}%, number of parameters is: {param_num}, sample size is: {len(corrupted_set)}')
         records.loc[len(records)] = [args.dataset, arch, param_num, noise_type, args.corruption_level, 'CEG', accuracy, 100.-accuracy]
+
+        corrupted_set = MultiTFDataset(
+            dataset=mlt_load_from(root_path=cache_path, index_file_name=index_file_name),
+            tfs=[
+                Components(transforms=[
+                    a_transforms.MelSpectrogram(
+                        sample_rate=sample_rate, n_mels=args.n_mels, n_fft=n_fft, hop_length=hop_length, win_length=win_length,
+                        mel_scale=mel_scale
+                    ), # 80 x 104
+                    AmplitudeToDB(top_db=80., max_out=2.),
+                    MelSpectrogramPadding(target_length=args.target_length),
+                    FrequenceTokenTransformer()
+                ]),
+                Components(transforms=[
+                    time_shift(shift_limit=-.17, is_random=False, is_bidirection=False),
+                    a_transforms.MelSpectrogram(
+                        sample_rate=sample_rate, n_mels=args.n_mels, n_fft=n_fft, hop_length=hop_length, win_length=win_length,
+                        mel_scale=mel_scale
+                    ), # 80 x 104
+                    AmplitudeToDB(top_db=80., max_out=2.),
+                    MelSpectrogramPadding(target_length=args.target_length),
+                    FrequenceTokenTransformer()
+                ]),
+                Components(transforms=[
+                    time_shift(shift_limit=.17, is_random=False, is_bidirection=False),
+                    a_transforms.MelSpectrogram(
+                        sample_rate=sample_rate, n_mels=args.n_mels, n_fft=n_fft, hop_length=hop_length, win_length=win_length,
+                        mel_scale=mel_scale
+                    ), # 80 x 104
+                    AmplitudeToDB(top_db=80., max_out=2.),
+                    MelSpectrogramPadding(target_length=args.target_length),
+                    FrequenceTokenTransformer()
+                ])
+            ]
+        )
+
+        corrupted_loader = DataLoader(dataset=corrupted_set, batch_size=args.batch_size, shuffle=False, drop_last=False, num_workers=args.num_workers, pin_memory=True)
+        load_weight(args, mode='adaption', auT=auT1, auC=cls1)
+        auT1.eval(), cls1.eval()
+        ttl_corr = 0. 
+        ttl_size = 0.
+        for f1, f2, f3, labels in tqdm(corrupted_loader):
+            f1, f2, f3, labels = f1.to(args.device), f2.to(args.device), f3.to(args.device), labels.to(args.device)
+
+            with torch.no_grad():
+                o1, _ = cls1(auT1(f1)[0])
+                o2, _ = cls1(auT1(f2)[0])
+                o3, _ = cls1(auT1(f3)[0])
+                outputs = merge_outs(o1, o2, o3, softmax=True)
+                _, preds = torch.max(outputs.detach(), dim=1)
+            ttl_corr += (preds == labels).sum().cpu().item()
+            ttl_size += labels.shape[0]
+        accuracy = ttl_corr / ttl_size * 100.
+        print(f'augment election accuracy is: {accuracy:.4f}%, number of parameters is: {param_num}, sample size is: {len(corrupted_set)}')
+        records.loc[len(records)] = [args.dataset, arch, param_num, noise_type, args.corruption_level, 'aug-elec', accuracy, 100.-accuracy]
 
         clean_cache(cache_path)
 
