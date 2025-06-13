@@ -7,4 +7,4 @@ python -m AuT.speech_commands.tta --dataset 'SpeechCommandsV1' --dataset_root_pa
     --ent_rate 0.5 --gent_rate 0.5 --gent_q 1.1 --cache_path $BASE_PATH'/tmp' \
     --origin_auT_weight './result/SpeechCommandsV1/AuT/train/AuT-SC1-auT0.pt' \
     --origin_cls_weight './result/SpeechCommandsV1/AuT/train/AuT-SC1-cls0.pt' \
-    --background_path $BASE_PATH'/data/speech_commands_v0.01'
+    --background_path $BASE_PATH'/data/speech_commands_v0.01' --wandb
