@@ -87,8 +87,8 @@ if __name__ == '__main__':
         train_set = SpeechCommandsV2(
             root_path=args.dataset_root_path, mode='training', 
             data_tf=Compose(transforms=[
-                time_shift(shift_limit=.17, is_random=True, is_bidirection=True),
                 AudioPadding(max_length=max_length, sample_rate=args.sample_rate, random_shift=True),
+                time_shift(shift_limit=.17, is_random=True, is_bidirection=True),
                 ReduceChannel()
             ])
         )
@@ -96,8 +96,8 @@ if __name__ == '__main__':
         train_set = SpeechCommandsV1(
             root_path=args.dataset_root_path, mode='train', include_rate=False,
             data_tfs=Compose(transforms=[
-                time_shift(shift_limit=.17, is_random=True, is_bidirection=True),
                 AudioPadding(max_length=max_length, sample_rate=args.sample_rate, random_shift=True),
+                time_shift(shift_limit=.17, is_random=True, is_bidirection=True),
                 ReduceChannel()
             ])
         )
