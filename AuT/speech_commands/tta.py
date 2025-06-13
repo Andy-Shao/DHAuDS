@@ -7,6 +7,7 @@ from tqdm import tqdm
 
 import torch
 from torch import optim
+from torch import nn
 from torchaudio import transforms as a_transforms
 from torch.utils.data import DataLoader
 
@@ -61,7 +62,7 @@ def nucnm(args:argparse.Namespace, outputs:torch.Tensor) -> torch.Tensor:
         nucnm_loss = torch.tensor(.0).to(args.device)
     return nucnm_loss
 
-def build_optimizer(args: argparse.Namespace, auT:FCETransform, auC:AudioClassifier) -> optim.Optimizer:
+def build_optimizer(args: argparse.Namespace, auT:nn.Module, auC:nn.Module) -> optim.Optimizer:
     param_group = []
     for _, v in auT.named_parameters():
         if args.auT_lr_decay > 0.:
@@ -90,6 +91,7 @@ if __name__ == '__main__':
     ap.add_argument('--corruption_type', type=str, choices=['doing_the_dishes', 'exercise_bike', 'running_tap', 'VocalSound', 'CochlScene'])
     ap.add_argument('--num_workers', type=int, default=16)
     ap.add_argument('--output_path', type=str, default='./result')
+    ap.add_argument('--cache_path', type=str)
     ap.add_argument('--file_suffix', type=str, default='')
     ap.add_argument('--batch_size', type=int, default=64)
     ap.add_argument('--max_epoch', type=int, default=200, help='max epoch')
@@ -159,7 +161,7 @@ if __name__ == '__main__':
                 BackgroundNoiseByFunc(noise_level=args.corruption_level, noise_func=noise_source(args, source_type=args.corruption_type), is_random=True)
             ])
         )
-    dataset_root_path = f'/root/tmp/{args.dataset}/{args.corruption_type}/{args.corruption_level}'
+    dataset_root_path = os.path.join(args.cache_path, args.dataset, args.corruption_type, str(args.corruption_level))
     index_file_name = 'metaInfo.csv'
     mlt_store_to(
         dataset=corrupted_set, 
