@@ -3,6 +3,7 @@ import numpy as np
 
 import torch 
 from torch import nn
+from torchaudio.prototype import pipelines
 
 class time_shift(nn.Module):
     def __init__(self, shift_limit: float, is_random=True, is_bidirection=False) -> None:
@@ -157,3 +158,14 @@ class DoNothing(nn.Module):
 
     def forward(self, x:torch.Tensor) -> torch.Tensor:
         return x
+    
+class VggPreprocessor(nn.Module):
+    def __init__(self, bundle:pipelines.VGGishBundle):
+        super().__init__()
+        self.processor = bundle.get_input_processor()
+
+    def forward(self, wavform:torch.tensor) -> torch.Tensor:
+        wavform = torch.squeeze(wavform, dim=0)
+        feature = self.processor(wavform)
+        feature = torch.squeeze(feature, dim=0)
+        return feature

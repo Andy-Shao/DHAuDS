@@ -3,13 +3,19 @@ import os
 import numpy as np
 import random
 import wandb
+from tqdm import tqdm
 
 import torch
 from torchaudio.prototype import pipelines
+from torch.utils.data import DataLoader
 
 from VGGish.lib.model import AudioClassifier
-from lib.utils import ConfigDict, print_argparse, make_unless_exits
+from lib.utils import ConfigDict, print_argparse, make_unless_exits, store_model_structure_to_txt
 from lib import constants
+from lib.spdataset import SpeechCommandsV1
+from lib.component import Components, AudioPadding, VggPreprocessor, time_shift
+from AuT.speech_commands.train import build_optimizer, lr_scheduler
+from AuT.lib.loss import CrossEntropyLabelSmooth
 
 def build_model(args:argparse.Namespace) -> tuple[pipelines.VGGishBundle, pipelines.VGGishBundle.VGGish, AudioClassifier]:
     bundle = pipelines.VGGISH
@@ -17,6 +23,7 @@ def build_model(args:argparse.Namespace) -> tuple[pipelines.VGGishBundle, pipeli
     cfg = ConfigDict()
     cfg.embedding = ConfigDict()
     cfg.embedding['embed_size'] = 128
+    cfg.classifier = ConfigDict()
     cfg.classifier['extend_size'] = 256
     cfg.classifier['convergent_size'] = 128
     cfg.classifier['class_num'] = args.class_num
@@ -31,6 +38,7 @@ if __name__ == '__main__':
     ap.add_argument('--lr', type=float, default=1e-3)
     ap.add_argument('--lr_cardinality', type=int, default=40)
     ap.add_argument('--lr_gamma', type=float, default=10)
+    ap.add_argument('--lr_threshold', type=int, default=1)
     ap.add_argument('--num_workers', type=int, default=16)
     ap.add_argument('--max_epoch', type=int, default=30)
     ap.add_argument('--interval', type=int, default=1, help='interval number')
@@ -71,3 +79,86 @@ if __name__ == '__main__':
     )
 
     vgg_bundle, vgg, clsmodel = build_model(args)
+    store_model_structure_to_txt(model=vgg, output_path=os.path.join(args.output_path, f'{arch}-vgg-{constants.dataset_dic[args.dataset]}.txt'))
+    store_model_structure_to_txt(model=clsmodel, output_path=os.path.join(args.output_path, f'{arch}-cls-{constants.dataset_dic[args.dataset]}.txt'))
+    optimizer = build_optimizer(args=args, auT=vgg, auC=clsmodel)
+    loss_fn = CrossEntropyLabelSmooth(num_classes=args.class_num, use_gpu=torch.cuda.is_available(), epsilon=args.smooth)
+
+    max_length = args.sample_rate
+    if args.dataset == 'SpeechCommandsV1':
+        train_set = SpeechCommandsV1(
+            root_path=args.dataset_root_path, mode='train', include_rate=False,
+            data_tfs=Components(transforms=[
+                AudioPadding(max_length=max_length, sample_rate=args.sample_rate, random_shift=True),
+                time_shift(shift_limit=.17, is_random=True, is_bidirection=True),
+                VggPreprocessor(bundle=vgg_bundle)
+            ])
+        )
+    train_loader = DataLoader(dataset=train_set, batch_size=args.batch_size, shuffle=True, drop_last=False, num_workers=args.num_workers, pin_memory=True)
+
+    if args.dataset == 'SpeechCommandsV1':
+        val_set = SpeechCommandsV1(
+            root_path=args.dataset_root_path, mode='validation', include_rate=False, 
+            data_tfs=Components(transforms=[
+                AudioPadding(max_length=max_length, sample_rate=args.sample_rate, random_shift=True),
+                VggPreprocessor(bundle=vgg_bundle)
+            ])
+        )
+    val_loader = DataLoader(dataset=val_set, batch_size=args.batch_size, shuffle=False, drop_last=False, num_workers=4, pin_memory=True)
+    
+    vgg.train()
+    clsmodel.train()
+    max_accu = 0.
+    for epoch in range(args.max_epoch):
+        print(f'Epoch:{epoch+1}/{args.max_epoch}')
+        print('Training...')
+        ttl_corr = 0.
+        ttl_size = 0.
+        train_loss = 0.
+        for features, labels in tqdm(train_loader):
+            features, labels = features.to(args.device), labels.to(args.device)
+
+            optimizer.zero_grad()
+            outputs, _ = clsmodel(vgg(features))
+            loss = loss_fn(outputs, labels)
+            loss.backward()
+            optimizer.step()
+
+            ttl_size += labels.shape[0]
+            _, preds = torch.max(input=outputs.detach(), dim=1)
+            ttl_corr += (preds == labels).sum().cpu().item()
+            train_loss += loss.cpu().item()
+        train_accu = ttl_corr/ttl_size * 100.
+        print(f'Training accuracy is: {train_accu:.4f}%, sample size is: {len(train_set)}')
+
+        learning_rate = optimizer.param_groups[0]['lr']
+        if epoch % args.interval == 0:
+            lr_scheduler(optimizer=optimizer, epoch=epoch, lr_cardinality=args.lr_cardinality, gamma=args.lr_gamma, threshold=args.lr_threshold)
+
+        print('Validating...')
+        vgg.eval()
+        clsmodel.eval()
+        ttl_corr = 0.
+        ttl_size = 0.
+        for features, labels in tqdm(val_loader):
+            features, labels = features.to(args.device), labels.to(args.device)
+
+            with torch.no_grad():
+                outputs, _ = clsmodel(vgg(features))
+            ttl_size += labels.shape[0]
+            _, preds = torch.max(input=outputs.detach(), dim=1)
+            ttl_corr += (preds == labels).sum().cpu().item()
+        val_accu = ttl_corr / ttl_size * 100.
+        print(f'Validation accuracy is: {val_accu:.4f}%, sample size is: {len(val_set)}')
+
+        wandb_run.log(data={
+            'Train/Loss': train_loss / len(train_loader),
+            'Train/Accu': train_accu,
+            'Train/LR': learning_rate,
+            'Val/Accu': val_accu
+        }, step=epoch, commit=True)
+
+        if max_accu <= val_accu:
+            max_accu == val_accu
+            torch.save(obj=clsmodel.state_dict(), f=os.path.join(args.output_path, f'{arch}-cls-{constants.dataset_dic[args.dataset]}.pt'))
+            torch.save(obj=vgg.state_dict(), f=os.path.join(args.output_path, f'{arch}-vgg-{constants.dataset_dic[args.dataset]}.pt'))
