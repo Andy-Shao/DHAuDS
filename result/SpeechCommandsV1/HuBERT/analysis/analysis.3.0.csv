@@ -1,5 +1,5 @@
 ,dataset,module,param_num,corruption_type,corruption_level,adaptation,accuracy,error_rate
 0,SpeechCommandsV1,HuBERT,96478652,,,,97.61521580102414,2.384784198975865
-1,SpeechCommandsV1,HuBERT,96478652,doing_the_dishes,3.0,,86.97878566203366,13.021214337966342
-2,SpeechCommandsV1,HuBERT,96478652,doing_the_dishes,3.0,CEG,92.6700804681785,7.329919531821503
-3,SpeechCommandsV1,HuBERT,96478652,doing_the_dishes,3.0,aug-elec,93.050475493782,6.9495245062179976
+1,SpeechCommandsV1,HuBERT,96478652,doing_the_dishes,3.0,,86.7885881492319,13.211411850768101
+2,SpeechCommandsV1,HuBERT,96478652,doing_the_dishes,3.0,CEG,92.30431602048282,7.6956839795171845
+3,SpeechCommandsV1,HuBERT,96478652,doing_the_dishes,3.0,aug-elec,92.31894659839064,7.681053401609361

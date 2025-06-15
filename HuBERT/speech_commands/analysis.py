@@ -142,11 +142,11 @@ if __name__ == '__main__':
                     ReduceChannel()
                 ]),
                 Components(transforms=[
-                    time_shift(shift_limit=.17, is_random=False, is_bidirection=False),
+                    time_shift(shift_limit=.1, is_random=False, is_bidirection=False),
                     ReduceChannel()
                 ]),
                 Components(transforms=[
-                    time_shift(shift_limit=-.17, is_random=False, is_bidirection=False),
+                    time_shift(shift_limit=-.1, is_random=False, is_bidirection=False),
                     ReduceChannel()
                 ])
             ]
