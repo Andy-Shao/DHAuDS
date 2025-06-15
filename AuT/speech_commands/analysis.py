@@ -249,7 +249,7 @@ if __name__ == '__main__':
 
         corrupted_loader = DataLoader(dataset=corrupted_set, batch_size=args.batch_size, shuffle=False, drop_last=False, num_workers=args.num_workers, pin_memory=True)
         load_weight(args, mode='adaption', auT=auT1, auC=cls1)
-        auT1.eval(), cls1.eval()
+        auT1.eval(); cls1.eval()
         ttl_corr = 0. 
         ttl_size = 0.
         for f1, f2, f3, labels in tqdm(corrupted_loader):

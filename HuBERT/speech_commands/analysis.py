@@ -10,9 +10,9 @@ import torchaudio
 
 from lib.utils import print_argparse, make_unless_exits, count_ttl_params
 from lib.spdataset import SpeechCommandsV1, SpeechCommandsV2
-from lib.component import Components, AudioPadding, ReduceChannel, BackgroundNoiseByFunc, DoNothing
-from lib.dataset import mlt_load_from, mlt_store_to
-from AuT.speech_commands.analysis import load_weight, noise_source, clean_cache
+from lib.component import Components, AudioPadding, ReduceChannel, BackgroundNoiseByFunc, DoNothing, time_shift
+from lib.dataset import mlt_load_from, mlt_store_to, MultiTFDataset
+from AuT.speech_commands.analysis import load_weight, noise_source, clean_cache, merge_outs
 from AuT.lib.model import AudioClassifier
 from HuBERT.speech_commands.train import build_model
 
@@ -127,6 +127,48 @@ if __name__ == '__main__':
         accuracy = inference(args=args, hubert=hubert, clsmodel=clsmodel, data_loader=corrupted_loader)
         print(f'Corrupted testing: accuracy is {accuracy:.4f}%, number of parameters is {param_num}, sample size is {len(corrupted_set)}')
         records.loc[len(records)] = [args.dataset, arch, param_num, noise_type, args.corruption_level, np.nan, accuracy, 100.-accuracy]
+
+        print('Adapted')
+        hubert, clsmodel = build_model(args=args, pre_weight=True)
+        load_weight(args=args, mode='adaption', auT=hubert, auC=clsmodel)
+        accuracy = inference(args=args, hubert=hubert, clsmodel=clsmodel, data_loader=corrupted_loader)
+        print(f'accuracy is: {accuracy:.4f}%, number of parameters is: {param_num}, sample size is: {len(corrupted_set)}')
+        records.loc[len(records)] = [args.dataset, arch, param_num, noise_type, args.corruption_level, 'CEG', accuracy, 100.-accuracy]
+
+        corrupted_set = MultiTFDataset(
+            dataset=mlt_load_from(root_path=cache_path, index_file_name=index_file_name),
+            tfs=[
+                Components(transforms=[
+                    ReduceChannel()
+                ]),
+                Components(transforms=[
+                    time_shift(shift_limit=.17, is_random=False, is_bidirection=False),
+                    ReduceChannel()
+                ]),
+                Components(transforms=[
+                    time_shift(shift_limit=-.17, is_random=False, is_bidirection=False),
+                    ReduceChannel()
+                ])
+            ]
+        )
+        corrupted_loader = DataLoader(dataset=corrupted_set, batch_size=args.batch_size, shuffle=False, drop_last=False, num_workers=args.num_workers, pin_memory=True)
+        load_weight(args=args, mode='adaption', auT=hubert, auC=clsmodel)
+        hubert.eval(); clsmodel.eval()
+        ttl_corr=0.; ttl_size=0.
+        for f1, f2, f3, labels in tqdm(corrupted_loader):
+            f1, f2, f3, labels = f1.to(args.device), f2.to(args.device), f3.to(args.device), labels.to(args.device)
+
+            with torch.no_grad():
+                o1, _ = clsmodel(hubert(f1)[0])
+                o2, _ = clsmodel(hubert(f2)[0])
+                o3, _ = clsmodel(hubert(f3)[0])
+                outputs = merge_outs(o1, o2, o3, softmax=args.softmax)
+                _, preds = torch.max(outputs, dim=1)
+            ttl_corr += (preds == labels).sum().cpu().item()
+            ttl_size += labels.shape[0]
+        accuracy = ttl_corr / ttl_size * 100.
+        print(f'augment election accuracy is: {accuracy:.4f}%, number of parameters is: {param_num}, sample size is: {len(corrupted_set)}')
+        records.loc[len(records)] = [args.dataset, arch, param_num, noise_type, args.corruption_level, 'aug-elec', accuracy, 100.-accuracy]
 
         clean_cache(cache_path)
     records.to_csv(os.path.join(args.output_path, args.analysis_file))
