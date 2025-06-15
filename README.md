@@ -6,7 +6,7 @@ conda create --name my-audio python=3.12 -y
 conda activate my-audio
 # CUDA 12.4
 conda install pytorch==2.4.1 torchvision==0.19.1 torchaudio==2.4.1 pytorch-cuda=12.4 -c pytorch -c nvidia -y
-#conda install -c anaconda scipy==1.15.3 -y
+# conda install conda-forge::transformers
 conda install pandas==2.2.3 -y
 conda install tqdm==4.67.1 -y
 conda install matplotlib==3.10.0 -y
@@ -25,7 +25,6 @@ from unrecognized ones.
 
 + Sample size: 64721 (train: 51088, test: 6835, validation: 6798)
 + Sampling rate: 16000
-<!-- + Sample data shape: [1, 5945 - 16000] -->
 + Class Number: 30
 + Audio length: 1 second
 
