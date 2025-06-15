@@ -42,7 +42,7 @@ The SpeechCommands V2 (2.26GB) is a speech audio set which includes 35 English w
 [Speech Commands Dataset Link](https://research.google/blog/launching-the-speech-commands-dataset/)<br/>
 [Pytorch Document](https://pytorch.org/audio/main/generated/torchaudio.datasets.SPEECHCOMMANDS.html)
 
-### VocalSound
+<!-- ### VocalSound
 VocalSound is a free dataset consisting of 21,024 crowdsourced recordings of laughter, sighs, coughs, throat clearing, sneezes, and sniffs from 3,365 unique subjects. The VocalSound dataset also contains meta-information such as speaker age, gender, native language, country, and health condition.
 + Sample Size: 20977 (Train: 15531, validation: 1855, test: 3591)
 + Sample rate: 16000
@@ -53,7 +53,7 @@ VocalSound is a free dataset consisting of 21,024 crowdsourced recordings of lau
 Download command:
 ```shell
 wget -O vocalsound_16k.zip https://www.dropbox.com/s/c5ace70qh1vbyzb/vs_release_16k.zip?dl=1
-```
+``` -->
 
 ### CochlScene
 Cochl Acoustic Scene Dataset, or CochlScene, is a new acoustic scene dataset whose recordings are fully collected from crowdsourcing participants. Most of the initial plans and guidelines for the processes were provided by the researchers in the field of audio signal processing and machine learning including the authors, and the actual process was performed by using the crowdsourcing platform developed by SelectStar, a Korean crowdsourcing data company. During the process, the initial plans were reinforced and modified from the discussion about the actual difficulty in the collection process. After extracting the subset of the total collections considering the purpose of the data, we collected 76,115 10 seconds files in 13 different acoustic scenes from 831 participants.
