@@ -36,6 +36,7 @@ class CrossEntropyLabelSmooth(nn.Module):
             return loss
         
 def SoftCrossEntropyLoss(logit: torch.Tensor, soft_pseudo_label: torch.Tensor) -> torch.Tensor:   # Checked and is correct
+    from torch.nn import functional as F
     """Pseudo-label cross-entropy loss uses this loss function"""
     percentage = F.log_softmax(logit, dim=1)
     # print(f'left shape: {soft_pseudo_label.shape}, right shape: {percentage.shape}')
