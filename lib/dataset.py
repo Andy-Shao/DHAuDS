@@ -197,14 +197,15 @@ class GpuMultiTFDataset(Dataset):
         return tuple(ret)
 
 class IdxSet(Dataset):
-    def __init__(self, dataset:Dataset, idx:int=0):
+    def __init__(self, dataset:Dataset):
         super().__init__()
         self.dataset = dataset
-        self.idx = idx
     
     def __len__(self):
         return len(self.dataset)
 
     def __getitem__(self, index):
         data = self.dataset[index]
-        return data[self.idx], data[-1]
+        ret = [index]
+        ret += data
+        return tuple(ret)
