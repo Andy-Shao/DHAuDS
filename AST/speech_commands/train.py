@@ -7,7 +7,7 @@ from tqdm import tqdm
 
 import torch
 from torch.utils.data import DataLoader
-from transformers import ASTModel, AutoFeatureExtractor
+from transformers import AutoFeatureExtractor, ASTForAudioClassification
 
 from lib.utils import print_argparse, make_unless_exits, ConfigDict, store_model_structure_to_txt
 from lib import constants
@@ -25,14 +25,14 @@ def collate_fn(batch):
         labels.append(l)
     return torch.stack(features), torch.tensor(labels)
 
-def build_model(args:argparse.Namespace) -> tuple[AutoFeatureExtractor, ASTModel, ASTClssifier]:
-    ast = ASTModel.from_pretrained("MIT/ast-finetuned-audioset-10-10-0.4593").to(args.device)
-    feature_extractor = AutoFeatureExtractor.from_pretrained("MIT/ast-finetuned-audioset-10-10-0.4593")
+def build_model(args:argparse.Namespace) -> tuple[AutoFeatureExtractor, ASTForAudioClassification, ASTClssifier]:
+    ast = ASTForAudioClassification.from_pretrained("MIT/ast-finetuned-speech-commands-v2").to(args.device)
+    feature_extractor = AutoFeatureExtractor.from_pretrained("MIT/ast-finetuned-speech-commands-v2")
 
     ast_cfg = ast.config
     cfg = ConfigDict()
     cfg.embedding = ConfigDict()
-    cfg.embedding['embed_size'] = ast_cfg.hidden_size
+    cfg.embedding['embed_size'] = ast_cfg.num_labels
     cfg.classifier = ConfigDict()
     cfg.classifier['class_num'] = args.class_num
     clsmodel = ASTClssifier(cfg).to(args.device)
@@ -41,7 +41,7 @@ def build_model(args:argparse.Namespace) -> tuple[AutoFeatureExtractor, ASTModel
 
 if __name__ == '__main__':
     ap = argparse.ArgumentParser()
-    ap.add_argument('--dataset', type=str, default='SpeechCommandsV2', choices=['SpeechCommandsV2', 'SpeechCommandsV1'])
+    ap.add_argument('--dataset', type=str, default='SpeechCommandsV2', choices=['SpeechCommandsV1'])
     ap.add_argument('--dataset_root_path', type=str)
     ap.add_argument('--batch_size', type=int, default=32)
     ap.add_argument('--lr', type=float, default=1e-3)
@@ -58,9 +58,7 @@ if __name__ == '__main__':
 
     args = ap.parse_args()
     args.device = 'cuda' if torch.cuda.is_available() else 'cpu'
-    if args.dataset == 'SpeechCommandsV2':
-        args.class_num = 35
-    elif args.dataset == 'SpeechCommandsV1':
+    if args.dataset == 'SpeechCommandsV1':
         args.class_num = 30
     else:
         raise Exception('No support!')
@@ -126,10 +124,10 @@ if __name__ == '__main__':
         print('Training...')
         ttl_corr = 0.; ttl_size = 0.; train_loss = 0.
         for features, labels in tqdm(train_loader):
-            features, labels = labels.to(args.device)
+            features, labels = features.to(args.device), labels.to(args.device)
 
             optimizer.zero_grad()
-            outputs = clsmodel(ast(features).pooler_output)
+            outputs = clsmodel(ast(features).logits)
             loss = loss_fn(outputs, labels)
             loss.backward()
             optimizer.step()
@@ -152,7 +150,7 @@ if __name__ == '__main__':
             features, labels = features.to(args.device), labels.to(args.device)
 
             with torch.no_grad():
-                outputs = clsmodel(ast(features).pooler_output)
+                outputs = clsmodel(ast(features).logits)
             ttl_size += labels.shape[0]
             _, preds = torch.max(input=outputs.detach(), dim=1)
             ttl_corr += (preds == labels).sum().cpu().item()
