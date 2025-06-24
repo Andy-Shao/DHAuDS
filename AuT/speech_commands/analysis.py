@@ -184,7 +184,7 @@ if __name__ == '__main__':
             o1, _ = clsmodel(auTmodel(f1)[0])
             o2, _ = clsmodel(auTmodel(f2)[0])
             o3, _ = clsmodel(auTmodel(f3)[0])
-            outputs = merge_outs(o1, o2, o3, softmax=True)
+            outputs = merge_outs(o1, o2, o3, softmax=args.softmax)
             _, preds = torch.max(outputs.detach(), dim=1)
         ttl_corr += (preds == labels).sum().cpu().item()
         ttl_size += labels.shape[0]
