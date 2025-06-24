@@ -15,9 +15,26 @@ from lib.dataset import mlt_load_from, mlt_store_to, MultiTFDataset
 from lib.spdataset import VocalSound
 from lib.component import Components, AudioPadding, AmplitudeToDB, MelSpectrogramPadding
 from lib.component import FrequenceTokenTransformer, time_shift, DoNothing
-from AuT.speech_commands.analysis import load_weight, inference
-from AuT.speech_commands.train import build_model, lr_scheduler
+from AuT.speech_commands.analysis import load_weight
+from AuT.speech_commands.train import lr_scheduler
 from AuT.speech_commands.tta import build_optimizer, nucnm, g_entropy, entropy
+from AuT.VocalSound.train import build_model
+from AuT.lib.model import FCEClassifier, FCETransform
+
+def inference(args:argparse, auT:FCETransform, auC:FCEClassifier, data_loader:DataLoader) -> float:
+    auT.eval()
+    auC.eval()
+    ttl_corr = 0.
+    ttl_size = 0.
+    for features, labels in tqdm(data_loader):
+        features, labels = features.to(args.device), labels.to(args.device)
+
+        with torch.no_grad():
+            outputs = auC(auT(features)[1])
+            _, preds = torch.max(outputs.detach(), dim=1)
+        ttl_size += labels.shape[0]
+        ttl_corr += (preds == labels).sum().cpu().item()
+    return ttl_corr / ttl_size * 100.
 
 if __name__ == '__main__':
     ap = argparse.ArgumentParser()
@@ -70,14 +87,15 @@ if __name__ == '__main__':
         mode='online' if args.wandb else 'disabled', config=args, tags=['Audio Classification', args.dataset, 'Test-time Adaptation'])
 
     sample_rate=16000
-    args.n_mels=80
+    max_length = sample_rate * 10
+    args.n_mels=64
     n_fft=1024
     win_length=400
-    hop_length=155
+    hop_length=154
     mel_scale='slaney'
-    args.target_length=104
+    args.target_length=1040
     if args.dataset == 'VocalSound':
-        corrupted_set = VocalSound(root_path=args.dataset_root_path, mode='train', include_rate=False, data_tf=None, version='16k')
+        corrupted_set = VocalSound(root_path=args.dataset_root_path, mode='test', include_rate=False, data_tf=None, version='16k')
     dataset_root_path = os.path.join(args.cache_path, args.dataset)
     index_file_name = 'metaInfo.csv'
     mlt_store_to(
@@ -143,7 +161,7 @@ if __name__ == '__main__':
 
     print('Pre-adaptation')
     accuracy = inference(args=args, auT=auTmodel, auC=clsmodel, data_loader=test_loader)
-    print(f'Accurayc is: {accuracy:.4f}%, sample size is: {len(corrupted_set)}')
+    print(f'Accuracy is: {accuracy:.4f}%, sample size is: {len(corrupted_set)}')
 
     max_accu = 0.
     for epoch in range(args.max_epoch):
@@ -160,8 +178,8 @@ if __name__ == '__main__':
             fs1, fs2 = fs1.to(args.device), fs2.to(args.device)
 
             optimizer.zero_grad()
-            os1, _ = clsmodel(auTmodel(fs1)[0])
-            os2, _ = clsmodel(auTmodel(fs2)[0])
+            os1 = clsmodel(auTmodel(fs1)[1])
+            os2 = clsmodel(auTmodel(fs2)[1])
 
             nucnm_loss = nucnm(args, os1) + nucnm(args, os2)
             ent_loss = entropy(args, os1) + entropy(args, os2)
