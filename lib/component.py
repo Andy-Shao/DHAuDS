@@ -3,7 +3,7 @@ import numpy as np
 
 import torch 
 from torch import nn
-from transformers import AutoFeatureExtractor
+# from transformers import AutoFeatureExtractor
 
 class time_shift(nn.Module):
     def __init__(self, shift_limit: float, is_random=True, is_bidirection=False) -> None:
@@ -159,12 +159,12 @@ class DoNothing(nn.Module):
     def forward(self, x:torch.Tensor) -> torch.Tensor:
         return x
     
-class ASTFeatureExt(nn.Module):
-    def __init__(self, feature_extractor:AutoFeatureExtractor, sample_rate:int):
-        super().__init__()
-        self.feature_extractor = feature_extractor
-        self.sample_rate = sample_rate
+# class ASTFeatureExt(nn.Module):
+#     def __init__(self, feature_extractor:AutoFeatureExtractor, sample_rate:int):
+#         super().__init__()
+#         self.feature_extractor = feature_extractor
+#         self.sample_rate = sample_rate
 
-    def forward(self, x:torch.Tensor) -> torch.Tensor:
-        x = self.feature_extractor(x.numpy(), sampling_rate=self.sample_rate, return_tensors="pt", padding=False)['input_values']
-        return x
+#     def forward(self, x:torch.Tensor) -> torch.Tensor:
+#         x = self.feature_extractor(x.numpy(), sampling_rate=self.sample_rate, return_tensors="pt", padding=False)['input_values']
+#         return x
