@@ -15,11 +15,10 @@ from lib import constants
 from lib.utils import make_unless_exits, print_argparse
 from lib.dataset import mlt_load_from, mlt_store_to, MultiTFDataset
 from lib.spdataset import SpeechCommandsV2, SpeechCommandsV1
-from lib.component import Components, BackgroundNoiseByFunc, AudioPadding, AmplitudeToDB, MelSpectrogramPadding
+from lib.component import Components, AudioPadding, AmplitudeToDB, MelSpectrogramPadding
 from lib.component import FrequenceTokenTransformer, time_shift, DoNothing
-from AuT.speech_commands.analysis import noise_source, load_weight, inference
+from AuT.speech_commands.analysis import load_weight, inference
 from AuT.speech_commands.train import build_model, op_copy, lr_scheduler
-from AuT.lib.model import FCETransform, AudioClassifier
 
 def g_entropy(args:argparse.Namespace, outputs:torch.Tensor, q:float=.9) -> torch.Tensor:
     """
@@ -84,11 +83,6 @@ if __name__ == '__main__':
     ap = argparse.ArgumentParser()
     ap.add_argument('--dataset', type=str, default='SpeechCommandsV2', choices=['SpeechCommandsV2', 'SpeechCommandsV1'])
     ap.add_argument('--dataset_root_path', type=str)
-    ap.add_argument('--background_path', type=str)
-    ap.add_argument('--vocalsound_path', type=str)
-    ap.add_argument('--cochlscene_path', type=str)
-    ap.add_argument('--corruption_level', type=float)
-    ap.add_argument('--corruption_type', type=str, choices=['doing_the_dishes', 'exercise_bike', 'running_tap', 'VocalSound', 'CochlScene'])
     ap.add_argument('--num_workers', type=int, default=16)
     ap.add_argument('--output_path', type=str, default='./result')
     ap.add_argument('--cache_path', type=str)
@@ -134,7 +128,7 @@ if __name__ == '__main__':
     arch = 'AuT'
     wandb_run = wandb.init(
         project=f'{constants.PROJECT_TITLE}-{constants.TTA_TAG}', 
-        name=f'{arch}-{constants.dataset_dic[args.dataset]}-{constants.corruption_dic[args.corruption_type]}-{args.corruption_level}', 
+        name=f'{arch}-{constants.dataset_dic[args.dataset]}', 
         mode='online' if args.wandb else 'disabled', config=args, tags=['Audio Classification', args.dataset, 'Test-time Adaptation'])
 
     sample_rate=16000
@@ -150,7 +144,6 @@ if __name__ == '__main__':
             root_path=args.dataset_root_path, mode='testing', download=False, 
             data_tf=Components(transforms=[
                 AudioPadding(sample_rate=sample_rate, random_shift=False, max_length=sample_rate),
-                BackgroundNoiseByFunc(noise_level=args.corruption_level, noise_func=noise_source(args, source_type=args.corruption_type), is_random=True),
             ])
         )
     elif args.dataset == 'SpeechCommandsV1':
@@ -158,10 +151,9 @@ if __name__ == '__main__':
             root_path=args.dataset_root_path, mode='test',  include_rate=False,
             data_tfs=Components(transforms=[
                 AudioPadding(sample_rate=sample_rate, random_shift=False, max_length=sample_rate),
-                BackgroundNoiseByFunc(noise_level=args.corruption_level, noise_func=noise_source(args, source_type=args.corruption_type), is_random=True)
             ])
         )
-    dataset_root_path = os.path.join(args.cache_path, args.dataset, args.corruption_type, str(args.corruption_level))
+    dataset_root_path = os.path.join(args.cache_path, args.dataset)
     index_file_name = 'metaInfo.csv'
     mlt_store_to(
         dataset=corrupted_set, 
@@ -266,8 +258,8 @@ if __name__ == '__main__':
         print(f'Accuracy is: {accuracy:.4f}%, sample size is: {len(corrupted_set)}')
         if accuracy >= max_accu:
             max_accu = accuracy
-            torch.save(auTmodel.state_dict(), os.path.join(args.output_path, f'{arch}-{constants.dataset_dic[args.dataset]}-auT-{constants.corruption_dic[args.corruption_type]}-{args.corruption_level}{args.file_suffix}.pt'))
-            torch.save(clsmodel.state_dict(), os.path.join(args.output_path, f'{arch}-{constants.dataset_dic[args.dataset]}-cls-{constants.corruption_dic[args.corruption_type]}-{args.corruption_level}{args.file_suffix}.pt'))
+        torch.save(auTmodel.state_dict(), os.path.join(args.output_path, f'{arch}-{constants.dataset_dic[args.dataset]}-auT{args.file_suffix}.pt'))
+        torch.save(clsmodel.state_dict(), os.path.join(args.output_path, f'{arch}-{constants.dataset_dic[args.dataset]}-cls{args.file_suffix}.pt'))
 
         wandb_run.log(
             data={
