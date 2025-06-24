@@ -142,16 +142,12 @@ if __name__ == '__main__':
         SpeechCommandsV2(root_path=args.dataset_root_path, mode='testing', download=True)
         corrupted_set = SpeechCommandsV2(
             root_path=args.dataset_root_path, mode='testing', download=False, 
-            data_tf=Components(transforms=[
-                AudioPadding(sample_rate=sample_rate, random_shift=False, max_length=sample_rate),
-            ])
+            data_tf=None
         )
     elif args.dataset == 'SpeechCommandsV1':
         corrupted_set = SpeechCommandsV1(
             root_path=args.dataset_root_path, mode='test',  include_rate=False,
-            data_tfs=Components(transforms=[
-                AudioPadding(sample_rate=sample_rate, random_shift=False, max_length=sample_rate),
-            ])
+            data_tfs=None
         )
     dataset_root_path = os.path.join(args.cache_path, args.dataset)
     index_file_name = 'metaInfo.csv'
@@ -169,6 +165,7 @@ if __name__ == '__main__':
         dataset=corrupted_set,
         tfs=[
             Components(transforms=[
+                AudioPadding(sample_rate=sample_rate, random_shift=True, max_length=sample_rate),
                 time_shift(shift_limit=.17, is_random=True, is_bidirection=False),
                 a_transforms.MelSpectrogram(
                     sample_rate=sample_rate, n_mels=args.n_mels, n_fft=n_fft, hop_length=hop_length, win_length=win_length,
@@ -179,6 +176,7 @@ if __name__ == '__main__':
                 FrequenceTokenTransformer()
             ]),
             Components(transforms=[
+                AudioPadding(sample_rate=sample_rate, random_shift=True, max_length=sample_rate),
                 time_shift(shift_limit=-.17, is_random=True, is_bidirection=False),
                 a_transforms.MelSpectrogram(
                     sample_rate=sample_rate, n_mels=args.n_mels, n_fft=n_fft, hop_length=hop_length, win_length=win_length,
@@ -197,6 +195,7 @@ if __name__ == '__main__':
         root_path=dataset_root_path, index_file_name=index_file_name,
         data_tfs=[
             Components(transforms=[
+                AudioPadding(sample_rate=sample_rate, random_shift=False, max_length=sample_rate),
                 a_transforms.MelSpectrogram(
                     sample_rate=sample_rate, n_mels=args.n_mels, n_fft=n_fft, hop_length=hop_length, win_length=win_length,
                     mel_scale=mel_scale
