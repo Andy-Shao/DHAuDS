@@ -175,7 +175,7 @@ if __name__ == '__main__':
             ]
         )
     aug_loader = DataLoader(dataset=aug_set, batch_size=args.batch_size, shuffle=False, drop_last=False, num_workers=args.num_workers, pin_memory=True)
-    load_weight(args=args, mode='adaption', auT=auTmodel, auC=clsmodel)
+    load_weight(args=args, mode='origin', auT=auTmodel, auC=clsmodel)
     auTmodel.eval(); clsmodel.eval()
     ttl_corr, ttl_size = 0., 0.
     for f1, f2, f3, labels in tqdm(aug_loader):
@@ -190,6 +190,6 @@ if __name__ == '__main__':
         ttl_size += labels.shape[0]
     accuracy = ttl_corr / ttl_size * 100.
     print(f'Adapted testing: accuracy is {accuracy:.4f}%, number of parameters is {param_num}, sample size is {len(test_set)}')
-    records.loc[len(records)] = [args.dataset, arch, param_num, 'TTA+MltAug', accuracy, 100.-accuracy]
+    records.loc[len(records)] = [args.dataset, arch, param_num, 'MltAug', accuracy, 100.-accuracy]
 
     records.to_csv(os.path.join(args.output_path, args.analysis_file))
