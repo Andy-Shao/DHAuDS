@@ -15,9 +15,20 @@ from torchaudio import transforms
 from lib.utils import make_unless_exits, print_argparse
 from lib import constants
 from lib.acousticDataset import QUTNOISE
-from lib.component import Components, Stereo2Mono, AudioPadding, ASTFeatureExt
+from lib.component import Components, Stereo2Mono, AudioPadding, ASTFeatureExt, DoNothing, time_shift
 from lib.spdataset import SpeechCommandsV2
 from lib.corruption import DynEN
+from lib.dataset import mlt_store_to, mlt_load_from, MultiTFDataset
+
+def collate_fn2(batch): 
+    fs1, fs2, labels = [], [], []
+    for f1, f2, l in batch:
+        f1 = torch.squeeze(f1, dim=0)
+        f2 = torch.squeeze(f2, dim=0)
+        fs1.append(f1)
+        fs2.append(f2)
+        labels.append(l)
+    return torch.stack(fs1), torch.stack(fs2), torch.tensor(labels)
 
 def collate_fn(batch): 
     features, labels = [], []
@@ -177,17 +188,101 @@ if __name__ == '__main__':
         mode='online' if args.wandb else 'disabled', config=args, tags=['Audio Classification', args.dataset, 'Test-time Adaptation'])
 
     fe, ast = build_model(args)
+    optimizer = build_optimizer(args=args, model=ast)
     args.sample_rate = 16000
     test_set = SpeechCommandsV2(
         root_path=args.dataset_root_path, mode='testing', download=True,
         data_tf=Components(transforms=[
             AudioPadding(max_length=args.sample_rate, sample_rate=args.sample_rate, random_shift=False),
-            ASTFeatureExt(feature_extractor=fe, sample_rate=args.sample_rate)
+            DynEN(noise_list=en_noises(args), lsnr=5, rsnr=10, step=1)
         ])
+    )
+    dataset_root_path = os.path.join(args.cache_path, args.dataset)
+    index_file_name = 'metaInfo.csv'
+    mlt_store_to(
+        dataset=test_set, root_path=dataset_root_path, index_file_name=index_file_name,
+        data_tfs=[DoNothing()]
+    )
+    test_set = mlt_load_from(
+        root_path=dataset_root_path, index_file_name=index_file_name, 
+        data_tfs=[ASTFeatureExt(feature_extractor=fe, sample_rate=args.sample_rate)]
     )
     test_loader = DataLoader(
         dataset=test_set, batch_size=args.batch_size, shuffle=False, drop_last=False, num_workers=args.num_workers, 
         pin_memory=True, collate_fn=collate_fn
     )
+    adapt_set = mlt_load_from(root_path=dataset_root_path, index_file_name=index_file_name,)
+    adapt_set = MultiTFDataset(
+        dataset=adapt_set,
+        tfs=[
+            Components(transforms=[
+                time_shift(shift_limit=.17, is_random=True, is_bidirection=False),
+                ASTFeatureExt(feature_extractor=fe, sample_rate=args.sample_rate)
+            ]),
+            Components(transforms=[
+                time_shift(shift_limit=-.17, is_random=True, is_bidirection=False),
+                ASTFeatureExt(feature_extractor=fe, sample_rate=args.sample_rate)
+            ])
+        ]
+    )
+    adapt_loader = DataLoader(
+        dataset=adapt_set, batch_size=args.batch_size, shuffle=True, drop_last=False, num_workers=args.num_workers,
+        pin_memory=True, collate_fn=collate_fn2
+    )
+    print('Pre-adaptation')
     accuracy = inference(args=args, ast=ast, data_loader=test_loader)
-    print(f'Accuracy is: {accuracy:.4f}%')
+    print(f'Accuracy is: {accuracy:.4f}%, sample size is: {len(test_set)}')
+
+    max_accu = 0
+    for epoch in range(args.max_epoch):
+        print(f'Epoch {epoch+1}/{args.max_epoch}')
+        print('Adaptating...')
+        ast.train()
+        ttl_size = 0.
+        ttl_loss = 0.
+        ttl_nucnm_loss = 0.
+        ttl_ent_loss = 0.
+        ttl_gent_loss = 0.
+        for fs1, fs2, _ in tqdm(adapt_loader):
+            fs1, fs2 = fs1.to(args.device), fs2.to(args.device)
+
+            optimizer.zero_grad()
+            os1 = ast(fs1).logits
+            os2 = ast(fs2).logits
+
+            nucnm_loss = nucnm(args, os1) + nucnm(args, os2)
+            ent_loss = entropy(args, os1) + entropy(args, os2)
+            gent_loss = g_entropy(args, os1, q=args.gent_q) + g_entropy(args, os2, q=args.gent_q)
+
+            loss = nucnm_loss + ent_loss + gent_loss
+            loss.backward()
+            optimizer.step()
+
+            ttl_size += fs1.shape[0]
+            ttl_loss += loss.cpu().item()
+            ttl_nucnm_loss += nucnm_loss.cpu().item()
+            ttl_ent_loss += ent_loss.cpu().item()
+            ttl_gent_loss += gent_loss.cpu().item()
+
+            learning_rate = optimizer.param_groups[0]['lr']
+        if epoch % args.interval == 0:
+            lr_scheduler(optimizer=optimizer, epoch=epoch, lr_cardinality=args.lr_cardinality, gamma=args.lr_gamma, threshold=args.lr_threshold)
+
+        print('Inferencing...')
+        accuracy = inference(args=args, ast=ast, data_loader=test_loader)
+        print(f'Accuracy is: {accuracy:.4f}%, sample size is: {len(adapt_set)}')
+        if accuracy >= max_accu:
+            max_accu = accuracy
+            # torch.save(ast.state_dict(), os.path.join(args.output_path, f'{args.arch}-{constants.dataset_dic[args.dataset]}-ast-{constants.corruption_dic[args.corruption_type]}{args.file_suffix}.pt'))
+
+        wandb_run.log(
+            data={
+                'Loss/ttl_loss': ttl_loss / ttl_size,
+                'Loss/Nuclear-norm loss': ttl_nucnm_loss / ttl_size,
+                'Loss/Entropy loss': ttl_ent_loss / ttl_size,
+                'Loss/G-entropy loss': ttl_gent_loss / ttl_size,
+                'Adaptation/accuracy': accuracy,
+                'Adaptation/LR': learning_rate,
+                'Adaptation/max_accu': max_accu,
+            }, step=epoch, commit=True
+        )
