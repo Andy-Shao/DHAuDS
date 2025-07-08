@@ -9,11 +9,11 @@ import torchaudio
 
 class SpeechCommandsV2(Dataset):
     label_dict = {
-        'zero': 0., 'one': 1., 'two': 2., 'three': 3., 'four': 4., 'five': 5., 'six': 6., 'seven': 7., 
-        'eight': 8., 'nine': 9., 'bed': 10., 'dog': 11., 'happy': 12., 'marvin': 13., 'off': 14., 
-        'right': 15., 'up': 16., 'yes': 17., 'bird': 18., 'down': 19., 'house': 20., 'on': 21., 
-        'stop': 22., 'tree': 23., 'cat': 24., 'go': 25., 'left': 26., 'no': 27., 'sheila': 28., 
-        'wow': 29., 'backward': 30., 'forward': 31., 'follow': 32., 'learn': 33., 'visual': 34.
+        'backward': 0, 'bed': 3, 'bird': 32, 'cat': 17, 'dog': 10, 'down': 14, 'eight': 13, 'five': 2, 
+        'follow': 1, 'forward': 16, 'four': 20, 'go': 33, 'happy': 31, 'house': 8, 'learn': 6, 'left': 26, 
+        'marvin': 27, 'nine': 23, 'no': 22, 'off': 24, 'on': 5, 'one': 34, 'right': 18, 'seven': 12, 
+        'sheila': 30, 'six': 15, 'stop': 11, 'three': 25, 'tree': 9, 'two': 7, 'up': 29, 'visual': 19, 
+        'wow': 21, 'yes': 28, 'zero': 4
     }
     def __init__(
             self, root_path:str, folder_in_archive:str='speech_commands_v0.02', mode:str=None, download:bool = True, 

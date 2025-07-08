@@ -168,3 +168,10 @@ class ASTFeatureExt(nn.Module):
     def forward(self, x:torch.Tensor) -> torch.Tensor:
         x = self.feature_extractor(x.numpy(), sampling_rate=self.sample_rate, return_tensors="pt", padding=False)['input_values']
         return x
+
+class Stereo2Mono(nn.Module):
+    def __init__(self):
+        super(Stereo2Mono, self).__init__()
+
+    def forward(self, wavform:torch.Tensor) -> torch.Tensor:
+        return wavform.mean(dim=0, keepdim=True)

@@ -3,14 +3,60 @@ import os
 import numpy as np
 import random
 import wandb
+from tqdm import tqdm
 
 from transformers import AutoFeatureExtractor, ASTForAudioClassification
 import torch
 from torch import optim
 from torch import nn
+from torch.utils.data import DataLoader
+from torchaudio import transforms
 
 from lib.utils import make_unless_exits, print_argparse
 from lib import constants
+from lib.acousticDataset import QUTNOISE
+from lib.component import Components, Stereo2Mono, AudioPadding, ASTFeatureExt
+from lib.spdataset import SpeechCommandsV2
+from lib.corruption import DynEN
+
+def collate_fn(batch): 
+    features, labels = [], []
+    for f, l in batch:
+        f = torch.squeeze(f, dim=0)
+        features.append(f)
+        labels.append(l)
+    return torch.stack(features), torch.tensor(labels)
+
+def inference(args:argparse.Namespace, ast:ASTForAudioClassification, data_loader:DataLoader) -> float:
+    ast.eval()
+    ttl_curr, ttl_size = 0., 0.
+    for features, labels in tqdm(data_loader):
+        features, labels = features.to(args.device), labels.to(args.device)
+
+        with torch.no_grad():
+            outputs = ast(features).logits
+            _, preds = torch.max(outputs.detach(), dim=1)
+            ttl_curr += (preds == labels).sum().cpu().item()
+            ttl_size += labels.shape[0]
+    return ttl_curr / ttl_size * 100.
+
+def en_noises(args:argparse.Namespace, noise_modes:list[str] = ['CAFE', 'HOME', 'STREET']) -> list[torch.Tensor]:
+    background_path = args.noise_path
+    noises = []
+    print('Loading noise files...')
+    for mode in tqdm(noise_modes):
+        noise_set = QUTNOISE(
+            root_path=background_path, 
+            mode=mode, 
+            include_rate=False,
+            data_tf=Components(transforms=[
+                transforms.Resample(orig_freq=48000, new_freq=args.sample_rate),
+                Stereo2Mono()
+            ])
+        )
+        for wavform in noise_set:
+            noises.append(wavform)
+    return noises
 
 def g_entropy(args:argparse.Namespace, outputs:torch.Tensor, q:float=.9) -> torch.Tensor:
     """
@@ -88,6 +134,7 @@ if __name__ == '__main__':
     ap = argparse.ArgumentParser()
     ap.add_argument('--dataset', type=str, default='SpeechCommandsV2', choices=['SpeechCommandsV2'])
     ap.add_argument('--dataset_root_path', type=str)
+    ap.add_argument('--noise_path', type=str)
     ap.add_argument('--num_workers', type=int, default=16)
     ap.add_argument('--output_path', type=str, default='./result')
     ap.add_argument('--cache_path', type=str)
@@ -130,3 +177,17 @@ if __name__ == '__main__':
         mode='online' if args.wandb else 'disabled', config=args, tags=['Audio Classification', args.dataset, 'Test-time Adaptation'])
 
     fe, ast = build_model(args)
+    args.sample_rate = 16000
+    test_set = SpeechCommandsV2(
+        root_path=args.dataset_root_path, mode='testing', download=True,
+        data_tf=Components(transforms=[
+            AudioPadding(max_length=args.sample_rate, sample_rate=args.sample_rate, random_shift=False),
+            ASTFeatureExt(feature_extractor=fe, sample_rate=args.sample_rate)
+        ])
+    )
+    test_loader = DataLoader(
+        dataset=test_set, batch_size=args.batch_size, shuffle=False, drop_last=False, num_workers=args.num_workers, 
+        pin_memory=True, collate_fn=collate_fn
+    )
+    accuracy = inference(args=args, ast=ast, data_loader=test_loader)
+    print(f'Accuracy is: {accuracy:.4f}%')

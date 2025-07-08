@@ -1,0 +1,24 @@
+import random
+
+import torch
+from torch import nn
+from torchaudio.functional import add_noise
+
+class DynEN(nn.Module):
+    def __init__(self, noise_list:list[torch.Tensor], lsnr:float, rsnr:float, step:float):
+        super().__init__()
+        self.noise_list = noise_list
+        self.lsnr = lsnr
+        self.rsnr = rsnr
+        self.step = step
+
+    def forward(self, wavform:torch.Tensor) -> torch.Tensor:
+        channel, length = wavform.size()
+        noise = self.noise_list[random.randint(0, len(self.noise_list) - 1)]
+        start = random.randint(0, noise.shape[1]-length)
+        noise = noise[:, start:start+length]
+        snr_num = int((self.rsnr - self.lsnr)/self.step)
+        corr_wav = add_noise(
+            waveform=wavform, noise=noise, snr=torch.tensor([self.lsnr + (random.randint(0, snr_num) * self.step)])
+        )
+        return corr_wav
