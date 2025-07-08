@@ -13,7 +13,7 @@ pip install wandb==0.19.11
 ```
 
 ## Datasets
-### SpeechCommands V1
+<!-- ### SpeechCommands V1
 The dataset (1.4 GB) has 65,000 one-second long utterances of 30 short words by thousands of different people, contributed by public members through the AIY website. This is a set of one-second .wav audio files, each containing a single spoken English word.
 
 In both versions, ten of them are used as commands by convention: "Yes", "No", "Up", "Down", "Left",
@@ -27,7 +27,7 @@ from unrecognized ones.
 + Audio length: 1 second
 
 [Speech Commands Dataset Link](https://research.google/blog/launching-the-speech-commands-dataset/)<br/>
-[Dataset Download Link](http://download.tensorflow.org/data/speech_commands_v0.01.tar.gz)
+[Dataset Download Link](http://download.tensorflow.org/data/speech_commands_v0.01.tar.gz) -->
 
 ### SpeechCommands V2
 The SpeechCommands V2 (2.26GB) is a speech audio set which includes 35 English words. 
