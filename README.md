@@ -1,6 +1,7 @@
 # NTTA
 
 ## Software Environment
+Docker image id: nvidia/cuda:12.4.0-runtime-ubuntu22.04
 ```shell
 conda create --name my-audio python=3.12 -y
 conda activate my-audio

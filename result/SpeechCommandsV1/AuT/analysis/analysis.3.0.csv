@@ -1,5 +1,0 @@
-,dataset,module,param_num,corruption_type,corruption_level,adaptation,accuracy,error_rate
-0,SpeechCommandsV1,AuT,103070780,,,,95.91806876371616,4.081931236283836
-1,SpeechCommandsV1,AuT,103070780,doing_the_dishes,3.0,,76.51792245793709,23.48207754206291
-2,SpeechCommandsV1,AuT,103070780,doing_the_dishes,3.0,CEG,85.80833942940747,14.191660570592532
-3,SpeechCommandsV1,AuT,103070780,doing_the_dishes,3.0,aug-elec,86.08632040965618,13.913679590343818

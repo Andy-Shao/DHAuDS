@@ -12,7 +12,7 @@ from torch import nn
 from torch.utils.data import DataLoader
 from torchaudio import transforms
 
-from lib.utils import make_unless_exits, print_argparse
+from lib.utils import make_unless_exits, print_argparse, store_model_structure_to_txt
 from lib import constants
 from lib.acousticDataset import QUTNOISE
 from lib.component import Components, Stereo2Mono, AudioPadding, ASTFeatureExt, DoNothing, time_shift
@@ -33,7 +33,7 @@ def inference(args:argparse.Namespace, ast:ASTForAudioClassification, data_loade
             ttl_size += labels.shape[0]
     return ttl_curr / ttl_size * 100.
 
-def en_noises(args:argparse.Namespace, noise_modes:list[str] = ['CAFE', 'HOME', 'STREET']) -> list[torch.Tensor]:
+def enq_noises(args:argparse.Namespace, noise_modes:list[str] = ['CAFE', 'HOME', 'STREET']) -> list[torch.Tensor]:
     background_path = args.noise_path
     noises = []
     print('Loading noise files...')
@@ -128,6 +128,8 @@ if __name__ == '__main__':
     ap.add_argument('--dataset', type=str, default='SpeechCommandsV2', choices=['SpeechCommandsV2'])
     ap.add_argument('--dataset_root_path', type=str)
     ap.add_argument('--noise_path', type=str)
+    ap.add_argument('--corruption_type', type=str, choices=['WHN', 'ENQ', 'END', 'TST+PSH', 'DP+PSH'])
+    ap.add_argument('--corruption_level', type=str, choices=['L1', 'L2'])
     ap.add_argument('--num_workers', type=int, default=16)
     ap.add_argument('--output_path', type=str, default='./result')
     ap.add_argument('--cache_path', type=str)
@@ -166,19 +168,27 @@ if __name__ == '__main__':
     ##########################################
     wandb_run = wandb.init(
         project=f'{constants.PROJECT_TITLE}-{constants.TTA_TAG}', 
-        name=f'{args.arch}-{constants.dataset_dic[args.dataset]}', 
+        name=f'{constants.architecture_dic[args.arch]}-{constants.dataset_dic[args.dataset]}-{args.corruption_type}-{args.corruption_level}', 
         mode='online' if args.wandb else 'disabled', config=args, tags=['Audio Classification', args.dataset, 'Test-time Adaptation'])
 
     fe, ast = build_model(args)
+    store_model_structure_to_txt(
+        model=ast, 
+        output_path=os.path.join(args.output_path, f'{constants.architecture_dic[args.arch]}-{constants.dataset_dic[args.dataset]}-{args.corruption_type}-{args.corruption_level}{args.file_suffix}.txt'))
     optimizer = build_optimizer(args=args, model=ast)
     args.sample_rate = 16000
-    test_set = SpeechCommandsV2(
-        root_path=args.dataset_root_path, mode='testing', download=True,
-        data_tf=Components(transforms=[
-            AudioPadding(max_length=args.sample_rate, sample_rate=args.sample_rate, random_shift=False),
-            DynEN(noise_list=en_noises(args), lsnr=5, rsnr=10, step=1)
-        ])
-    )
+    if args.corruption_type == 'ENQ':
+        if args.corruption_level == 'L1':
+            snrs = [5, 1, 10]
+        elif args.corruption_level == 'L2':
+            snrs = [3, 0.5, 5]
+        test_set = SpeechCommandsV2(
+            root_path=args.dataset_root_path, mode='testing', download=True,
+            data_tf=Components(transforms=[
+                AudioPadding(max_length=args.sample_rate, sample_rate=args.sample_rate, random_shift=False),
+                DynEN(noise_list=enq_noises(args), lsnr=snrs[0], rsnr=snrs[2], step=snrs[1])
+            ])
+        )
     dataset_root_path = os.path.join(args.cache_path, args.dataset)
     index_file_name = 'metaInfo.csv'
     mlt_store_to(
@@ -246,7 +256,7 @@ if __name__ == '__main__':
             ttl_ent_loss += ent_loss.cpu().item()
             ttl_gent_loss += gent_loss.cpu().item()
 
-            learning_rate = optimizer.param_groups[0]['lr']
+        learning_rate = optimizer.param_groups[0]['lr']
         if epoch % args.interval == 0:
             lr_scheduler(optimizer=optimizer, epoch=epoch, lr_cardinality=args.lr_cardinality, gamma=args.lr_gamma, threshold=args.lr_threshold)
 
@@ -255,7 +265,9 @@ if __name__ == '__main__':
         print(f'Accuracy is: {accuracy:.4f}%, sample size is: {len(adapt_set)}')
         if accuracy >= max_accu:
             max_accu = accuracy
-            # torch.save(ast.state_dict(), os.path.join(args.output_path, f'{args.arch}-{constants.dataset_dic[args.dataset]}-ast-{constants.corruption_dic[args.corruption_type]}{args.file_suffix}.pt'))
+            torch.save(
+                ast.state_dict(), 
+                os.path.join(args.output_path, f'{constants.architecture_dic[args.arch]}-{constants.dataset_dic[args.dataset]}-{args.corruption_type}-{args.corruption_level}{args.file_suffix}.pt'))
 
         wandb_run.log(
             data={
