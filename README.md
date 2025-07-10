@@ -64,6 +64,6 @@ Cochl Acoustic Scene Dataset, or CochlScene, is a new acoustic scene dataset who
 [Dataset Link](https://zenodo.org/records/7080122)
 
 ## Code Reference
-+ [MMAuT](https://github.com/Andy-Shao/MMAuT)
++ [AMAuT](https://github.com/Andy-Shao/AMAuT)
 + [SSAST](https://github.com/YuanGongND/ssast/tree/main)
 + [Test-time-Adaptation-in-AC](https://github.com/Andy-Shao/Test-time-Adaptation-in-AC)
