@@ -20,24 +20,6 @@ from lib.spdataset import SpeechCommandsV2
 from lib.corruption import DynEN
 from lib.dataset import mlt_store_to, mlt_load_from, MultiTFDataset
 
-def collate_fn2(batch): 
-    fs1, fs2, labels = [], [], []
-    for f1, f2, l in batch:
-        f1 = torch.squeeze(f1, dim=0)
-        f2 = torch.squeeze(f2, dim=0)
-        fs1.append(f1)
-        fs2.append(f2)
-        labels.append(l)
-    return torch.stack(fs1), torch.stack(fs2), torch.tensor(labels)
-
-def collate_fn(batch): 
-    features, labels = [], []
-    for f, l in batch:
-        f = torch.squeeze(f, dim=0)
-        features.append(f)
-        labels.append(l)
-    return torch.stack(features), torch.tensor(labels)
-
 def inference(args:argparse.Namespace, ast:ASTForAudioClassification, data_loader:DataLoader) -> float:
     ast.eval()
     ttl_curr, ttl_size = 0., 0.
@@ -205,11 +187,11 @@ if __name__ == '__main__':
     )
     test_set = mlt_load_from(
         root_path=dataset_root_path, index_file_name=index_file_name, 
-        data_tfs=[ASTFeatureExt(feature_extractor=fe, sample_rate=args.sample_rate)]
+        data_tfs=[ASTFeatureExt(feature_extractor=fe, sample_rate=args.sample_rate, mode='batch')]
     )
     test_loader = DataLoader(
         dataset=test_set, batch_size=args.batch_size, shuffle=False, drop_last=False, num_workers=args.num_workers, 
-        pin_memory=True, collate_fn=collate_fn
+        pin_memory=True
     )
     adapt_set = mlt_load_from(root_path=dataset_root_path, index_file_name=index_file_name,)
     adapt_set = MultiTFDataset(
@@ -217,17 +199,17 @@ if __name__ == '__main__':
         tfs=[
             Components(transforms=[
                 time_shift(shift_limit=.17, is_random=True, is_bidirection=False),
-                ASTFeatureExt(feature_extractor=fe, sample_rate=args.sample_rate)
+                ASTFeatureExt(feature_extractor=fe, sample_rate=args.sample_rate, mode='batch')
             ]),
             Components(transforms=[
                 time_shift(shift_limit=-.17, is_random=True, is_bidirection=False),
-                ASTFeatureExt(feature_extractor=fe, sample_rate=args.sample_rate)
+                ASTFeatureExt(feature_extractor=fe, sample_rate=args.sample_rate, mode='batch')
             ])
         ]
     )
     adapt_loader = DataLoader(
         dataset=adapt_set, batch_size=args.batch_size, shuffle=True, drop_last=False, num_workers=args.num_workers,
-        pin_memory=True, collate_fn=collate_fn2
+        pin_memory=True
     )
     print('Pre-adaptation')
     accuracy = inference(args=args, ast=ast, data_loader=test_loader)
