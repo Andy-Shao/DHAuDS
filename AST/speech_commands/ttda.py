@@ -9,7 +9,7 @@ from transformers import AutoFeatureExtractor, ASTForAudioClassification
 import torch
 from torch import optim
 from torch import nn
-from torch.utils.data import DataLoader
+from torch.utils.data import DataLoader, Dataset
 from torchaudio import transforms
 
 from lib.utils import make_unless_exits, print_argparse, store_model_structure_to_txt
@@ -19,6 +19,21 @@ from lib.component import Components, Stereo2Mono, AudioPadding, ASTFeatureExt, 
 from lib.spdataset import SpeechCommandsV2
 from lib.corruption import DynEN
 from lib.dataset import mlt_store_to, mlt_load_from, MultiTFDataset
+
+def corrupt_data(args:argparse.Namespace) -> Dataset:
+    if args.corruption_type == 'ENQ':
+        if args.corruption_level == 'L1':
+            snrs = [5, 1, 10]
+        elif args.corruption_level == 'L2':
+            snrs = [3, 0.5, 5]
+        test_set = SpeechCommandsV2(
+            root_path=args.dataset_root_path, mode='testing', download=True,
+            data_tf=Components(transforms=[
+                AudioPadding(max_length=args.sample_rate, sample_rate=args.sample_rate, random_shift=False),
+                DynEN(noise_list=enq_noises(args), lsnr=snrs[0], rsnr=snrs[2], step=snrs[1])
+            ])
+        )
+    return test_set
 
 def inference(args:argparse.Namespace, ast:ASTForAudioClassification, data_loader:DataLoader) -> float:
     ast.eval()
@@ -177,18 +192,7 @@ if __name__ == '__main__':
         output_path=os.path.join(args.output_path, f'{constants.architecture_dic[args.arch]}-{constants.dataset_dic[args.dataset]}-{args.corruption_type}-{args.corruption_level}{args.file_suffix}.txt'))
     optimizer = build_optimizer(args=args, model=ast)
     args.sample_rate = 16000
-    if args.corruption_type == 'ENQ':
-        if args.corruption_level == 'L1':
-            snrs = [5, 1, 10]
-        elif args.corruption_level == 'L2':
-            snrs = [3, 0.5, 5]
-        test_set = SpeechCommandsV2(
-            root_path=args.dataset_root_path, mode='testing', download=True,
-            data_tf=Components(transforms=[
-                AudioPadding(max_length=args.sample_rate, sample_rate=args.sample_rate, random_shift=False),
-                DynEN(noise_list=enq_noises(args), lsnr=snrs[0], rsnr=snrs[2], step=snrs[1])
-            ])
-        )
+    test_set = corrupt_data(args)
     dataset_root_path = os.path.join(args.cache_path, args.dataset)
     index_file_name = 'metaInfo.csv'
     mlt_store_to(
