@@ -23,9 +23,9 @@ from lib.dataset import mlt_store_to, mlt_load_from, MultiTFDataset
 def corrupt_data(args:argparse.Namespace) -> Dataset:
     if args.corruption_type == 'ENQ':
         if args.corruption_level == 'L1':
-            snrs = [5, 1, 10]
+            snrs = [10, 1, 15]
         elif args.corruption_level == 'L2':
-            snrs = [3, 0.5, 5]
+            snrs = [5, 1, 10]
         test_set = SpeechCommandsV2(
             root_path=args.dataset_root_path, mode='testing', download=True,
             data_tf=Components(transforms=[
