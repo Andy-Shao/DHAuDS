@@ -48,6 +48,9 @@ def inference(args:argparse.Namespace, ast:ASTForAudioClassification, data_loade
             ttl_size += labels.shape[0]
     return ttl_curr / ttl_size * 100.
 
+def end_noises(args:argparse.Namespace, noise_modes:list[str] = ['DKITCHEN', 'NFIELD', 'OOFFICE', 'STRAFFIC', 'TCAR']) -> list[torch.Tensor]:
+    pass
+
 def enq_noises(args:argparse.Namespace, noise_modes:list[str] = ['CAFE', 'HOME', 'STREET']) -> list[torch.Tensor]:
     background_path = args.noise_path
     noises = []
