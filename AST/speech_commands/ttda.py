@@ -17,7 +17,7 @@ from lib import constants
 from lib.acousticDataset import QUTNOISE, DEMAND
 from lib.component import Components, Stereo2Mono, AudioPadding, ASTFeatureExt, DoNothing, time_shift
 from lib.spdataset import SpeechCommandsV2
-from lib.corruption import DynEN
+from lib.corruption import DynEN, WHN
 from lib.dataset import mlt_store_to, mlt_load_from, MultiTFDataset, MergSet
 
 def corrupt_data(args:argparse.Namespace, mode:str='train') -> Dataset:
@@ -44,6 +44,18 @@ def corrupt_data(args:argparse.Namespace, mode:str='train') -> Dataset:
             data_tf=Components(transforms=[
                 AudioPadding(max_length=args.sample_rate, sample_rate=args.sample_rate, random_shift=False),
                 DynEN(noise_list=end_noises(args), lsnr=snrs[0], rsnr=snrs[2], step=snrs[1])
+            ])
+        )
+    elif args.corruption_type == 'WHN':
+        if args.corruption_level == 'L1':
+            snrs = [10, 1, 15] if mode == 'eval' else [10, 0, 10]
+        elif args.corruption_level == 'L2':
+            snrs = [5, 1, 10] if mode == 'eval' else [5, 0, 5]
+        test_set = SpeechCommandsV2(
+            root_path=args.dataset_root_path, mode='testing', download=True,
+            data_tf=Components(transforms=[
+                AudioPadding(max_length=args.sample_rate, sample_rate=args.sample_rate, random_shift=False),
+                WHN(lsnr=snrs[0], rsnr=snrs[2], step=snrs[1])
             ])
         )
     else:
