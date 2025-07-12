@@ -33,6 +33,20 @@ def corrupt_data(args:argparse.Namespace) -> Dataset:
                 DynEN(noise_list=enq_noises(args), lsnr=snrs[0], rsnr=snrs[2], step=snrs[1])
             ])
         )
+    elif args.corruption_type == 'END':
+        if args.corruption_level == 'L1':
+            snrs = [10, 1, 15]
+        elif args.corruption_level == 'L2':
+            snrs = [5, 1, 10]
+        test_set = SpeechCommandsV2(
+            root_path=args.dataset_root_path, mode='testing', download=True,
+            data_tf=Components(transforms=[
+                AudioPadding(max_length=args.sample_rate, sample_rate=args.sample_rate, random_shift=False),
+                DynEN(noise_list=end_noises(args), lsnr=snrs[0], rsnr=snrs[2], step=snrs[1])
+            ])
+        )
+    else:
+        raise Exception('No support')
     return test_set
 
 def inference(args:argparse.Namespace, ast:ASTForAudioClassification, data_loader:DataLoader) -> float:
@@ -48,17 +62,13 @@ def inference(args:argparse.Namespace, ast:ASTForAudioClassification, data_loade
             ttl_size += labels.shape[0]
     return ttl_curr / ttl_size * 100.
 
-def end_noises(args:argparse.Namespace, noise_modes:list[str] = ['DKITCHEN', 'NFIELD', 'OOFFICE', 'STRAFFIC', 'TCAR']) -> list[torch.Tensor]:
+def end_noises(args:argparse.Namespace, noise_modes:list[str] = ['DKITCHEN', 'NFIELD', 'OOFFICE', 'PRESTO', 'TCAR']) -> list[torch.Tensor]:
     noises = []
     print('Loading noise files...')
-    demand_set = MergSet([
-        DEMAND(
-            root_path=args.noise_path, mode=md, include_rate=False, 
-            data_tf=Components(transforms=[
-                DoNothing()
-            ])
-        ) for md in noise_modes
-    ])
+    demand_set = MergSet([DEMAND(root_path=args.noise_path, mode=md, include_rate=False) for md in noise_modes])
+    for wavform in tqdm(demand_set):
+        noises.append(wavform)
+    print(f'TTL noise size is: {len(noises)}')
     return noises
 
 def enq_noises(args:argparse.Namespace, noise_modes:list[str] = ['CAFE', 'HOME', 'STREET']) -> list[torch.Tensor]:
@@ -76,7 +86,7 @@ def enq_noises(args:argparse.Namespace, noise_modes:list[str] = ['CAFE', 'HOME',
     ])
     for wavform in tqdm(qutnoise_set):
         noises.append(wavform)
-    print(f'TTl noise size is: {len(noises)}')
+    print(f'TTL noise size is: {len(noises)}')
     return noises
 
 def g_entropy(args:argparse.Namespace, outputs:torch.Tensor, q:float=.9) -> torch.Tensor:
@@ -179,6 +189,7 @@ if __name__ == '__main__':
     args = ap.parse_args()
     if args.dataset == 'SpeechCommandsV2':
         args.class_num = 35
+        args.sample_rate = 16000
     else:
         raise Exception('No support!')
     args.device = 'cuda' if torch.cuda.is_available() else 'cpu'
@@ -204,7 +215,6 @@ if __name__ == '__main__':
         model=ast, 
         output_path=os.path.join(args.output_path, f'{constants.architecture_dic[args.arch]}-{constants.dataset_dic[args.dataset]}-{args.corruption_type}-{args.corruption_level}{args.file_suffix}.txt'))
     optimizer = build_optimizer(args=args, model=ast)
-    args.sample_rate = 16000
     test_set = corrupt_data(args)
     dataset_root_path = os.path.join(args.cache_path, args.dataset)
     index_file_name = 'metaInfo.csv'
