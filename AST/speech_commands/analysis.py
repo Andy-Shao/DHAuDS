@@ -1,6 +1,8 @@
 import argparse
 import os
 import pandas as pd
+import shutil
+import time
 
 import torch
 from torch.utils.data import DataLoader
@@ -30,6 +32,7 @@ if __name__ == '__main__':
     ap.add_argument('--wandb', action='store_true')
     ap.add_argument('--seed', type=int, default=2025, help='random seed')
     ap.add_argument('--adpt_wght_pth', type=str)
+    ap.add_argument('--repeat_no', type=int, default=3)
 
     args = ap.parse_args()
     if args.dataset == 'SpeechCommandsV2':
@@ -45,36 +48,47 @@ if __name__ == '__main__':
 
     print_argparse(args)
     ##########################################
-    records = pd.DataFrame(columns=['Dataset', 'Algorithm', 'Param No.', 'Adapted', 'Accuracy', 'Error-rate'])
+    records = pd.DataFrame(columns=['index', 'Dataset', 'Algorithm', 'Param No.', 'No-adapted', 'Adapted'])
 
-    fe, ast = build_model(args)
-    param_no = count_ttl_params(model=ast)
-    test_set = corrupt_data(args)
-    dataset_root_path = os.path.join(args.cache_path, args.dataset)
-    index_file_name = 'metaInfo.csv'
-    mlt_store_to(
-        dataset=test_set, root_path=dataset_root_path, index_file_name=index_file_name,
-        data_tfs=[DoNothing()]
-    )
-    test_set = mlt_load_from(
-        root_path=dataset_root_path, index_file_name=index_file_name, 
-        data_tfs=[ASTFeatureExt(feature_extractor=fe, sample_rate=args.sample_rate, mode='batch')]
-    )
-    test_loader = DataLoader(
-        dataset=test_set, batch_size=args.batch_size, shuffle=False, drop_last=False, num_workers=args.num_workers, 
-        pin_memory=True
-    )
+    cpt_set = corrupt_data(args, mode='eval')
+    for idx in range(args.repeat_no):
 
-    print('Non-adapted')
-    accuracy = inference(args=args, ast=ast, data_loader=test_loader)
-    print(f'Non-adapted accuracy: {accuracy:.4f}%, sample size: {len(test_set)}')
-    records.loc[len(records)] = [constants.dataset_dic[args.dataset], constants.architecture_dic[args.arch], param_no, 'No', accuracy, 100.-accuracy]
+        fe, ast = build_model(args)
+        param_no = count_ttl_params(model=ast)
+        dataset_root_path = os.path.join(os.path.join(args.cache_path, args.dataset))
+        index_file_name = 'metaInfo.csv'
+        mlt_store_to(
+            dataset=cpt_set, root_path=dataset_root_path, index_file_name=index_file_name,
+            data_tfs=[DoNothing()]
+        )
+        test_set = mlt_load_from(
+            root_path=dataset_root_path, index_file_name=index_file_name, 
+            data_tfs=[ASTFeatureExt(feature_extractor=fe, sample_rate=args.sample_rate, mode='batch')]
+        )
+        test_loader = DataLoader(
+            dataset=test_set, batch_size=args.batch_size, shuffle=False, drop_last=False, num_workers=args.num_workers, 
+            pin_memory=True
+        )
+
+        print('Non-adapted')
+        no_adpt_accu = inference(args=args, ast=ast, data_loader=test_loader)
+        print(f'Non-adapted accuracy: {no_adpt_accu:.4f}%, sample size: {len(test_set)}')
     
-    print('Adapted')
-    load_weight(args=args, model=ast)
-    accuracy = inference(args=args, ast=ast, data_loader=test_loader)
-    print(f'Adapted accuracy: {accuracy:.4f}%, sample size: {len(test_set)}')
-    records.loc[len(records)] = [constants.dataset_dic[args.dataset], constants.architecture_dic[args.arch], param_no, 'Yes', accuracy, 100.-accuracy]
+        print('Adapted')
+        load_weight(args=args, model=ast)
+        adpt_accu = inference(args=args, ast=ast, data_loader=test_loader)
+        print(f'Adapted accuracy: {adpt_accu:.4f}%, sample size: {len(test_set)}')
+        records.loc[len(records)] = [
+            idx, constants.dataset_dic[args.dataset], constants.architecture_dic[args.arch], 
+            param_no, no_adpt_accu, adpt_accu
+        ]
+    no_adpt_accu = records['No-adapted'].mean()
+    adpt_accu = records['Adapted'].mean()
+    records.loc[len(records)] = [
+        'Mean', constants.dataset_dic[args.dataset], constants.architecture_dic[args.arch], 
+        param_no, no_adpt_accu, adpt_accu
+    ]
+    print(f'No-adapted mean accuracy: {no_adpt_accu:.4f}%, adapted mean accuracy: {adpt_accu:.4f}%')
 
     records.to_csv(os.path.join(
         args.output_path, 
