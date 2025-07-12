@@ -93,4 +93,4 @@ if __name__ == '__main__':
     records.to_csv(os.path.join(
         args.output_path, 
         f'{constants.architecture_dic[args.arch]}-{constants.dataset_dic[args.dataset]}-{args.corruption_type}-{args.corruption_level}{args.file_suffix}.csv'
-    ))
+    ), index=False)
