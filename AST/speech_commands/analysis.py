@@ -50,7 +50,7 @@ if __name__ == '__main__':
     ##########################################
     records = pd.DataFrame(columns=['index', 'Dataset', 'Algorithm', 'Param No.', 'No-adapted', 'Adapted'])
 
-    cpt_set = corrupt_data(args, mode='eval')
+    cpt_set = corrupt_data(args)
     for idx in range(args.repeat_no):
 
         fe, ast = build_model(args)

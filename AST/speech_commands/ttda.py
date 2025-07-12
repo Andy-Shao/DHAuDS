@@ -20,13 +20,12 @@ from lib.spdataset import SpeechCommandsV2
 from lib.corruption import DynEN, WHN
 from lib.dataset import mlt_store_to, mlt_load_from, MultiTFDataset, MergSet
 
-def corrupt_data(args:argparse.Namespace, mode:str='train') -> Dataset:
-    assert mode in ['train', 'eval'], 'No support'
+def corrupt_data(args:argparse.Namespace) -> Dataset:
     if args.corruption_type == 'ENQ':
         if args.corruption_level == 'L1':
-            snrs = [10, 1, 15] if mode == 'eval' else [10, 0, 10]
+            snrs = [10, 1, 15]
         elif args.corruption_level == 'L2':
-            snrs = [5, 1, 10] if mode == 'eval' else [5, 0, 5]
+            snrs = [3, 1, 7]
         test_set = SpeechCommandsV2(
             root_path=args.dataset_root_path, mode='testing', download=True,
             data_tf=Components(transforms=[
@@ -36,9 +35,9 @@ def corrupt_data(args:argparse.Namespace, mode:str='train') -> Dataset:
         )
     elif args.corruption_type == 'END':
         if args.corruption_level == 'L1':
-            snrs = [10, 1, 15] if mode == 'eval' else [10, 0, 10]
+            snrs = [10, 1, 15]
         elif args.corruption_level == 'L2':
-            snrs = [5, 1, 10] if mode == 'eval' else [5, 0, 5]
+            snrs = [5, 1, 10]
         test_set = SpeechCommandsV2(
             root_path=args.dataset_root_path, mode='testing', download=True,
             data_tf=Components(transforms=[
@@ -48,9 +47,9 @@ def corrupt_data(args:argparse.Namespace, mode:str='train') -> Dataset:
         )
     elif args.corruption_type == 'WHN':
         if args.corruption_level == 'L1':
-            snrs = [10, 1, 15] if mode == 'eval' else [10, 0, 10]
+            snrs = [10, 1, 15]
         elif args.corruption_level == 'L2':
-            snrs = [5, 1, 10] if mode == 'eval' else [5, 0, 5]
+            snrs = [5, 1, 10]
         test_set = SpeechCommandsV2(
             root_path=args.dataset_root_path, mode='testing', download=True,
             data_tf=Components(transforms=[
