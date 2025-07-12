@@ -5,6 +5,40 @@ import torchaudio
 from torch.utils.data import Dataset
 from torch import nn
 
+class DEMAND(Dataset):
+    def __init__(self, root_path:str, mode:str, include_rate:bool=False, data_tf:nn.Module=None):
+        super().__init__()
+        assert mode in [
+            'DKITCHEN', 'DLIVING', 'DWASHING', 'NFIELD', 'NPARK', 'NRIVER', 'OHALLWAY',
+            'OMEETING', 'OOFFICE', 'PCAFETER', 'PRESTO', 'PSTATION', 'SPSQUARE', 'STRAFFIC',
+            'TBUS', 'TCAR', 'TMETRO'
+        ]
+        self.mode = mode
+        self.root_path = root_path
+        self.include_rate = include_rate
+        self.data_tf = data_tf 
+        self.wav_list = self.__scan_wav__()
+    
+    def __scan_wav__(self) -> list[str]:
+        wav_path = os.path.join(self.root_path, self.mode)
+        ret = []
+        for f in os.listdir(wav_path):
+            if f.endswith('.wav'):
+                ret.append(os.path.join(wav_path, f))
+        return ret
+    
+    def __len__(self):
+        return len(self.wav_list)
+    
+    def __getitem__(self, index):
+        wav_path = self.wav_list[index]
+        wavform, sample_rate = torchaudio.load(wav_path, normalize=True)
+        if self.data_tf is not None:
+            wavform = self.data_tf(wavform)
+        if self.include_rate:
+            return wavform, sample_rate
+        else: return wavform
+
 class QUTNOISE(Dataset):
     def __init__(self, root_path:str, mode:str, include_rate:bool=False, data_tf:nn.Module=None):
         super().__init__()

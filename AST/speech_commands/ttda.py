@@ -14,11 +14,11 @@ from torchaudio import transforms
 
 from lib.utils import make_unless_exits, print_argparse, store_model_structure_to_txt
 from lib import constants
-from lib.acousticDataset import QUTNOISE
+from lib.acousticDataset import QUTNOISE, DEMAND
 from lib.component import Components, Stereo2Mono, AudioPadding, ASTFeatureExt, DoNothing, time_shift
 from lib.spdataset import SpeechCommandsV2
 from lib.corruption import DynEN
-from lib.dataset import mlt_store_to, mlt_load_from, MultiTFDataset
+from lib.dataset import mlt_store_to, mlt_load_from, MultiTFDataset, MergSet
 
 def corrupt_data(args:argparse.Namespace) -> Dataset:
     if args.corruption_type == 'ENQ':
@@ -49,24 +49,34 @@ def inference(args:argparse.Namespace, ast:ASTForAudioClassification, data_loade
     return ttl_curr / ttl_size * 100.
 
 def end_noises(args:argparse.Namespace, noise_modes:list[str] = ['DKITCHEN', 'NFIELD', 'OOFFICE', 'STRAFFIC', 'TCAR']) -> list[torch.Tensor]:
-    pass
+    noises = []
+    print('Loading noise files...')
+    demand_set = MergSet([
+        DEMAND(
+            root_path=args.noise_path, mode=md, include_rate=False, 
+            data_tf=Components(transforms=[
+                DoNothing()
+            ])
+        ) for md in noise_modes
+    ])
+    return noises
 
 def enq_noises(args:argparse.Namespace, noise_modes:list[str] = ['CAFE', 'HOME', 'STREET']) -> list[torch.Tensor]:
     background_path = args.noise_path
     noises = []
     print('Loading noise files...')
-    for mode in tqdm(noise_modes):
-        noise_set = QUTNOISE(
-            root_path=background_path, 
-            mode=mode, 
-            include_rate=False,
+    qutnoise_set = MergSet([
+        QUTNOISE(
+            root_path=background_path, mode=md, include_rate=False,
             data_tf=Components(transforms=[
                 transforms.Resample(orig_freq=48000, new_freq=args.sample_rate),
                 Stereo2Mono()
             ])
-        )
-        for wavform in noise_set:
-            noises.append(wavform)
+        ) for md in noise_modes
+    ])
+    for wavform in tqdm(qutnoise_set):
+        noises.append(wavform)
+    print(f'TTl noise size is: {len(noises)}')
     return noises
 
 def g_entropy(args:argparse.Namespace, outputs:torch.Tensor, q:float=.9) -> torch.Tensor:

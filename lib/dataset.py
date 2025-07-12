@@ -209,3 +209,39 @@ class IdxSet(Dataset):
         ret = [index]
         ret += data
         return tuple(ret)
+
+class BiMergSet(Dataset):
+    def __init__(self, set1:Dataset, set2:Dataset):
+        super().__init__()
+        self.set1 = set1
+        self.set2 = set2
+
+    def __len__(self):
+        return len(self.set1) + len(self.set2)
+
+    def __getitem__(self, index):
+        if index >= len(self.set1):
+            index -= len(self.set1)
+            return self.set2[index]
+        else:
+            return self.set1[index]
+
+class MergSet(Dataset):
+    def __init__(self, set_lst:list[Dataset]):
+        super().__init__()
+        set_size = len(set_lst)
+        assert set_size > 0, 'No support'
+        if set_size == 1:
+            self.dataset = set_lst[0]
+        elif set_size == 2:
+            self.dataset = BiMergSet(set_lst[0], set_lst[1])
+        else:
+            self.dataset = BiMergSet(set_lst[0], set_lst[1])
+            for idx in range(2, set_size):
+                self.dataset = BiMergSet(self.dataset, set_lst[idx])
+    
+    def __len__(self):
+        return len(self.dataset)
+
+    def __getitem__(self, index):
+        return self.dataset[index]
