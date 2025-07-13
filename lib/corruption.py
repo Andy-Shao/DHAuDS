@@ -13,19 +13,17 @@ class WHN(nn.Module):
 
     def forward(self, wavform:torch.Tensor) -> torch.Tensor:
         channel, length = wavform.size()
-        noise_type = random.randint(0, 1)
-        if noise_type == 0: # Gaussian noise
-            noise = torch.normal(mean=0., std=1., size=[channel, length])
-        else: # Uniform noise
-            noise = torch.rand([channel, length])
-        if self.rsnr == self.lsnr:
-            corr_wav = add_noise(waveform=wavform, noise=noise, snr=torch.tensor([self.lsnr]))
-        else:
+        for nt in ['Guassian', 'Uniform']:
+            if nt == 'Guassian':
+                noise = torch.normal(mean=0., std=1., size=[channel, length])
+            elif nt == 'Uniform':
+                noise = torch.rand([channel, length])
             snr_num = int((self.rsnr - self.lsnr)/self.step)
-            corr_wav = add_noise(
-                waveform=wavform, noise=noise, snr=torch.tensor([self.lsnr + (random.randint(0, snr_num) * self.step)])
+            wavform = add_noise(
+                waveform=wavform, noise=noise,
+                snr=torch.tensor([self.lsnr + (random.randint(0, snr_num) * self.step)])
             )
-        return corr_wav
+        return wavform
 
 class DynEN(nn.Module):
     def __init__(self, noise_list:list[torch.Tensor], lsnr:float, rsnr:float, step:float):
