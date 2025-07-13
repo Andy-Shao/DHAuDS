@@ -48,7 +48,7 @@ if __name__ == '__main__':
 
     print_argparse(args)
     ##########################################
-    records = pd.DataFrame(columns=['index', 'Dataset', 'Algorithm', 'Param No.', 'No-adapted', 'Adapted'])
+    records = pd.DataFrame(columns=['index', 'Dataset', 'Algorithm', 'Param No.', 'No-adapted', 'Adapted', 'Increase'])
 
     cpt_set = corrupt_data(args)
     for idx in range(args.repeat_no):
@@ -80,13 +80,13 @@ if __name__ == '__main__':
         print(f'Adapted accuracy: {adpt_accu:.4f}%, sample size: {len(test_set)}')
         records.loc[len(records)] = [
             idx, constants.dataset_dic[args.dataset], constants.architecture_dic[args.arch], 
-            param_no, no_adpt_accu, adpt_accu
+            param_no, no_adpt_accu, adpt_accu, adpt_accu - no_adpt_accu
         ]
     no_adpt_accu = records['No-adapted'].mean()
     adpt_accu = records['Adapted'].mean()
     records.loc[len(records)] = [
         'Mean', constants.dataset_dic[args.dataset], constants.architecture_dic[args.arch], 
-        param_no, no_adpt_accu, adpt_accu
+        param_no, no_adpt_accu, adpt_accu, adpt_accu - no_adpt_accu
     ]
     print(f'No-adapted mean accuracy: {no_adpt_accu:.4f}%, adapted mean accuracy: {adpt_accu:.4f}%')
 
