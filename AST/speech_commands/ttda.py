@@ -17,27 +17,32 @@ from lib import constants
 from lib.acousticDataset import QUTNOISE, DEMAND
 from lib.component import Components, Stereo2Mono, AudioPadding, ASTFeatureExt, DoNothing, time_shift
 from lib.spdataset import SpeechCommandsV2
-from lib.corruption import DynEN, WHN
-from lib.dataset import mlt_store_to, mlt_load_from, MultiTFDataset, MergSet
+from lib.corruption import DynEN, WHN, DynPSH
+from lib.dataset import mlt_store_to, mlt_load_from, MultiTFDataset, MergSet, GpuMultiTFDataset
 
 def corrupt_data(args:argparse.Namespace) -> Dataset:
-    if args.corruption_type == 'ENQ':
-        if args.corruption_level == 'L1':
-            snrs = [10, 1, 15]
-        elif args.corruption_level == 'L2':
-            snrs = [5, 1, 10]
+    if args.corruption_level == 'L1':
+        snrs = [10, 1, 15]
+        steps = [0, 3]
+    elif args.corruption_level == 'L2':
+        snrs = [5, 1, 10]
+        steps = [2, 5]
+    if args.corruption_type == 'ENQP':
+        modes = ['CAFE', 'CAR', 'HOME', 'REVERB', 'STREET']
         test_set = SpeechCommandsV2(
             root_path=args.dataset_root_path, mode='testing', download=True,
             data_tf=Components(transforms=[
                 AudioPadding(max_length=args.sample_rate, sample_rate=args.sample_rate, random_shift=False),
-                DynEN(noise_list=enq_noises(args), lsnr=snrs[0], rsnr=snrs[2], step=snrs[1])
+                DynEN(noise_list=enq_noises(args, noise_modes=modes), lsnr=snrs[0], rsnr=snrs[2], step=snrs[1])
             ])
         )
-    elif args.corruption_type == 'END1' or args.corruption_type == 'END2':
-        if args.corruption_level == 'L1':
-            snrs = [10, 1, 15]
-        elif args.corruption_level == 'L2':
-            snrs = [5, 1, 10]
+        test_set = GpuMultiTFDataset(
+            dataset=test_set, device=args.device, maintain_cpu=True,
+            tfs=[
+                DynPSH(sample_rate=args.sample_rate, min_steps=steps[0], max_steps=steps[1], is_bidirection=True),
+            ]
+        )
+    elif args.corruption_type == 'ENDP1' or args.corruption_type == 'ENDP2':
         if args.corruption_type == 'END1':
             modes = ['DKITCHEN', 'NFIELD', 'STRAFFIC']
         elif args.corruption_type == 'END2':
@@ -49,17 +54,19 @@ def corrupt_data(args:argparse.Namespace) -> Dataset:
                 DynEN(noise_list=end_noises(args, noise_modes=modes), lsnr=snrs[0], rsnr=snrs[2], step=snrs[1])
             ])
         )
-    elif args.corruption_type == 'WHN':
-        if args.corruption_level == 'L1':
-            snrs = [10, 1, 15]
-        elif args.corruption_level == 'L2':
-            snrs = [5, 1, 10]
+    elif args.corruption_type == 'WHNP':
         test_set = SpeechCommandsV2(
             root_path=args.dataset_root_path, mode='testing', download=True,
             data_tf=Components(transforms=[
                 AudioPadding(max_length=args.sample_rate, sample_rate=args.sample_rate, random_shift=False),
                 WHN(lsnr=snrs[0], rsnr=snrs[2], step=snrs[1])
             ])
+        )
+        test_set = GpuMultiTFDataset(
+            dataset=test_set, device=args.device, maintain_cpu=True,
+            tfs=[
+                DynPSH(sample_rate=args.sample_rate, min_steps=steps[0], max_steps=steps[1], is_bidirection=True)
+            ]
         )
     else:
         raise Exception('No support')
@@ -182,7 +189,7 @@ if __name__ == '__main__':
     ap.add_argument('--dataset', type=str, default='SpeechCommandsV2', choices=['SpeechCommandsV2'])
     ap.add_argument('--dataset_root_path', type=str)
     ap.add_argument('--noise_path', type=str)
-    ap.add_argument('--corruption_type', type=str, choices=['WHN', 'ENQ', 'END1', 'END2', 'TST+PSH', 'DP+PSH'])
+    ap.add_argument('--corruption_type', type=str, choices=['WHNP', 'ENQP', 'ENDP1', 'ENDP2'])
     ap.add_argument('--corruption_level', type=str, choices=['L1', 'L2'])
     ap.add_argument('--num_workers', type=int, default=16)
     ap.add_argument('--output_path', type=str, default='./result')

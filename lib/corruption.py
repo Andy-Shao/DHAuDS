@@ -2,7 +2,7 @@ import random
 
 import torch
 from torch import nn
-from torchaudio.functional import add_noise
+from torchaudio.functional import add_noise, pitch_shift
 
 class WHN(nn.Module):
     def __init__(self, lsnr:float, rsnr:float, step:float):
@@ -46,3 +46,17 @@ class DynEN(nn.Module):
                 waveform=wavform, noise=noise, snr=torch.tensor([self.lsnr + (random.randint(0, snr_num) * self.step)])
             )
         return corr_wav
+
+class DynPSH(nn.Module):
+    def __init__(self, sample_rate:int, min_steps:int, max_steps:int, is_bidirection:bool=False):
+        super().__init__()
+        self.min_steps = min_steps
+        self.max_steps = max_steps
+        self.is_bidirection = is_bidirection
+        self.sample_rate = sample_rate
+
+    def forward(self, wavform:torch.Tensor) -> torch.Tensor:
+        step = random.randint(self.min_steps, self.max_steps)
+        if self.is_bidirection and random.randint(0, 1) == 1:
+            step = - step
+        return pitch_shift(waveform=wavform, sample_rate=self.sample_rate, n_steps=step)
