@@ -43,16 +43,22 @@ def corrupt_data(args:argparse.Namespace) -> Dataset:
             ]
         )
     elif args.corruption_type == 'ENDP1' or args.corruption_type == 'ENDP2':
-        if args.corruption_type == 'END1':
-            modes = ['DKITCHEN', 'NFIELD', 'STRAFFIC']
-        elif args.corruption_type == 'END2':
-            modes = ['PRESTO', 'TCAR', 'OOFFICE']
+        if args.corruption_type == 'ENDP1':
+            modes = ['DKITCHEN', 'NFIELD', 'STRAFFIC', 'PRESTO', 'TCAR', 'OOFFICE']
+        elif args.corruption_type == 'ENDP2':
+            modes = ['DLIVING', 'NRIVER', 'OHALLWAY', 'PSTATION', 'SPSQUARE', 'TMETRO']
         test_set = SpeechCommandsV2(
             root_path=args.dataset_root_path, mode='testing', download=True,
             data_tf=Components(transforms=[
                 AudioPadding(max_length=args.sample_rate, sample_rate=args.sample_rate, random_shift=False),
                 DynEN(noise_list=end_noises(args, noise_modes=modes), lsnr=snrs[0], rsnr=snrs[2], step=snrs[1])
             ])
+        )
+        test_set = GpuMultiTFDataset(
+            dataset=test_set, device=args.device, maintain_cpu=True,
+            tfs=[
+                DynPSH(sample_rate=args.sample_rate, min_steps=steps[0], max_steps=steps[1], is_bidirection=True)
+            ]
         )
     elif args.corruption_type == 'WHNP':
         test_set = SpeechCommandsV2(
