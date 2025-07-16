@@ -14,6 +14,17 @@ pip install wandb==0.19.11
 ```
 
 ## Datasets
+### AudioMNIST
+This repository contains code and data used in Interpreting and Explaining Deep Neural Networks for Classifying Audio Signals. The dataset consists of 30,000 audio samples of spoken digits (0–9) from 60 different speakers. Additionally, it holds the audioMNIST_meta.txt, which provides meta information such as the gender or age of each speaker.
+
++ Sample size: 30000 (Train: 18000, Validation: 6000, Test: 6000)
++ Sample rate: 48000
++ Audio length: 1 second
++ Class Number: 10
+<!-- + sample data shape: [1, 14073 - 47998] -->
+  
+[Official Audio MNIST Link](https://github.com/soerenab/AudioMNIST/tree/master)<br/>
+[Dataset Hosting Link](https://drive.google.com/file/d/1kq5_qCKRUTHmViDIziSRKPjW4fIoyT9u/view?usp=drive_link)
 <!-- ### SpeechCommands V1
 The dataset (1.4 GB) has 65,000 one-second long utterances of 30 short words by thousands of different people, contributed by public members through the AIY website. This is a set of one-second .wav audio files, each containing a single spoken English word.
 
