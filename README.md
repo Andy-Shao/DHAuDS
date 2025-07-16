@@ -1,10 +1,10 @@
-# NTTA
+# A Dynamic and Heterogeneous Audio Domain Shift (DHAuDS) for Test-time Adaptation on Audio Classification
 
 ## Software Environment
 Docker image id: nvidia/cuda:12.4.0-runtime-ubuntu22.04
 ```shell
-conda create --name NTTA python=3.12 -y
-conda activate NTTA
+conda create --name DHAuDS python=3.12 -y
+conda activate DHAuDS
 # CUDA 12.4
 conda install pytorch==2.4.1 torchvision==0.19.1 torchaudio==2.4.1 pytorch-cuda=12.4 -c pytorch -c nvidia -y
 conda install conda-forge::transformers==4.52.4 -y
