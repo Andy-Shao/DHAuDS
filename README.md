@@ -81,6 +81,7 @@ QUT-NOISE is an environmental acoustic dataset for environmental background nois
 + Sample size: 20
 + Audio length: ???
 + Class Number: 5
+  
 [Official Link](https://research.qut.edu.au/saivt/databases/qut-noise-databases-and-protocols/)
 
 ### DEMAND
@@ -89,6 +90,7 @@ A database of 16-channel environmental noise recordings.
 + Sample size: ???
 + Audio length: ???
 + Class Number: 16
+  
 [Official Link](https://zenodo.org/records/1227121)
 
 ## Code Reference
