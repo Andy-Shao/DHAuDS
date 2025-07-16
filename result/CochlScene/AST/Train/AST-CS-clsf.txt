@@ -1,0 +1,4 @@
+ASTClssifier(
+  (norm): LayerNorm((527,), eps=1e-06, elementwise_affine=True)
+  (fc): Linear(in_features=527, out_features=13, bias=True)
+)
