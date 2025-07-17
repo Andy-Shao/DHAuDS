@@ -8,6 +8,7 @@ conda activate DHAuDS
 # CUDA 12.4
 conda install pytorch==2.4.1 torchvision==0.19.1 torchaudio==2.4.1 pytorch-cuda=12.4 -c pytorch -c nvidia -y
 conda install conda-forge::transformers==4.52.4 -y
+conda install -c conda-forge torchmetrics==1.7.4 -y
 conda install matplotlib==3.10.0 -y
 conda install jupyter==1.1.1 -y
 pip install wandb==0.19.11
