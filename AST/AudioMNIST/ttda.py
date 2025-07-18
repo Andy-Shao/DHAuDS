@@ -12,12 +12,12 @@ from transformers import ASTForAudioClassification
 
 from lib.utils import make_unless_exits, print_argparse
 from lib import constants
-from lib.dataset import GpuMultiTFDataset, mlt_load_from, mlt_store_to
+from lib.dataset import GpuMultiTFDataset, mlt_load_from, mlt_store_to, MultiTFDataset
 from lib.component import Components, AudioPadding, DoNothing, ASTFeatureExt, time_shift
 from lib.corruption import WHN, DynPSH
-from lib.spdataset import AudioMINST
+from lib.spdataset import AudioMNIST
 from AST.lib.model import ASTClssifier
-from AST.AudioMNIST.train import build_model, inference, optimizer
+from AST.AudioMNIST.train import build_model, inference, build_optimizer
 from AST.speech_commands.ttda import nucnm, g_entropy, entropy, lr_scheduler
 
 def load_weight(args:argparse.Namespace, model:ASTForAudioClassification, classifier:ASTClssifier, mode:str='origin') -> None:
@@ -36,18 +36,16 @@ def corrupt_data(args:argparse.Namespace) -> Dataset:
     if args.corruption_level == 'L1':
         snrs = [10, 1, 15]
         steps = [0, 3]
-        speeds = [.05, .05, .1]
     elif args.corruption_level == 'L2':
         snrs = [5, 1, 10]
         steps = [2, 5]
-        speeds = [.1, .01, .2]
     if args.corruption_type == 'WHNP':
-        test_set = AudioMINST(
-            data_paths=AudioMINST.default_splits(mode='test', root_path=args.dataset_root_path), 
+        test_set = AudioMNIST(
+            data_paths=AudioMNIST.default_splits(mode='test', root_path=args.dataset_root_path), 
             include_rate=False, 
             data_trainsforms=Components(transforms=[
                 transforms.Resample(orig_freq=args.org_sample_rate, new_freq=args.sample_rate),
-                AudioPadding(max_length=10*args.sample_rate, sample_rate=args.sample_rate, random_shift=False),
+                AudioPadding(max_length=args.sample_rate, sample_rate=args.sample_rate, random_shift=False),
                 WHN(lsnr=snrs[0], rsnr=snrs[2], step=snrs[1])
             ])
         )
@@ -114,7 +112,8 @@ if __name__ == '__main__':
         mode='online' if args.wandb else 'disabled', config=args, tags=['Audio Classification', args.dataset, 'Test-time Adaptation'])
     
     fe, ast, clsf = build_model(args)
-    load_weight(args=args, mode=ast, classifier=clsf)
+    load_weight(args=args, model=ast, classifier=clsf)
+    optimizer = build_optimizer(args=args, model=ast, classifier=clsf)
     test_set = corrupt_data(args)
     dataset_root_path = os.path.join(args.cache_path, args.dataset)
     index_file_name = 'metaInfo.csv'
@@ -130,9 +129,9 @@ if __name__ == '__main__':
         dataset=test_set, batch_size=args.batch_size, shuffle=False, drop_last=False, num_workers=args.num_workers, 
         pin_memory=True
     )
-    adapt_set = mlt_load_from(
-        root_path=dataset_root_path, index_file_name=index_file_name, 
-        data_tfs=[
+    adapt_set = MultiTFDataset(
+        dataset=mlt_load_from(root_path=dataset_root_path, index_file_name=index_file_name), 
+        tfs=[
             Components(transforms=[
                 time_shift(shift_limit=.17, is_random=True, is_bidirection=False),
                 ASTFeatureExt(feature_extractor=fe, sample_rate=args.sample_rate, mode='batch')
@@ -165,8 +164,8 @@ if __name__ == '__main__':
             fs1, fs2 = fs1.to(args.device), fs2.to(args.device)
 
             optimizer.zero_grad()
-            os1 = ast(fs1).logits
-            os2 = ast(fs2).logits
+            os1 = clsf(ast(fs1).logits)
+            os2 = clsf(ast(fs2).logits)
 
             nucnm_loss = nucnm(args, os1) + nucnm(args, os2)
             ent_loss = entropy(args, os1) + entropy(args, os2)
