@@ -6,7 +6,7 @@ from tqdm import tqdm
 import shutil
 import numpy as np
 
-from torch.utils.data import Dataset
+from torch.utils.data import Dataset, DataLoader
 from torch import nn
 import torch
 
@@ -121,6 +121,33 @@ def mlt_store_to(dataset:Dataset, root_path:str, index_file_name:str, data_tfs:l
             row.append(data_path)
         row.append(label)
         data_index.loc[len(data_index)] = row
+    data_index.to_csv(os.path.join(root_path, index_file_name))
+
+def batch_store_to(data_loader:DataLoader, root_path:str, index_file_name:str, f_num:int=1) -> None:
+    print(f'Store dataset into {root_path}, meta file is: {index_file_name}')
+    columns = []
+    for i in range(f_num):
+        columns.append(f'data_path{i}')
+    columns.append('label')
+    data_index = pd.DataFrame(columns=columns)
+    try: 
+        if os.path.exists(root_path): shutil.rmtree(root_path)
+        os.makedirs(root_path)
+    except:
+        raise Exception('remove director has an error')
+    for idx, mlt_data in tqdm(enumerate(data_loader), total=len(data_loader)):
+        labels = mlt_data[-1]
+        batch_size = labels.shape[0]
+        for j in range(batch_size):
+            label = labels[j].item()
+            row = []
+            for k in range(len(mlt_data)-1):
+                feature = mlt_data[k][j]
+                data_path = f'{idx}-{k}-{j}_{label}.npy'
+                np.save(file=os.path.join(root_path, data_path), arr=feature.detach().numpy())
+                row.append(data_path)
+            row.append(label)
+            data_index.loc[len(data_index)] = row
     data_index.to_csv(os.path.join(root_path, index_file_name))
 
 def load_from(root_path: str, index_file_name: str, data_tf=None, label_tf=None) -> Dataset:
