@@ -14,7 +14,7 @@ from transformers import AutoFeatureExtractor, ASTForAudioClassification
 
 from lib.utils import make_unless_exits, print_argparse, ConfigDict, count_ttl_params, store_model_structure_to_txt
 from lib import constants
-from lib.spdataset import AudioMINST
+from lib.spdataset import AudioMNIST
 from lib.component import Components, AudioPadding, ASTFeatureExt, time_shift
 from AST.lib.model import ASTClssifier
 from AST.speech_commands.ttda import op_copy, lr_scheduler
@@ -59,7 +59,7 @@ def build_model(args:argparse.Namespace) -> tuple[AutoFeatureExtractor, ASTForAu
 
 if __name__ == '__main__':
     ap = argparse.ArgumentParser()
-    ap.add_argument('--dataset', type=str, default='AudioMINST', choices=['AudioMINST'])
+    ap.add_argument('--dataset', type=str, default='AudioMNIST', choices=['AudioMNIST'])
     ap.add_argument('--dataset_root_path', type=str)
     ap.add_argument('--num_workers', type=int, default=16)
     ap.add_argument('--output_path', type=str, default='./result')
@@ -76,7 +76,7 @@ if __name__ == '__main__':
     ap.add_argument('--seed', type=int, default=2025, help='random seed')
 
     args = ap.parse_args()
-    if args.dataset == 'AudioMINST':
+    if args.dataset == 'AudioMNIST':
         args.class_num = 10
         args.sample_rate = 16000
         args.org_sample_rate = 48000
@@ -108,8 +108,8 @@ if __name__ == '__main__':
     store_model_structure_to_txt(model=ast, output_path=os.path.join(args.output_path, f'{constants.architecture_dic[args.arch]}-{constants.dataset_dic[args.dataset]}-ast{args.file_suffix}.txt'))
     store_model_structure_to_txt(model=clsf, output_path=os.path.join(args.output_path, f'{constants.architecture_dic[args.arch]}-{constants.dataset_dic[args.dataset]}-clsf{args.file_suffix}.txt'))
 
-    train_set = AudioMINST(
-        data_paths=AudioMINST.default_splits(root_path=args.dataset_root_path, mode='train'), include_rate=False, 
+    train_set = AudioMNIST(
+        data_paths=AudioMNIST.default_splits(root_path=args.dataset_root_path, mode='train'), include_rate=False, 
         data_trainsforms=Components(transforms=[
             transforms.Resample(orig_freq=args.org_sample_rate, new_freq=args.sample_rate),
             AudioPadding(max_length=args.sample_rate, sample_rate=args.sample_rate, random_shift=True),
@@ -122,8 +122,8 @@ if __name__ == '__main__':
         num_workers=args.num_workers
     )
 
-    val_set = AudioMINST(
-        data_paths=AudioMINST.default_splits(root_path=args.dataset_root_path, mode='validate'), include_rate=False, 
+    val_set = AudioMNIST(
+        data_paths=AudioMNIST.default_splits(root_path=args.dataset_root_path, mode='validate'), include_rate=False, 
         data_trainsforms=Components(transforms=[
             transforms.Resample(orig_freq=args.org_sample_rate, new_freq=args.sample_rate),
             AudioPadding(max_length=args.sample_rate, sample_rate=args.sample_rate, random_shift=False),

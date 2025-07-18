@@ -226,9 +226,9 @@ class SpeechCommandsV1(Dataset):
         audio_path = os.path.join(self.root_path, meta_data)
         return audio_path, label
     
-class AudioMINST(Dataset):
+class AudioMNIST(Dataset):
     def __init__(self, data_paths: list[str], data_trainsforms=None, include_rate=True):
-        super(AudioMINST, self).__init__()
+        super(AudioMNIST, self).__init__()
         self.data_paths = data_paths
         self.data_trainsforms = data_trainsforms
         self.include_rate = include_rate

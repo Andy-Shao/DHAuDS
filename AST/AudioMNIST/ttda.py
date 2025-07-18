@@ -1,24 +1,24 @@
 import argparse
 import os
+import wandb
 import numpy as np
 import random
-import wandb
 from tqdm import tqdm
 
-import torch
-from torch.utils.data import Dataset, DataLoader
+import torch 
 from torchaudio import transforms
+from torch.utils.data import Dataset, DataLoader
 from transformers import ASTForAudioClassification
 
-from lib.utils import make_unless_exits, print_argparse, count_ttl_params
+from lib.utils import make_unless_exits, print_argparse
 from lib import constants
+from lib.dataset import GpuMultiTFDataset, mlt_load_from, mlt_store_to
 from lib.component import Components, AudioPadding, DoNothing, ASTFeatureExt, time_shift
 from lib.corruption import WHN, DynPSH
-from lib.acousticDataset import CochlScene
-from lib.dataset import GpuMultiTFDataset, mlt_load_from, mlt_store_to, MultiTFDataset
-from AST.CochlScene.train import build_model, inference, build_optimizer
-from AST.speech_commands.ttda import nucnm, g_entropy, entropy, lr_scheduler
+from lib.spdataset import AudioMINST
 from AST.lib.model import ASTClssifier
+from AST.AudioMNIST.train import build_model, inference, optimizer
+from AST.speech_commands.ttda import nucnm, g_entropy, entropy, lr_scheduler
 
 def load_weight(args:argparse.Namespace, model:ASTForAudioClassification, classifier:ASTClssifier, mode:str='origin') -> None:
     if mode == 'origin':
@@ -27,8 +27,8 @@ def load_weight(args:argparse.Namespace, model:ASTForAudioClassification, classi
     elif mode == 'adaption':
         ast_pth = args.adpt_ast_wght_pth
         clsf_pth = args.adpt_clsf_wght_pth
-    else: 
-        raise Exception('No Support')
+    else:
+        raise Exception('No support')
     model.load_state_dict(state_dict=torch.load(f=ast_pth, weights_only=True))
     classifier.load_state_dict(state_dict=torch.load(f=clsf_pth, weights_only=True))
 
@@ -42,9 +42,10 @@ def corrupt_data(args:argparse.Namespace) -> Dataset:
         steps = [2, 5]
         speeds = [.1, .01, .2]
     if args.corruption_type == 'WHNP':
-        test_set = CochlScene(
-            root_path=args.dataset_root_path, mode='test', include_rate=False,
-            data_tf=Components(transforms=[
+        test_set = AudioMINST(
+            data_paths=AudioMINST.default_splits(mode='test', root_path=args.dataset_root_path), 
+            include_rate=False, 
+            data_trainsforms=Components(transforms=[
                 transforms.Resample(orig_freq=args.org_sample_rate, new_freq=args.sample_rate),
                 AudioPadding(max_length=10*args.sample_rate, sample_rate=args.sample_rate, random_shift=False),
                 WHN(lsnr=snrs[0], rsnr=snrs[2], step=snrs[1])
@@ -60,10 +61,10 @@ def corrupt_data(args:argparse.Namespace) -> Dataset:
 
 if __name__ == '__main__':
     ap = argparse.ArgumentParser()
-    ap.add_argument('--dataset', type=str, default='CochlScene', choices=['CochlScene'])
+    ap.add_argument('--dataset', type=str, default='AudioMNIST', choices=['AudioMNIST'])
     ap.add_argument('--dataset_root_path', type=str)
     ap.add_argument('--noise_path', type=str)
-    ap.add_argument('--corruption_type', type=str, choices=['WHNP', 'WHNT', 'HVP', 'HVT'])
+    ap.add_argument('--corruption_type', type=str, choices=['WHNP', 'ENQP', 'ENDP1', 'ENDP2'])
     ap.add_argument('--corruption_level', type=str, choices=['L1', 'L2'])
     ap.add_argument('--num_workers', type=int, default=16)
     ap.add_argument('--output_path', type=str, default='./result')
@@ -86,10 +87,10 @@ if __name__ == '__main__':
     ap.add_argument('--clsf_wght_pth', type=str)
 
     args = ap.parse_args()
-    if args.dataset == 'CochlScene':
-        args.class_num = 13
+    if args.dataset == 'AudioMNIST':
+        args.class_num = 10
         args.sample_rate = 16000
-        args.org_sample_rate = 44100
+        args.org_sample_rate = 48000
         if not os.path.exists(args.dataset_root_path):
             os.makedirs(args.dataset_root_path)
     else:
@@ -113,28 +114,25 @@ if __name__ == '__main__':
         mode='online' if args.wandb else 'disabled', config=args, tags=['Audio Classification', args.dataset, 'Test-time Adaptation'])
     
     fe, ast, clsf = build_model(args)
-    optimizer = build_optimizer(args=args, model=ast, classifier=clsf)
-    param_no = count_ttl_params(ast) + count_ttl_params(clsf)
-    print(f'Param No. is: {param_no}')
+    load_weight(args=args, mode=ast, classifier=clsf)
     test_set = corrupt_data(args)
     dataset_root_path = os.path.join(args.cache_path, args.dataset)
     index_file_name = 'metaInfo.csv'
-    # mlt_store_to(
-    #     dataset=test_set, root_path=dataset_root_path, index_file_name=index_file_name,
-    #     data_tfs=[DoNothing()]
-    # )
+    mlt_store_to(
+        dataset=test_set, root_path=dataset_root_path, index_file_name=index_file_name, 
+        data_tfs=[DoNothing()]
+    )
     test_set = mlt_load_from(
         root_path=dataset_root_path, index_file_name=index_file_name, 
         data_tfs=[ASTFeatureExt(feature_extractor=fe, sample_rate=args.sample_rate, mode='batch')]
     )
     test_loader = DataLoader(
-        dataset=test_set, batch_size=args.batch_size, shuffle=False, drop_last=False, 
-        num_workers=args.num_workers, pin_memory=True
+        dataset=test_set, batch_size=args.batch_size, shuffle=False, drop_last=False, num_workers=args.num_workers, 
+        pin_memory=True
     )
-    adapt_set = mlt_load_from(root_path=dataset_root_path, index_file_name=index_file_name,)
-    adapt_set = MultiTFDataset(
-        dataset=adapt_set,
-        tfs=[
+    adapt_set = mlt_load_from(
+        root_path=dataset_root_path, index_file_name=index_file_name, 
+        data_tfs=[
             Components(transforms=[
                 time_shift(shift_limit=.17, is_random=True, is_bidirection=False),
                 ASTFeatureExt(feature_extractor=fe, sample_rate=args.sample_rate, mode='batch')
@@ -157,15 +155,18 @@ if __name__ == '__main__':
     for epoch in range(args.max_epoch):
         print(f'Epoch {epoch+1}/{args.max_epoch}')
         print('Adaptating...')
-        ast.train(); clsf.train()
-        ttl_size = 0.; ttl_loss = 0.; ttl_nucnm_loss = 0.
-        ttl_ent_loss = 0.; ttl_gent_loss = 0.
+        ast.train()
+        ttl_size = 0.
+        ttl_loss = 0.
+        ttl_nucnm_loss = 0.
+        ttl_ent_loss = 0.
+        ttl_gent_loss = 0.
         for fs1, fs2, _ in tqdm(adapt_loader):
             fs1, fs2 = fs1.to(args.device), fs2.to(args.device)
 
             optimizer.zero_grad()
-            os1 = clsf(ast(fs1).logits)
-            os2 = clsf(ast(fs2).logits)
+            os1 = ast(fs1).logits
+            os2 = ast(fs2).logits
 
             nucnm_loss = nucnm(args, os1) + nucnm(args, os2)
             ent_loss = entropy(args, os1) + entropy(args, os2)
@@ -196,7 +197,7 @@ if __name__ == '__main__':
             torch.save(
                 clsf.state_dict(), 
                 os.path.join(args.output_path, f'{constants.architecture_dic[args.arch]}-{constants.dataset_dic[args.dataset]}-clsf-{args.corruption_type}-{args.corruption_level}{args.file_suffix}.pt'))
-                
+
         wandb_run.log(
             data={
                 'Loss/ttl_loss': ttl_loss / ttl_size,

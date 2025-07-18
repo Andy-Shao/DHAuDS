@@ -2,20 +2,12 @@ PROJECT_TITLE='DHAuDS'
 TRAIN_TAG='Train'
 TTA_TAG='TTA'
 
-corruption_dic = {
-    'doing_the_dishes': 'DTD', 
-    'exercise_bike': 'EB',
-    'running_tap': 'RT', 
-    'VocalSound': 'VS',
-    'CochlScene': 'CS'
-}
-
 dataset_dic = {
     'SpeechCommandsV2': 'SC2',
     'SpeechCommandsV1': 'SC1',
     'VocalSound': 'VS',
     'CochlScene': 'CS',
-    'AudioMINST': 'AM'
+    'AudioMNIST': 'AM'
 }
 
 architecture_dic = {
