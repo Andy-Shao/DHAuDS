@@ -14,7 +14,8 @@ dataset_dic = {
     'SpeechCommandsV2': 'SC2',
     'SpeechCommandsV1': 'SC1',
     'VocalSound': 'VS',
-    'CochlScene': 'CS'
+    'CochlScene': 'CS',
+    'AudioMINST': 'AM'
 }
 
 architecture_dic = {
