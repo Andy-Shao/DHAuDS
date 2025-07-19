@@ -17,6 +17,7 @@ from lib.acousticDataset import CochlScene
 from lib.component import Components, AudioPadding, ReduceChannel, time_shift, AudioClip
 from AuT.lib.model import AudioClassifier
 from AuT.lib.loss import CrossEntropyLabelSmooth
+from AuT.speech_commands.train import build_optimizer, lr_scheduler
 
 def inference(args:argparse.Namespace, hubert:nn.Module, clsModel:nn.Module, data_loader:DataLoader):
     hubert.eval(); clsModel.eval()
@@ -30,33 +31,6 @@ def inference(args:argparse.Namespace, hubert:nn.Module, clsModel:nn.Module, dat
         _, preds = torch.max(input=outputs.detach(), dim=1)
         ttl_corr += (preds == labels).sum().cpu().item()
     return ttl_corr / ttl_size * 100.
-
-def build_optimizer(args: argparse.Namespace, auT:nn.Module, auC:nn.Module) -> optim.Optimizer:
-    param_group = []
-    learning_rate = args.lr
-    for k, v in auT.named_parameters():
-        param_group += [{'params':v, 'lr':learning_rate}]
-    for k, v in auC.named_parameters():
-        param_group += [{'params':v, 'lr':learning_rate}]
-    optimizer = optim.SGD(params=param_group)
-    optimizer = op_copy(optimizer)
-    return optimizer
-
-def op_copy(optimizer: optim.Optimizer) -> optim.Optimizer:
-    for param_group in optimizer.param_groups:
-        param_group['lr0'] = param_group['lr']
-    return optimizer
-
-def lr_scheduler(optimizer: torch.optim.Optimizer, epoch:int, lr_cardinality:int, gamma=10, power=0.75, threshold=1) -> optim.Optimizer:
-    if epoch >= lr_cardinality-threshold:
-        return optimizer
-    decay = (1 + gamma * epoch / lr_cardinality) ** (-power)
-    for param_group in optimizer.param_groups:
-        param_group['lr'] = param_group['lr0'] * decay
-        param_group['weight_decay'] = 1e-3
-        param_group['momentum'] = .9
-        param_group['nestenv'] = True
-    return optimizer
 
 def build_model(args:argparse.Namespace, pre_weight:bool=True) -> tuple[torchaudio.models.Wav2Vec2Model, AudioClassifier]:
     bundle = torchaudio.pipelines.HUBERT_BASE
