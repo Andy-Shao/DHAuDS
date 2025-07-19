@@ -47,7 +47,7 @@ def corrupt_data(args:argparse.Namespace) -> Dataset:
             data_tf=Components(transforms=[
                 transforms.Resample(orig_freq=args.org_sample_rate, new_freq=args.sample_rate),
                 AudioPadding(max_length=10*args.sample_rate, sample_rate=args.sample_rate, random_shift=False),
-                WHN(lsnr=snrs[0], rsnr=snrs[2], step=snrs[1])
+                WHN(lsnr=snrs[0], rsnr=snrs[2], step=snrs[1]),
             ])
         )
         test_set = GpuMultiTFDataset(
@@ -113,6 +113,7 @@ if __name__ == '__main__':
         mode='online' if args.wandb else 'disabled', config=args, tags=['Audio Classification', args.dataset, 'Test-time Adaptation'])
     
     fe, ast, clsf = build_model(args)
+    load_weight(args=args, model=ast, classifier=clsf)
     optimizer = build_optimizer(args=args, model=ast, classifier=clsf)
     param_no = count_ttl_params(ast) + count_ttl_params(clsf)
     print(f'Param No. is: {param_no}')
@@ -128,7 +129,7 @@ if __name__ == '__main__':
         data_tfs=[ASTFeatureExt(feature_extractor=fe, sample_rate=args.sample_rate, mode='batch')]
     )
     test_loader = DataLoader(
-        dataset=test_set, batch_size=args.batch_size, shuffle=False, drop_last=False, 
+        dataset=test_set, batch_size=30, shuffle=False, drop_last=False, 
         num_workers=args.num_workers, pin_memory=True
     )
     adapt_set = mlt_load_from(root_path=dataset_root_path, index_file_name=index_file_name,)

@@ -119,7 +119,7 @@ if __name__ == '__main__':
         ])
     )
     train_loader = DataLoader(
-        dataset=train_set, batch_size=args.batch_size, shuffle=True, drop_last=True, num_workers=args.num_workers, 
+        dataset=train_set, batch_size=args.batch_size, shuffle=True, drop_last=False, num_workers=args.num_workers, 
         pin_memory=True
     )
 
@@ -132,7 +132,7 @@ if __name__ == '__main__':
         ])
     )
     val_loader = DataLoader(
-        dataset=val_set, batch_size=args.batch_size, shuffle=False, drop_last=True, num_workers=4,
+        dataset=val_set, batch_size=args.batch_size, shuffle=False, drop_last=False, num_workers=4,
         pin_memory=True
     )
 

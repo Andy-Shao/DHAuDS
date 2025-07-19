@@ -13,16 +13,26 @@ class WHN(nn.Module):
 
     def forward(self, wavform:torch.Tensor) -> torch.Tensor:
         channel, length = wavform.size()
-        for nt in ['Guassian', 'Uniform']:
-            if nt == 'Guassian':
-                noise = torch.normal(mean=0., std=1., size=[channel, length])
-            elif nt == 'Uniform':
-                noise = torch.rand([channel, length])
-            snr_num = int((self.rsnr - self.lsnr)/self.step)
-            wavform = add_noise(
-                waveform=wavform, noise=noise,
-                snr=torch.tensor([self.lsnr + (random.randint(0, snr_num) * self.step)])
-            )
+        # for nt in ['Guassian', 'Uniform']:
+        #     if nt == 'Guassian':
+        #         noise = torch.normal(mean=0., std=1., size=[channel, length])
+        #     elif nt == 'Uniform':
+        #         noise = torch.rand([channel, length])
+        #     snr_num = int((self.rsnr - self.lsnr)/self.step)
+        #     wavform = add_noise(
+        #         waveform=wavform, noise=noise,
+        #         snr=torch.tensor([self.lsnr + (random.randint(0, snr_num) * self.step)])
+        #     )
+        nt = random.randint(0, 1)
+        if nt == 0: # Guassian
+            noise = torch.normal(mean=0., std=1., size=[channel, length])
+        else: # Uniform
+            noise = torch.rand([channel, length])
+        snr_num = int((self.rsnr - self.lsnr)/self.step)
+        wavform = add_noise(
+            waveform=wavform, noise=noise,
+            snr=torch.tensor([self.lsnr + (random.randint(0, snr_num) * self.step)])
+        )
         return wavform
 
 class DynEN(nn.Module):
