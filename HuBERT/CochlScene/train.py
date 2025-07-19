@@ -99,7 +99,7 @@ if __name__ == '__main__':
         root_path=args.dataset_root_path, mode='train', include_rate=False, 
         data_tf=Components(transforms=[
             transforms.Resample(orig_freq=args.org_sample_rate, new_freq=args.sample_rate),
-            AudioClip(max_length=5*args.sample_rate, is_random=True),
+            AudioClip(max_length=4*args.sample_rate, is_random=True),
             time_shift(shift_limit=.17, is_random=True, is_bidirection=True),
             ReduceChannel()
         ])
@@ -113,7 +113,7 @@ if __name__ == '__main__':
         root_path=args.dataset_root_path, mode='validation', include_rate=False, 
         data_tf=Components(transforms=[
             transforms.Resample(orig_freq=args.org_sample_rate, new_freq=args.sample_rate),
-            AudioClip(max_length=5*args.sample_rate, mode='head', is_random=False),
+            AudioClip(max_length=4*args.sample_rate, mode='head', is_random=False),
             ReduceChannel()
         ])
     )
