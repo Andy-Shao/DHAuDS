@@ -119,10 +119,10 @@ if __name__ == '__main__':
     test_set = corrupt_data(args)
     dataset_root_path = os.path.join(args.cache_path, args.dataset)
     index_file_name = 'metaInfo.csv'
-    # mlt_store_to(
-    #     dataset=test_set, root_path=dataset_root_path, index_file_name=index_file_name,
-    #     data_tfs=[DoNothing()]
-    # )
+    mlt_store_to(
+        dataset=test_set, root_path=dataset_root_path, index_file_name=index_file_name,
+        data_tfs=[DoNothing()]
+    )
     test_set = mlt_load_from(
         root_path=dataset_root_path, index_file_name=index_file_name, 
         data_tfs=[ASTFeatureExt(feature_extractor=fe, sample_rate=args.sample_rate, mode='batch')]
