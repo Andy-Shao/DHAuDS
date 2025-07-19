@@ -1,22 +1,62 @@
 import argparse
-from tqdm import tqdm
 import os
-import wandb
 import numpy as np
 import random
+import wandb
+from tqdm import tqdm
 
-import torchaudio
-from torchvision.transforms import Compose
 import torch
+from torch import nn, optim
 from torch.utils.data import DataLoader
+import torchaudio
+from torchaudio import transforms
 
-from AuT.lib.model import AudioClassifier
-from AuT.speech_commands.train import build_optimizer, lr_scheduler
-from AuT.lib.loss import CrossEntropyLabelSmooth
-from lib.utils import print_argparse, store_model_structure_to_txt, make_unless_exits, ConfigDict
-from lib.component import AudioPadding, ReduceChannel, time_shift
-from lib.spdataset import SpeechCommandsV2, SpeechCommandsV1
+from lib.utils import print_argparse, make_unless_exits, ConfigDict, store_model_structure_to_txt
 from lib import constants
+from lib.acousticDataset import CochlScene
+from lib.component import Components, AudioPadding, ReduceChannel, time_shift, AudioClip
+from AuT.lib.model import AudioClassifier
+from AuT.lib.loss import CrossEntropyLabelSmooth
+
+def inference(args:argparse.Namespace, hubert:nn.Module, clsModel:nn.Module, data_loader:DataLoader):
+    hubert.eval(); clsModel.eval()
+    ttl_corr = 0.; ttl_size = 0.
+    for features, labels in tqdm(data_loader):
+        features, labels = features.to(args.device), labels.to(args.device)
+
+        with torch.no_grad():
+            outputs, _ = clsModel(hubert(features)[0])
+        ttl_size += labels.shape[0]
+        _, preds = torch.max(input=outputs.detach(), dim=1)
+        ttl_corr += (preds == labels).sum().cpu().item()
+    return ttl_corr / ttl_size * 100.
+
+def build_optimizer(args: argparse.Namespace, auT:nn.Module, auC:nn.Module) -> optim.Optimizer:
+    param_group = []
+    learning_rate = args.lr
+    for k, v in auT.named_parameters():
+        param_group += [{'params':v, 'lr':learning_rate}]
+    for k, v in auC.named_parameters():
+        param_group += [{'params':v, 'lr':learning_rate}]
+    optimizer = optim.SGD(params=param_group)
+    optimizer = op_copy(optimizer)
+    return optimizer
+
+def op_copy(optimizer: optim.Optimizer) -> optim.Optimizer:
+    for param_group in optimizer.param_groups:
+        param_group['lr0'] = param_group['lr']
+    return optimizer
+
+def lr_scheduler(optimizer: torch.optim.Optimizer, epoch:int, lr_cardinality:int, gamma=10, power=0.75, threshold=1) -> optim.Optimizer:
+    if epoch >= lr_cardinality-threshold:
+        return optimizer
+    decay = (1 + gamma * epoch / lr_cardinality) ** (-power)
+    for param_group in optimizer.param_groups:
+        param_group['lr'] = param_group['lr0'] * decay
+        param_group['weight_decay'] = 1e-3
+        param_group['momentum'] = .9
+        param_group['nestenv'] = True
+    return optimizer
 
 def build_model(args:argparse.Namespace, pre_weight:bool=True) -> tuple[torchaudio.models.Wav2Vec2Model, AudioClassifier]:
     bundle = torchaudio.pipelines.HUBERT_BASE
@@ -36,7 +76,7 @@ def build_model(args:argparse.Namespace, pre_weight:bool=True) -> tuple[torchaud
 
 if __name__ == '__main__':
     ap = argparse.ArgumentParser()
-    ap.add_argument('--dataset', type=str, default='SpeechCommandsV2', choices=['SpeechCommandsV2', 'SpeechCommandsV1'])
+    ap.add_argument('--dataset', type=str, default='CochlScene', choices=['CochlScene'])
     ap.add_argument('--dataset_root_path', type=str)
     ap.add_argument('--batch_size', type=int, default=32)
     ap.add_argument('--lr', type=float, default=1e-3)
@@ -54,15 +94,14 @@ if __name__ == '__main__':
 
     args = ap.parse_args()
     args.device = 'cuda' if torch.cuda.is_available() else 'cpu'
-    if args.dataset == 'SpeechCommandsV2':
-        args.class_num = 35
-    elif args.dataset == 'SpeechCommandsV1':
-        args.class_num = 30
+    if args.dataset == 'CochlScene':
+        args.class_num = 13
+        args.sample_rate = 16000
+        args.org_sample_rate = 44100
     else:
         raise Exception('No support!')
-    args.sample_rate = 16000
-    arch = 'HuBERT'
-    args.output_path = os.path.join(args.output_path, args.dataset, arch, 'train')
+    args.arch = 'HuBERT'
+    args.output_path = os.path.join(args.output_path, args.dataset, args.arch, 'train')
 
     torch.backends.cudnn.benchmark == True
     torch.manual_seed(seed=args.seed)
@@ -78,49 +117,36 @@ if __name__ == '__main__':
 
     wandb_run = wandb.init(
         project=f'{constants.PROJECT_TITLE}-{constants.TRAIN_TAG}', 
-        name=f'HuB-{constants.hubert_level_dic[args.model_level]}-{constants.dataset_dic[args.dataset]}', mode='online' if args.wandb else 'disabled', 
+        name=f'{constants.architecture_dic[args.arch]}-{constants.hubert_level_dic[args.model_level]}-{constants.dataset_dic[args.dataset]}', mode='online' if args.wandb else 'disabled', 
         config=args, tags=['Audio Classification', 'Test-time Adaptation', args.dataset]
     )
 
-    max_length = args.sample_rate
-    if args.dataset == 'SpeechCommandsV2':
-        train_set = SpeechCommandsV2(
-            root_path=args.dataset_root_path, mode='training', 
-            data_tf=Compose(transforms=[
-                AudioPadding(max_length=max_length, sample_rate=args.sample_rate, random_shift=True),
-                time_shift(shift_limit=.17, is_random=True, is_bidirection=True),
-                ReduceChannel()
-            ])
-        )
-    elif args.dataset == 'SpeechCommandsV1':
-        train_set = SpeechCommandsV1(
-            root_path=args.dataset_root_path, mode='train', include_rate=False,
-            data_tfs=Compose(transforms=[
-                AudioPadding(max_length=max_length, sample_rate=args.sample_rate, random_shift=True),
-                time_shift(shift_limit=.17, is_random=True, is_bidirection=True),
-                ReduceChannel()
-            ])
-        )
+    train_set = CochlScene(
+        root_path=args.dataset_root_path, mode='train', include_rate=False, 
+        data_tf=Components(transforms=[
+            transforms.Resample(orig_freq=args.org_sample_rate, new_freq=args.sample_rate),
+            AudioClip(max_length=5*args.sample_rate, is_random=True),
+            time_shift(shift_limit=.17, is_random=True, is_bidirection=True),
+            ReduceChannel()
+        ])
+    )
+    train_loader = DataLoader(
+        dataset=train_set, batch_size=args.batch_size, shuffle=True, drop_last=False, num_workers=args.num_workers,
+        pin_memory=True
+    )
 
-    train_loader = DataLoader(dataset=train_set, batch_size=args.batch_size, shuffle=True, drop_last=False, num_workers=args.num_workers)
-
-    if args.dataset == 'SpeechCommandsV2':
-        val_set = SpeechCommandsV2(
-            root_path=args.dataset_root_path, mode='validation', 
-            data_tf=Compose(transforms=[
-                AudioPadding(max_length=max_length, sample_rate=args.sample_rate, random_shift=False),
-                ReduceChannel()
-            ])
-        )
-    elif args.dataset == 'SpeechCommandsV1':
-        val_set = SpeechCommandsV1(
-            root_path=args.dataset_root_path, mode='validation', include_rate=False,
-            data_tfs=Compose(transforms=[
-                AudioPadding(max_length=max_length, sample_rate=args.sample_rate, random_shift=False),
-                ReduceChannel()
-            ])
-        )
-    val_loader = DataLoader(dataset=val_set, batch_size=args.batch_size, shuffle=False, drop_last=False, num_workers=args.num_workers)
+    val_set = CochlScene(
+        root_path=args.dataset_root_path, mode='validation', include_rate=False, 
+        data_tf=Components(transforms=[
+            transforms.Resample(orig_freq=args.org_sample_rate, new_freq=args.sample_rate),
+            AudioClip(max_length=5*args.sample_rate, mode='head', is_random=False),
+            ReduceChannel()
+        ])
+    )
+    val_loader = DataLoader(
+        dataset=val_set, batch_size=args.batch_size, shuffle=False, drop_last=False, pin_memory=True,
+        num_workers=args.num_workers
+    )
 
     hubert, clsModel = build_model(args=args, pre_weight=args.use_pre_trained_weigth)
     store_model_structure_to_txt(model=hubert, output_path=os.path.join(args.output_path, f'hubert-{args.model_level}-{constants.dataset_dic[args.dataset]}.txt'))
@@ -132,11 +158,8 @@ if __name__ == '__main__':
     for epoch in range(args.max_epoch):
         print(f'Epoch:{epoch+1}/{args.max_epoch}')
         print('Training...')
-        hubert.train()
-        clsModel.train()
-        ttl_corr = 0.
-        ttl_size = 0.
-        train_loss = 0.
+        hubert.train(); clsModel.train()
+        ttl_corr = 0.; ttl_size = 0.; train_loss = 0.
         for features, labels in tqdm(train_loader):
             features, labels = features.to(args.device), labels.to(args.device)
 
@@ -158,19 +181,7 @@ if __name__ == '__main__':
             lr_scheduler(optimizer=optimizer, epoch=epoch, lr_cardinality=args.lr_cardinality, gamma=args.lr_gamma)
 
         print('Validating...')
-        hubert.eval()
-        clsModel.eval()
-        ttl_corr = 0.
-        ttl_size = 0.
-        for features, labels in tqdm(val_loader):
-            features, labels = features.to(args.device), labels.to(args.device)
-
-            with torch.no_grad():
-                outputs, _ = clsModel(hubert(features)[0])
-            ttl_size += labels.shape[0]
-            _, preds = torch.max(input=outputs.detach(), dim=1)
-            ttl_corr += (preds == labels).sum().cpu().item()
-        val_accu = ttl_corr / ttl_size * 100.
+        val_accu = inference(args=args, hubert=hubert, clsModel=clsModel, data_loader=val_loader)
         print(f'Validation accuracy is: {val_accu:.4f}%, sample size is: {len(val_set)}')
 
         wandb_run.log(data={
