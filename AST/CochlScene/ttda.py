@@ -6,6 +6,7 @@ import wandb
 from tqdm import tqdm
 
 import torch
+from torch import nn, optim
 from torch.utils.data import Dataset, DataLoader
 from torchaudio import transforms
 from transformers import ASTForAudioClassification
@@ -16,9 +17,20 @@ from lib.component import Components, AudioPadding, DoNothing, ASTFeatureExt, ti
 from lib.corruption import WHN, DynPSH
 from lib.acousticDataset import CochlScene
 from lib.dataset import GpuMultiTFDataset, mlt_load_from, mlt_store_to, MultiTFDataset
-from AST.CochlScene.train import build_model, inference, build_optimizer
-from AST.speech_commands.ttda import nucnm, g_entropy, entropy, lr_scheduler
+from AST.CochlScene.train import build_model, inference
+from AST.speech_commands.ttda import nucnm, g_entropy, entropy, lr_scheduler, op_copy
 from AST.lib.model import ASTClssifier
+
+def build_optimizer(args: argparse.Namespace, model:nn.Module, classifier:nn.Module) -> optim.Optimizer:
+    param_group = []
+    learning_rate = args.lr
+    for k, v in model.named_parameters():
+        param_group += [{'params':v, 'lr':learning_rate * args.ast_lr_decay}]
+    for k, v in classifier.named_parameters():
+        param_group += [{'params':v, 'lr':learning_rate * args.clsf_lr_decay}]
+    optimizer = optim.SGD(params=param_group)
+    optimizer = op_copy(optimizer)
+    return optimizer
 
 def load_weight(args:argparse.Namespace, model:ASTForAudioClassification, classifier:ASTClssifier, mode:str='origin') -> None:
     if mode == 'origin':
@@ -50,12 +62,12 @@ def corrupt_data(args:argparse.Namespace) -> Dataset:
                 WHN(lsnr=snrs[0], rsnr=snrs[2], step=snrs[1]),
             ])
         )
-        test_set = GpuMultiTFDataset(
-            dataset=test_set, device=args.device, maintain_cpu=True,
-            tfs=[
-                DynPSH(sample_rate=args.sample_rate, min_steps=steps[0], max_steps=steps[1], is_bidirection=True)
-            ]
-        )
+        # test_set = GpuMultiTFDataset(
+        #     dataset=test_set, device=args.device, maintain_cpu=True,
+        #     tfs=[
+        #         DynPSH(sample_rate=args.sample_rate, min_steps=steps[0], max_steps=steps[1], is_bidirection=True)
+        #     ]
+        # )
     return test_set
 
 if __name__ == '__main__':
@@ -75,6 +87,8 @@ if __name__ == '__main__':
     ap.add_argument('--lr_cardinality', type=int, default=40)
     ap.add_argument('--lr_gamma', type=int, default=10)
     ap.add_argument('--lr_threshold', type=int, default=1)
+    ap.add_argument('--ast_lr_decay', type=float, default=1.0)
+    ap.add_argument('--clsf_lr_decay', type=float, default=1.0)
     ap.add_argument('--nucnm_rate', type=float, default=1.)
     ap.add_argument('--ent_rate', type=float, default=1.)
     ap.add_argument('--gent_rate', type=float, default=1.)
@@ -120,10 +134,10 @@ if __name__ == '__main__':
     test_set = corrupt_data(args)
     dataset_root_path = os.path.join(args.cache_path, args.dataset)
     index_file_name = 'metaInfo.csv'
-    mlt_store_to(
-        dataset=test_set, root_path=dataset_root_path, index_file_name=index_file_name,
-        data_tfs=[DoNothing()]
-    )
+    # mlt_store_to(
+    #     dataset=test_set, root_path=dataset_root_path, index_file_name=index_file_name,
+    #     data_tfs=[DoNothing()]
+    # )
     test_set = mlt_load_from(
         root_path=dataset_root_path, index_file_name=index_file_name, 
         data_tfs=[ASTFeatureExt(feature_extractor=fe, sample_rate=args.sample_rate, mode='batch')]
@@ -137,13 +151,13 @@ if __name__ == '__main__':
         dataset=adapt_set,
         tfs=[
             Components(transforms=[
-                time_shift(shift_limit=.17, is_random=True, is_bidirection=False),
+                time_shift(shift_limit=.17, is_random=True, is_bidirection=True),
                 ASTFeatureExt(feature_extractor=fe, sample_rate=args.sample_rate, mode='batch')
             ]),
-            Components(transforms=[
-                time_shift(shift_limit=-.17, is_random=True, is_bidirection=False),
-                ASTFeatureExt(feature_extractor=fe, sample_rate=args.sample_rate, mode='batch')
-            ])
+            # Components(transforms=[
+            #     time_shift(shift_limit=-.17, is_random=True, is_bidirection=False),
+            #     ASTFeatureExt(feature_extractor=fe, sample_rate=args.sample_rate, mode='batch')
+            # ])
         ]
     )
     adapt_loader = DataLoader(
@@ -161,16 +175,19 @@ if __name__ == '__main__':
         ast.train(); clsf.train()
         ttl_size = 0.; ttl_loss = 0.; ttl_nucnm_loss = 0.
         ttl_ent_loss = 0.; ttl_gent_loss = 0.
-        for fs1, fs2, _ in tqdm(adapt_loader):
-            fs1, fs2 = fs1.to(args.device), fs2.to(args.device)
+        for fs1, _ in tqdm(adapt_loader):
+            fs1 = fs1.to(args.device)
 
             optimizer.zero_grad()
             os1 = clsf(ast(fs1).logits)
-            os2 = clsf(ast(fs2).logits)
+            # os2 = clsf(ast(fs2).logits)
 
-            nucnm_loss = nucnm(args, os1) + nucnm(args, os2)
-            ent_loss = entropy(args, os1) + entropy(args, os2)
-            gent_loss = g_entropy(args, os1, q=args.gent_q) + g_entropy(args, os2, q=args.gent_q)
+            # nucnm_loss = nucnm(args, os1) + nucnm(args, os2)
+            # ent_loss = entropy(args, os1) + entropy(args, os2)
+            # gent_loss = g_entropy(args, os1, q=args.gent_q) + g_entropy(args, os2, q=args.gent_q)
+            nucnm_loss = nucnm(args, os1)
+            ent_loss = entropy(args, os1)
+            gent_loss = g_entropy(args, os1, q=args.gent_q)
 
             loss = nucnm_loss + ent_loss + gent_loss
             loss.backward()
