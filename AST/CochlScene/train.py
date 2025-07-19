@@ -167,8 +167,8 @@ if __name__ == '__main__':
 
         print('Validating...')
         val_accu = inference(args=args, model=ast, classifier=clsf, data_loader=val_loader)
-        if max_accu >= val_accu:
-            val_accu = max_accu
+        if max_accu <= val_accu:
+            max_accu = val_accu
             torch.save(obj=ast.state_dict(), f=os.path.join(args.output_path, f'{constants.architecture_dic[args.arch]}-{constants.dataset_dic[args.dataset]}-ast{args.file_suffix}.pt'))
             torch.save(obj=clsf.state_dict(), f=os.path.join(args.output_path, f'{constants.architecture_dic[args.arch]}-{constants.dataset_dic[args.dataset]}-clsf{args.file_suffix}.pt'))
         print(f'Validation accuracy is: {val_accu:.4f}%, sample size is: {len(val_set)}')
