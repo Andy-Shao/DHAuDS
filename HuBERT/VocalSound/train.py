@@ -14,7 +14,7 @@ from lib.utils import make_unless_exits, print_argparse, ConfigDict, store_model
 from lib import constants
 from lib.spdataset import VocalSound
 from lib.component import Components, AudioPadding, time_shift, ReduceChannel, AudioClip
-from AuT.lib.model import AudioClassifier
+from AuT.lib.model import FCEClassifier
 from AuT.speech_commands.train import build_optimizer, lr_scheduler
 from AuT.lib.loss import CrossEntropyLabelSmooth
 
@@ -25,13 +25,13 @@ def inference(args:argparse.Namespace, hubert:nn.Module, clsModel:nn.Module, dat
         features, labels = features.to(args.device), labels.to(args.device)
 
         with torch.no_grad():
-            outputs, _ = clsModel(hubert(features)[0])
+            outputs = clsModel(hubert(features)[0][:, :2, :])
         ttl_size += labels.shape[0]
         _, preds = torch.max(input=outputs.detach(), dim=1)
         ttl_corr += (preds == labels).sum().cpu().item()
     return ttl_corr / ttl_size * 100.
 
-def build_model(args:argparse.Namespace, pre_weight:bool=True) -> tuple[torchaudio.models.Wav2Vec2Model, AudioClassifier]:
+def build_model(args:argparse.Namespace, pre_weight:bool=True) -> tuple[torchaudio.models.Wav2Vec2Model, FCEClassifier]:
     bundle = torchaudio.pipelines.HUBERT_BASE
     if pre_weight:
         hubert = bundle.get_model().to(device=args.device)
@@ -40,11 +40,10 @@ def build_model(args:argparse.Namespace, pre_weight:bool=True) -> tuple[torchaud
     cfg = ConfigDict()
     cfg.classifier = ConfigDict()
     cfg.classifier.class_num = args.class_num
-    cfg.classifier.extend_size = 2048
-    cfg.classifier.convergent_size = 256
+    cfg.classifier['in_embed_num'] = 2
     cfg.embedding = ConfigDict()
     cfg.embedding.embed_size = bundle._params['encoder_embed_dim']
-    classifier = AudioClassifier(config=cfg).to(device=args.device)
+    classifier = FCEClassifier(config=cfg).to(device=args.device)
     return hubert, classifier
 
 if __name__ == '__main__':
@@ -136,7 +135,7 @@ if __name__ == '__main__':
             features, labels = features.to(args.device), labels.to(args.device)
 
             optimizer.zero_grad()
-            outputs, _ = clsModel(hubert(features)[0])
+            outputs = clsModel(hubert(features)[0][:, :2, :])
             loss = loss_fn(outputs, labels)
             loss.backward()
             optimizer.step()
