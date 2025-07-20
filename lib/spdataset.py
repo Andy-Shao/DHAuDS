@@ -44,7 +44,7 @@ class SpeechCommandsV2(Dataset):
             label = self.label_tf(label)
         return wavform, label
 
-class BackgroundNoiseDataset(Dataset):
+class SpeechCommandsBackgroundNoise(Dataset):
     base_path = '_background_noise_'
 
     def __init__(self, root_path: str, data_tf=None, label_tf=None, include_rate=False) -> None:

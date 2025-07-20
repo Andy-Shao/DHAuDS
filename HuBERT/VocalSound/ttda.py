@@ -15,11 +15,23 @@ from lib import constants
 from lib.spdataset import VocalSound
 from lib.acousticDataset import DEMAND, QUTNOISE
 from lib.dataset import batch_store_to, mlt_load_from, MergSet, MultiTFDataset
+from lib.spdataset import SpeechCommandsV2, SpeechCommandsBackgroundNoise
 from lib.component import Components, AudioPadding, AudioClip, ReduceChannel, time_shift, Stereo2Mono
 from lib.corruption import WHN, DynEN
 from lib.loss import entropy, g_entropy, nucnm
 from HuBERT.VocalSound.train import build_model, inference
 from AuT.speech_commands.train import lr_scheduler, op_copy
+
+def ensc_noises(args:argparse.Namespace, noise_modes:list[str]) -> list[torch.Tensor]:
+    SpeechCommandsV2(root_path=args.noise_path, mode='test', download=True)
+    noise_set = SpeechCommandsBackgroundNoise(root_path=args.noise_path, include_rate=False)
+    print('Loading noise files...')
+    noises = []
+    for noise, noise_type in tqdm(noise_set):
+        if noise_type in noise_modes:
+            noises.append(noise)
+    print(f'TTL noise size is: {len(noises)}')
+    return noises
 
 def end_noises(args:argparse.Namespace, noise_modes:list[str] = ['DKITCHEN', 'NFIELD', 'OOFFICE', 'PRESTO', 'TCAR']) -> list[torch.Tensor]:
     noises = []
@@ -80,6 +92,13 @@ def corrupt_data(args:argparse.Namespace, orgin_set:Dataset) -> Dataset:
         test_set = MultiTFDataset(dataset=orgin_set, tfs=[
             DynEN(noise_list=enq_noises(args=args, noise_modes=noise_modes), lsnr=snrs[0], step=snrs[1], rsnr=snrs[2])
         ])
+    elif args.corruption_type == 'END1':
+        noise_modes = ['DKITCHEN', 'NFIELD', 'STRAFFIC', 'PRESTO', 'TCAR', 'OOFFICE']
+        test_set = MultiTFDataset(
+            dataset=orgin_set, tfs=[
+                DynEN(noise_list=end_noises(args=args, noise_modes=noise_modes), lsnr=snrs[0], step=snrs[1], rsnr=snrs[2])
+            ]
+        )
     else:
         raise Exception('No support')
     return test_set
@@ -89,7 +108,7 @@ if __name__ == '__main__':
     ap.add_argument('--dataset', type=str, default='VocalSound', choices=['VocalSound'])
     ap.add_argument('--dataset_root_path', type=str)
     ap.add_argument('--noise_path', type=str)
-    ap.add_argument('--corruption_type', type=str, choices=['WHN', 'ENQ', 'END1', 'END2', 'PSH', 'TST'])
+    ap.add_argument('--corruption_type', type=str, choices=['WHN', 'ENQ', 'END1', 'END2', 'ENSC', 'PSH', 'TST'])
     ap.add_argument('--corruption_level', type=str, choices=['L1', 'L2'])
     ap.add_argument('--num_workers', type=int, default=16)
     ap.add_argument('--output_path', type=str, default='./result')
