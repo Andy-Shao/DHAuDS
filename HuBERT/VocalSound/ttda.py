@@ -6,7 +6,7 @@ import wandb
 from tqdm import tqdm
 
 import torch
-from torch import nn
+from torch import nn, optim
 from torch.utils.data import Dataset, DataLoader
 
 from lib.utils import make_unless_exits, print_argparse
@@ -17,7 +17,18 @@ from lib.component import Components, AudioPadding, AudioClip, ReduceChannel, ti
 from lib.corruption import WHN
 from lib.loss import entropy, g_entropy, nucnm
 from HuBERT.VocalSound.train import build_model, inference
-from AuT.speech_commands.train import build_optimizer, lr_scheduler
+from AuT.speech_commands.train import lr_scheduler, op_copy
+
+def build_optimizer(args: argparse.Namespace, auT:nn.Module, auC:nn.Module) -> optim.Optimizer:
+    param_group = []
+    learning_rate = args.lr
+    for k, v in auT.named_parameters():
+        param_group += [{'params':v, 'lr':learning_rate * args.hub_lr_decay}]
+    for k, v in auC.named_parameters():
+        param_group += [{'params':v, 'lr':learning_rate * args.clsf_lr_decay}]
+    optimizer = optim.SGD(params=param_group)
+    optimizer = op_copy(optimizer)
+    return optimizer
 
 def load_weigth(args:argparse.Namespace, hubert:nn.Module, clsf:nn.Module, mode:str='origin') -> None:
     if mode == 'origin':
@@ -31,7 +42,7 @@ def corrupt_data(args:argparse.Namespace) -> Dataset:
         snrs = [10, 1, 15]
         steps = [0, 3]
     elif args.corruption_level == 'L2':
-        snrs = [5, 1, 10]
+        snrs = [3, .5, 5]
         steps = [2, 5]
     if args.corruption_type == 'WHNP':
         test_set = VocalSound(
@@ -63,6 +74,8 @@ if __name__ == '__main__':
     ap.add_argument('--lr_cardinality', type=int, default=40)
     ap.add_argument('--lr_gamma', type=int, default=10)
     ap.add_argument('--lr_threshold', type=int, default=1)
+    ap.add_argument('--hub_lr_decay', type=float, default=1.0)
+    ap.add_argument('--clsf_lr_decay', type=float, default=1.0)
     ap.add_argument('--nucnm_rate', type=float, default=1.)
     ap.add_argument('--ent_rate', type=float, default=1.)
     ap.add_argument('--gent_rate', type=float, default=1.)
