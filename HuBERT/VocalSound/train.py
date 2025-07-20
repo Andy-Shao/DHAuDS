@@ -14,8 +14,8 @@ from lib.utils import make_unless_exits, print_argparse, ConfigDict, store_model
 from lib import constants
 from lib.spdataset import VocalSound
 from lib.component import Components, AudioPadding, time_shift, ReduceChannel, AudioClip
+from lib.lr_utils import build_optimizer, lr_scheduler
 from AuT.lib.model import FCEClassifier
-from AuT.speech_commands.train import build_optimizer, lr_scheduler
 from AuT.lib.loss import CrossEntropyLabelSmooth
 
 def inference(args:argparse.Namespace, hubert:nn.Module, clsModel:nn.Module, data_loader:DataLoader):
@@ -54,6 +54,8 @@ if __name__ == '__main__':
     ap.add_argument('--lr', type=float, default=1e-3)
     ap.add_argument('--lr_cardinality', type=int, default=40)
     ap.add_argument('--lr_gamma', type=float, default=10)
+    ap.add_argument('--hub_lr_decay', type=float, default=1.0)
+    ap.add_argument('--clsf_lr_decay', type=float, default=1.0)
     ap.add_argument('--num_workers', type=int, default=16)
     ap.add_argument('--max_epoch', type=int, default=30)
     ap.add_argument('--interval', type=int, default=1, help='interval number')
@@ -122,7 +124,7 @@ if __name__ == '__main__':
     hubert, clsModel = build_model(args=args, pre_weight=args.use_pre_trained_weigth)
     store_model_structure_to_txt(model=hubert, output_path=os.path.join(args.output_path, f'hubert-{args.model_level}-{constants.dataset_dic[args.dataset]}.txt'))
     store_model_structure_to_txt(model=clsModel, output_path=os.path.join(args.output_path, f'clsModel-{args.model_level}-{constants.dataset_dic[args.dataset]}.txt'))
-    optimizer = build_optimizer(args=args, auT=hubert, auC=clsModel)
+    optimizer = build_optimizer(lr=args.lr, auT=hubert, auC=clsModel, auT_decay=args.hub_lr_decay, auC_decay=args.clsf_lr_decay)
     loss_fn = CrossEntropyLabelSmooth(num_classes=args.class_num, use_gpu=torch.cuda.is_available(), epsilon=args.smooth)
 
     max_accu = 0.

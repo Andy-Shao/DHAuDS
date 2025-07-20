@@ -19,8 +19,8 @@ from lib.spdataset import SpeechCommandsV2, SpeechCommandsBackgroundNoise
 from lib.component import Components, AudioPadding, AudioClip, ReduceChannel, time_shift, Stereo2Mono
 from lib.corruption import WHN, DynEN
 from lib.loss import entropy, g_entropy, nucnm
+from lib.lr_utils import build_optimizer, lr_scheduler
 from HuBERT.VocalSound.train import build_model, inference
-from AuT.speech_commands.train import lr_scheduler, op_copy
 
 def ensc_noises(args:argparse.Namespace, noise_modes:list[str]) -> list[torch.Tensor]:
     SpeechCommandsV2(root_path=args.noise_path, mode='testing', download=True)
@@ -62,17 +62,6 @@ def enq_noises(args:argparse.Namespace, noise_modes:list[str] = ['CAFE', 'HOME',
         noises.append(wavform)
     print(f'TTL noise size is: {len(noises)}')
     return noises
-
-def build_optimizer(args: argparse.Namespace, auT:nn.Module, auC:nn.Module) -> optim.Optimizer:
-    param_group = []
-    learning_rate = args.lr
-    for k, v in auT.named_parameters():
-        param_group += [{'params':v, 'lr':learning_rate * args.hub_lr_decay}]
-    for k, v in auC.named_parameters():
-        param_group += [{'params':v, 'lr':learning_rate * args.clsf_lr_decay}]
-    optimizer = optim.SGD(params=param_group)
-    optimizer = op_copy(optimizer)
-    return optimizer
 
 def load_weigth(args:argparse.Namespace, hubert:nn.Module, clsf:nn.Module, mode:str='origin') -> None:
     if mode == 'origin':
@@ -207,7 +196,7 @@ if __name__ == '__main__':
 
     hubert, clsf = build_model(args=args, pre_weight=args.use_pre_trained_weigth)
     load_weigth(args=args, hubert=hubert, clsf=clsf)
-    optimizer = build_optimizer(args=args, auT=hubert, auC=clsf)
+    optimizer = build_optimizer(lr=args.lr, auT=hubert, auC=clsf, auT_decay=args.hub_lr_decay, auC_decay=args.clsf_lr_decay)
 
     def inferecing(max_accu:float) -> tuple[float, float]:
         accuracy = inference(args=args, hubert=hubert, clsModel=clsf, data_loader=test_loader)
