@@ -86,8 +86,8 @@ QUT-NOISE is an environmental acoustic dataset for environmental background nois
 ### DEMAND
 A database of 16-channel environmental noise recordings. 
 + Sample rate: 16000/48000
-+ Sample size: ???
-+ One sample length: ???
++ Sample size: 272
++ One sample length: 300s
 + Class Number: 16
   
 [Official Link](https://zenodo.org/records/1227121)
