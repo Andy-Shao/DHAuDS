@@ -8,16 +8,45 @@ from tqdm import tqdm
 import torch
 from torch import nn, optim
 from torch.utils.data import Dataset, DataLoader
+from torchaudio import transforms
 
 from lib.utils import make_unless_exits, print_argparse
 from lib import constants
 from lib.spdataset import VocalSound
-from lib.dataset import batch_store_to, mlt_load_from
-from lib.component import Components, AudioPadding, AudioClip, ReduceChannel, time_shift
-from lib.corruption import WHN
+from lib.acousticDataset import DEMAND, QUTNOISE
+from lib.dataset import batch_store_to, mlt_load_from, MergSet, MultiTFDataset
+from lib.component import Components, AudioPadding, AudioClip, ReduceChannel, time_shift, Stereo2Mono
+from lib.corruption import WHN, DynEN
 from lib.loss import entropy, g_entropy, nucnm
 from HuBERT.VocalSound.train import build_model, inference
 from AuT.speech_commands.train import lr_scheduler, op_copy
+
+def end_noises(args:argparse.Namespace, noise_modes:list[str] = ['DKITCHEN', 'NFIELD', 'OOFFICE', 'PRESTO', 'TCAR']) -> list[torch.Tensor]:
+    noises = []
+    print('Loading noise files...')
+    demand_set = MergSet([DEMAND(root_path=args.noise_path, mode=md, include_rate=False) for md in noise_modes])
+    for wavform in tqdm(demand_set):
+        noises.append(wavform)
+    print(f'TTL noise size is: {len(noises)}')
+    return noises
+
+def enq_noises(args:argparse.Namespace, noise_modes:list[str] = ['CAFE', 'HOME', 'STREET']) -> list[torch.Tensor]:
+    background_path = args.noise_path
+    noises = []
+    print('Loading noise files...')
+    qutnoise_set = MergSet([
+        QUTNOISE(
+            root_path=background_path, mode=md, include_rate=False,
+            data_tf=Components(transforms=[
+                transforms.Resample(orig_freq=48000, new_freq=args.sample_rate),
+                Stereo2Mono()
+            ])
+        ) for md in noise_modes
+    ])
+    for wavform in tqdm(qutnoise_set):
+        noises.append(wavform)
+    print(f'TTL noise size is: {len(noises)}')
+    return noises
 
 def build_optimizer(args: argparse.Namespace, auT:nn.Module, auC:nn.Module) -> optim.Optimizer:
     param_group = []
@@ -37,22 +66,20 @@ def load_weigth(args:argparse.Namespace, hubert:nn.Module, clsf:nn.Module, mode:
     hubert.load_state_dict(state_dict=torch.load(hub_pth, weights_only=True))
     clsf.load_state_dict(state_dict=torch.load(clsf_pth, weights_only=True))
 
-def corrupt_data(args:argparse.Namespace) -> Dataset:
+def corrupt_data(args:argparse.Namespace, orgin_set:Dataset) -> Dataset:
     if args.corruption_level == 'L1':
-        snrs = [5, 1, 10]
+        snrs = [3, 1, 7]
         n_steps = [0, 3]
     elif args.corruption_level == 'L2':
-        snrs = [3, .5, 5]
+        snrs = [2, .5, 4]
         n_steps = [2, 5]
     if args.corruption_type == 'WHN':
-        test_set = VocalSound(
-            root_path=args.dataset_root_path, mode='test', include_rate=False, version='16k',
-            data_tf=Components(transforms=[
-                AudioPadding(max_length=10*args.sample_rate, sample_rate=args.sample_rate, random_shift=False),
-                AudioClip(max_length=10*args.sample_rate, mode='head', is_random=False),
-                WHN(lsnr=snrs[0], rsnr=snrs[2], step=snrs[1]),
-            ])
-        )
+        test_set = MultiTFDataset(dataset=orgin_set, tfs=[WHN(lsnr=snrs[0], rsnr=snrs[2], step=snrs[1])])
+    elif args.corruption_type == 'ENQ':
+        noise_modes = ['CAFE', 'CAR', 'HOME', 'REVERB', 'STREET']
+        test_set = MultiTFDataset(dataset=orgin_set, tfs=[
+            DynEN(noise_list=enq_noises(args=args, noise_modes=noise_modes), lsnr=snrs[0], step=snrs[1], rsnr=snrs[2])
+        ])
     else:
         raise Exception('No support')
     return test_set
@@ -112,7 +139,15 @@ if __name__ == '__main__':
         name=f'{constants.architecture_dic[args.arch]}-{constants.hubert_level_dic[args.model_level]}-{constants.dataset_dic[args.dataset]}-{args.corruption_type}-{args.corruption_level}', 
         mode='online' if args.wandb else 'disabled', config=args, tags=['Audio Classification', args.dataset, 'Test-time Adaptation'])
     
-    test_set = corrupt_data(args)
+    test_set = corrupt_data(
+        args=args, orgin_set=VocalSound(
+            root_path=args.dataset_root_path, mode='test', include_rate=False, version='16k',
+            data_tf=Components(transforms=[
+                AudioPadding(max_length=10*args.sample_rate, sample_rate=args.sample_rate, random_shift=False),
+                AudioClip(max_length=10*args.sample_rate, mode='head', is_random=False),
+            ])
+        )
+    )
     dataset_root_path = os.path.join(args.cache_path, args.dataset)
     index_file_name = 'metaInfo.csv'
     batch_store_to(
