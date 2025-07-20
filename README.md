@@ -65,16 +65,13 @@ Download command:
 wget -O vocalsound_16k.zip https://www.dropbox.com/s/c5ace70qh1vbyzb/vs_release_16k.zip?dl=1
 ```
 
-### CochlScene
-Cochl Acoustic Scene Dataset, or CochlScene, is a new acoustic scene dataset whose recordings are fully collected from crowdsourcing participants. Most of the initial plans and guidelines for the processes were provided by researchers in the field of audio signal processing and machine learning, including the authors. The actual process was performed using a crowdsourcing platform developed by SelectStar, a Korean crowdsourcing data company. During the process, the initial plans were reinforced and modified based on the discussion about the actual difficulties in the collection process. After extracting a subset of the total collections based on the data's purpose, we collected 76,115 10-second files from 13 different acoustic scenes involving 831 participants.
+### ReefSet
+This dataset contains strongly labeled audio clips from coral reef habitats, taken across 16 unique datasets from 11 countries. This dataset can be used to test transfer learning performance of audio embedding models. This folder includes: - 57,084 WAV files that make up ReefSet_v1.0. Each file is 1.88 seconds in length, sampled at 16 kHz. All files have an associated label. - reefset_annotations.json, which contains the associated label, file ID, filename, data sharer, dataset and recorder type used for each sample in ReefSet_v1.0. This information is also indicated in the filename of each file. - 'reefset_labels_by_dataset.csv' provides a table containing the counts of each label class within each dataset.
 
-+ Sample rate: 44100
-+ Sample size: 76115 (Train: 60855, validation: 7573, test: 7687)
-+ Audio length: 10 seconds
-+ Class Number: 13
-
-[Github Link](https://github.com/cochlearai/cochlscene)<br/>
-[Dataset Link](https://zenodo.org/records/7080122)
++ Sample rate: 16000
++ Sample size: ???
++ Audio length: 1.88s
++ Class Number: ???
 
 ### QUT-NOISE
 QUT-NOISE is an environmental acoustic dataset for environmental background noise. QUT-NOISE comprises five distinct types of background noise: CAFE, CAR, HOME, REVERB, and STREET. Each type of noise includes five noise files.
