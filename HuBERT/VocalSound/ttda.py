@@ -39,12 +39,12 @@ def load_weigth(args:argparse.Namespace, hubert:nn.Module, clsf:nn.Module, mode:
 
 def corrupt_data(args:argparse.Namespace) -> Dataset:
     if args.corruption_level == 'L1':
-        snrs = [10, 1, 15]
-        steps = [0, 3]
+        snrs = [5, 1, 10]
+        n_steps = [0, 3]
     elif args.corruption_level == 'L2':
         snrs = [3, .5, 5]
-        steps = [2, 5]
-    if args.corruption_type == 'WHNP':
+        n_steps = [2, 5]
+    if args.corruption_type == 'WHN':
         test_set = VocalSound(
             root_path=args.dataset_root_path, mode='test', include_rate=False, version='16k',
             data_tf=Components(transforms=[
@@ -62,7 +62,7 @@ if __name__ == '__main__':
     ap.add_argument('--dataset', type=str, default='VocalSound', choices=['VocalSound'])
     ap.add_argument('--dataset_root_path', type=str)
     ap.add_argument('--noise_path', type=str)
-    ap.add_argument('--corruption_type', type=str, choices=['WHNP', 'ENQP', 'ENDP1', 'ENDP2'])
+    ap.add_argument('--corruption_type', type=str, choices=['WHN', 'ENQ', 'END1', 'END2', 'PSH', 'TST'])
     ap.add_argument('--corruption_level', type=str, choices=['L1', 'L2'])
     ap.add_argument('--num_workers', type=int, default=16)
     ap.add_argument('--output_path', type=str, default='./result')
@@ -109,7 +109,7 @@ if __name__ == '__main__':
     ##########################################
     wandb_run = wandb.init(
         project=f'{constants.PROJECT_TITLE}-{constants.TTA_TAG}', 
-        name=f'{constants.architecture_dic[args.arch]}-{constants.dataset_dic[args.dataset]}-{args.corruption_type}-{args.corruption_level}', 
+        name=f'{constants.architecture_dic[args.arch]}-{constants.hubert_level_dic[args.model_level]}-{constants.dataset_dic[args.dataset]}-{args.corruption_type}-{args.corruption_level}', 
         mode='online' if args.wandb else 'disabled', config=args, tags=['Audio Classification', args.dataset, 'Test-time Adaptation'])
     
     test_set = corrupt_data(args)
@@ -145,13 +145,28 @@ if __name__ == '__main__':
     load_weigth(args=args, hubert=hubert, clsf=clsf)
     optimizer = build_optimizer(args=args, auT=hubert, auC=clsf)
 
-    print('Pre-adaptation')
-    accuracy = inference(args=args, hubert=hubert, clsModel=clsf, data_loader=test_loader)
-    print(f'Accuracy is: {accuracy:.4f}%, sample size is: {len(test_set)}')
-
+    def inferecing(max_accu:float) -> tuple[float, float]:
+        accuracy = inference(args=args, hubert=hubert, clsModel=clsf, data_loader=test_loader)
+        print(f'Accuracy is: {accuracy:.4f}%, sample size is: {len(adapt_set)}')
+        if accuracy >= max_accu:
+            max_accu = accuracy
+            torch.save(
+                hubert.state_dict(), 
+                os.path.join(args.output_path, f'hubert-{args.model_level}-{constants.dataset_dic[args.dataset]}-{args.corruption_type}-{args.corruption_level}{args.file_suffix}.pt')
+            )
+            torch.save(
+                hubert.state_dict(), 
+                os.path.join(args.output_path, f'clsModel-{args.model_level}-{constants.dataset_dic[args.dataset]}-{args.corruption_type}-{args.corruption_level}{args.file_suffix}.pt')
+            )
+        return accuracy, max_accu
+    
     max_accu = 0
     for epoch in range(args.max_epoch):
         print(f'Epoch {epoch+1}/{args.max_epoch}')
+            
+        print('Inferencing...')
+        accuracy, max_accu = inferecing(max_accu)
+
         print('Adaptating...')
         hubert.train(); clsf.train()
         ttl_size = 0.; ttl_loss = 0.; ttl_nucnm_loss = 0.
@@ -180,18 +195,6 @@ if __name__ == '__main__':
         if epoch % args.interval == 0:
             lr_scheduler(optimizer=optimizer, epoch=epoch, lr_cardinality=args.lr_cardinality, gamma=args.lr_gamma, threshold=args.lr_threshold)
 
-        print('Inferencing...')
-        accuracy = inference(args=args, hubert=hubert, clsModel=clsf, data_loader=test_loader)
-        print(f'Accuracy is: {accuracy:.4f}%, sample size is: {len(adapt_set)}')
-        if accuracy >= max_accu:
-            max_accu = accuracy
-            torch.save(
-                hubert.state_dict(), 
-                os.path.join(args.output_path, f'hubert-{args.model_level}-{constants.dataset_dic[args.dataset]}-{args.corruption_type}-{args.corruption_level}{args.file_suffix}.pt'))
-            torch.save(
-                hubert.state_dict(), 
-                os.path.join(args.output_path, f'clsModel-{args.model_level}-{constants.dataset_dic[args.dataset]}-{args.corruption_type}-{args.corruption_level}{args.file_suffix}.pt'))
-
         wandb_run.log(
             data={
                 'Loss/ttl_loss': ttl_loss / ttl_size,
@@ -203,3 +206,5 @@ if __name__ == '__main__':
                 'Adaptation/max_accu': max_accu,
             }, step=epoch, commit=True
         )
+    print('Finalizing...')
+    inferecing(max_accu)
