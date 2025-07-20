@@ -13,7 +13,7 @@ from torch import nn, optim
 from lib.utils import print_argparse, store_model_structure_to_txt, make_unless_exits
 from lib import constants
 from lib.dataset import MultiTFDataset
-from lib.spdataset import SpeechCommandsV2, BackgroundNoiseDataset, SpeechCommandsV1
+from lib.spdataset import SpeechCommandsV2, SpeechCommandsBackgroundNoise, SpeechCommandsV1
 from lib.component import Components, AudioPadding, time_shift, AmplitudeToDB, MelSpectrogramPadding, FrequenceTokenTransformer
 from lib.component import GuassianNoise, BackgroundNoise
 from AuT.lib.config import AuT_base
@@ -21,7 +21,7 @@ from AuT.lib.model import FCETransform, AudioClassifier
 from AuT.lib.loss import CrossEntropyLabelSmooth
 
 def background_noise(args:argparse.Namespace) -> dict[str, torch.Tensor]:
-    dataset = BackgroundNoiseDataset(root_path=args.background_path, include_rate=False)
+    dataset = SpeechCommandsBackgroundNoise(root_path=args.background_path, include_rate=False)
     ret = {}
     for noise, noise_type in dataset:
         ret[noise_type] = noise

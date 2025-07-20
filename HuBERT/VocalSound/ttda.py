@@ -23,8 +23,11 @@ from HuBERT.VocalSound.train import build_model, inference
 from AuT.speech_commands.train import lr_scheduler, op_copy
 
 def ensc_noises(args:argparse.Namespace, noise_modes:list[str]) -> list[torch.Tensor]:
-    SpeechCommandsV2(root_path=args.noise_path, mode='test', download=True)
-    noise_set = SpeechCommandsBackgroundNoise(root_path=args.noise_path, include_rate=False)
+    SpeechCommandsV2(root_path=args.noise_path, mode='testing', download=True)
+    noise_set = SpeechCommandsBackgroundNoise(
+        root_path=os.path.join(args.noise_path, 'speech_commands_v0.02', 'speech_commands_v0.02'), 
+        include_rate=False
+    )
     print('Loading noise files...')
     noises = []
     for noise, noise_type in tqdm(noise_set):
@@ -97,6 +100,13 @@ def corrupt_data(args:argparse.Namespace, orgin_set:Dataset) -> Dataset:
         test_set = MultiTFDataset(
             dataset=orgin_set, tfs=[
                 DynEN(noise_list=end_noises(args=args, noise_modes=noise_modes), lsnr=snrs[0], step=snrs[1], rsnr=snrs[2])
+            ]
+        )
+    elif args.corruption_type == 'ENSC':
+        noise_modes = ['doing_the_dishes', 'exercise_bike', 'running_tap', 'white_noise']
+        test_set = MultiTFDataset(
+            dataset=orgin_set, tfs=[
+                DynEN(noise_list=ensc_noises(args=args, noise_modes=noise_modes), lsnr=snrs[0], step=snrs[1], rsnr=snrs[2])
             ]
         )
     else:
