@@ -70,3 +70,19 @@ class DynPSH(nn.Module):
         if self.is_bidirection and random.randint(0, 1) == 1:
             step = - step
         return pitch_shift(waveform=wavform, sample_rate=self.sample_rate, n_steps=step)
+
+class DynTST(nn.Module):
+    def __init__(self, min_rate:float, max_rate:float, step:float, is_bidirection:bool=False):
+        from torchaudio.transforms import TimeStretch
+        super().__init__()
+        self.is_bidirection = is_bidirection
+        self.time_stretch = TimeStretch()
+        self.rates = [min_rate + (it * step) for it in range(int(max_rate - min_rate / step))]
+
+    def forward(self, wavform:torch.Tensor) -> torch.Tensor:
+        rate = random.choice(self.rates)
+        if self.is_bidirection and random.random() > .5:
+            rate = 1.0 - rate
+        else:
+            rate += 1.0
+        return self.time_stretch(wavform, rate)

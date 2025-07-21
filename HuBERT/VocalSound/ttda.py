@@ -14,10 +14,10 @@ from lib.utils import make_unless_exits, print_argparse
 from lib import constants
 from lib.spdataset import VocalSound
 from lib.acousticDataset import DEMAND, QUTNOISE
-from lib.dataset import batch_store_to, mlt_load_from, MergSet, MultiTFDataset
+from lib.dataset import batch_store_to, mlt_load_from, MergSet, MultiTFDataset, GpuMultiTFDataset, mlt_store_to
 from lib.spdataset import SpeechCommandsV2, SpeechCommandsBackgroundNoise
-from lib.component import Components, AudioPadding, AudioClip, ReduceChannel, time_shift, Stereo2Mono
-from lib.corruption import WHN, DynEN
+from lib.component import Components, AudioPadding, AudioClip, ReduceChannel, time_shift, Stereo2Mono, DoNothing
+from lib.corruption import WHN, DynEN, DynPSH
 from lib.loss import entropy, g_entropy, nucnm
 from lib.lr_utils import build_optimizer, lr_scheduler
 from HuBERT.VocalSound.train import build_model, inference
@@ -73,10 +73,10 @@ def load_weigth(args:argparse.Namespace, hubert:nn.Module, clsf:nn.Module, mode:
 def corrupt_data(args:argparse.Namespace, orgin_set:Dataset) -> Dataset:
     if args.corruption_level == 'L1':
         snrs = [3, 1, 7]
-        n_steps = [0, 3]
+        n_steps = [2, 5]
     elif args.corruption_level == 'L2':
         snrs = [2, .5, 4]
-        n_steps = [2, 5]
+        n_steps = [4, 7]
     if args.corruption_type == 'WHN':
         test_set = MultiTFDataset(dataset=orgin_set, tfs=[WHN(lsnr=snrs[0], rsnr=snrs[2], step=snrs[1])])
     elif args.corruption_type == 'ENQ':
@@ -96,6 +96,12 @@ def corrupt_data(args:argparse.Namespace, orgin_set:Dataset) -> Dataset:
         test_set = MultiTFDataset(
             dataset=orgin_set, tfs=[
                 DynEN(noise_list=ensc_noises(args=args, noise_modes=noise_modes), lsnr=snrs[0], step=snrs[1], rsnr=snrs[2])
+            ]
+        )
+    elif args.corruption_type == 'PSH':
+        test_set = GpuMultiTFDataset(
+            dataset=orgin_set, tfs=[
+                DynPSH(sample_rate=args.sample_rate, min_steps=n_steps[0], max_steps=n_steps[1], is_bidirection=True)
             ]
         )
     else:
@@ -168,10 +174,16 @@ if __name__ == '__main__':
     )
     dataset_root_path = os.path.join(args.cache_path, args.dataset)
     index_file_name = 'metaInfo.csv'
-    batch_store_to(
-        data_loader=DataLoader(dataset=test_set, batch_size=32, shuffle=False, drop_last=False, num_workers=4),
-        root_path=dataset_root_path, index_file_name=index_file_name, f_num=1
-    )
+    if args.corruption_type == 'PSH':
+        mlt_store_to(
+            dataset=test_set, root_path=dataset_root_path, index_file_name=index_file_name, 
+            data_tfs=[DoNothing()]
+        )
+    else:
+        batch_store_to(
+            data_loader=DataLoader(dataset=test_set, batch_size=32, shuffle=False, drop_last=False, num_workers=4),
+            root_path=dataset_root_path, index_file_name=index_file_name, f_num=1
+        )
     test_set = mlt_load_from(
         root_path=dataset_root_path, index_file_name=index_file_name, 
         data_tfs=[ ReduceChannel() ]
