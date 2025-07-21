@@ -78,7 +78,7 @@ This dataset contains strongly labeled audio clips from coral reef habitats, tak
 QUT-NOISE is an environmental acoustic dataset for environmental background noise. QUT-NOISE comprises five distinct types of background noise: CAFE, CAR, HOME, REVERB, and STREET. Each type of noise includes five noise files.
 + Sample rate: 48000
 + Sample size: 20
-+ One sample length: Greater than 1990s (33m 10s)
++ One sample length: greater than 1990s (33m 10s)
 + Class Number: 5
   
 [Official Link](https://research.qut.edu.au/saivt/databases/qut-noise-databases-and-protocols/)
