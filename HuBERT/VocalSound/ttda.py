@@ -74,9 +74,11 @@ def corrupt_data(args:argparse.Namespace, orgin_set:Dataset) -> Dataset:
     if args.corruption_level == 'L1':
         snrs = [3, 1, 7]
         n_steps = [2, 5]
+        rates = [.05, .005, .1]
     elif args.corruption_level == 'L2':
         snrs = [2, .5, 4]
         n_steps = [4, 7]
+        rates = [.1, .01, .2]
     if args.corruption_type == 'WHN':
         test_set = MultiTFDataset(dataset=orgin_set, tfs=[WHN(lsnr=snrs[0], rsnr=snrs[2], step=snrs[1])])
     elif args.corruption_type == 'ENQ':
@@ -272,4 +274,15 @@ if __name__ == '__main__':
             }, step=epoch, commit=True
         )
     print('Finalizing...')
-    inferecing(max_accu)
+    accuracy, max_accu = inferecing(max_accu)
+    wandb_run.log(
+        data={
+            'Loss/ttl_loss': ttl_loss / ttl_size,
+            'Loss/Nuclear-norm loss': ttl_nucnm_loss / ttl_size,
+            'Loss/Entropy loss': ttl_ent_loss / ttl_size,
+            'Loss/G-entropy loss': ttl_gent_loss / ttl_size,
+            'Adaptation/accuracy': accuracy,
+            'Adaptation/LR': learning_rate,
+            'Adaptation/max_accu': max_accu,
+        }, step=args.max_epoch, commit=True
+    )

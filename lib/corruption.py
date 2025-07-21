@@ -77,7 +77,7 @@ class DynTST(nn.Module):
         super().__init__()
         self.is_bidirection = is_bidirection
         self.time_stretch = TimeStretch()
-        self.rates = [min_rate + (it * step) for it in range(int(max_rate - min_rate / step))]
+        self.rates = [min_rate + (it * step) for it in range(int(((max_rate - min_rate) / step) + 1))]
 
     def forward(self, wavform:torch.Tensor) -> torch.Tensor:
         rate = random.choice(self.rates)
