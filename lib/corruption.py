@@ -72,17 +72,31 @@ class DynPSH(nn.Module):
         return pitch_shift(waveform=wavform, sample_rate=self.sample_rate, n_steps=step)
 
 class DynTST(nn.Module):
-    def __init__(self, min_rate:float, max_rate:float, step:float, is_bidirection:bool=False):
-        from torchaudio.transforms import TimeStretch
+    def __init__(
+        self, min_rate:float, max_rate:float, step:float, is_bidirection:bool=False, 
+        n_fft:int=1024, hop_length:int=256
+    ):
         super().__init__()
         self.is_bidirection = is_bidirection
-        self.time_stretch = TimeStretch()
-        self.rates = [min_rate + (it * step) for it in range(int(((max_rate - min_rate) / step) + 1))]
+        self.min_rate = min_rate
+        self.max_rate = max_rate
+        self.step = step
+        self.n_fft = n_fft
+        self.hop_length = hop_length
 
     def forward(self, wavform:torch.Tensor) -> torch.Tensor:
-        rate = random.choice(self.rates)
+        from torchaudio.transforms import TimeStretch, Spectrogram, GriffinLim
+        rate_num = int((self.max_rate - self.min_rate) / self.step)
+        rate = self.min_rate + (random.randint(0, rate_num) * self.step)
         if self.is_bidirection and random.random() > .5:
             rate = 1.0 - rate
         else:
             rate += 1.0
-        return self.time_stretch(wavform, rate)
+        spectrogram = Spectrogram(n_fft=self.n_fft, hop_length=self.hop_length, power=None)
+        spec = spectrogram(wavform)
+        time_stretch = TimeStretch(n_freq=self.n_fft//2 + 1, hop_length=self.hop_length)
+        str_spec = time_stretch(spec, rate)
+        g_lim = GriffinLim(n_fft=self.n_fft, hop_length=self.hop_length)
+        str_wav = g_lim(torch.abs(str_spec))
+
+        return str_wav

@@ -17,7 +17,7 @@ from lib.acousticDataset import DEMAND, QUTNOISE
 from lib.dataset import batch_store_to, mlt_load_from, MergSet, MultiTFDataset, GpuMultiTFDataset, mlt_store_to
 from lib.spdataset import SpeechCommandsV2, SpeechCommandsBackgroundNoise
 from lib.component import Components, AudioPadding, AudioClip, ReduceChannel, time_shift, Stereo2Mono, DoNothing
-from lib.corruption import WHN, DynEN, DynPSH
+from lib.corruption import WHN, DynEN, DynPSH, DynTST
 from lib.loss import entropy, g_entropy, nucnm
 from lib.lr_utils import build_optimizer, lr_scheduler
 from HuBERT.VocalSound.train import build_model, inference
@@ -74,11 +74,11 @@ def corrupt_data(args:argparse.Namespace, orgin_set:Dataset) -> Dataset:
     if args.corruption_level == 'L1':
         snrs = [3, 1, 7]
         n_steps = [2, 5]
-        rates = [.05, .005, .1]
+        rates = [.06, .01, .1]
     elif args.corruption_level == 'L2':
         snrs = [2, .5, 4]
         n_steps = [4, 7]
-        rates = [.1, .01, .2]
+        rates = [.08, .01, .12]
     if args.corruption_type == 'WHN':
         test_set = MultiTFDataset(dataset=orgin_set, tfs=[WHN(lsnr=snrs[0], rsnr=snrs[2], step=snrs[1])])
     elif args.corruption_type == 'ENQ':
@@ -104,6 +104,16 @@ def corrupt_data(args:argparse.Namespace, orgin_set:Dataset) -> Dataset:
         test_set = GpuMultiTFDataset(
             dataset=orgin_set, tfs=[
                 DynPSH(sample_rate=args.sample_rate, min_steps=n_steps[0], max_steps=n_steps[1], is_bidirection=True)
+            ]
+        )
+    elif args.corruption_type == 'TST':
+        test_set = MultiTFDataset(
+            dataset=orgin_set, tfs=[
+                Components(transforms=[
+                    DynTST(min_rate=rates[0], step=rates[1], max_rate=rates[2], is_bidirection=True),
+                    AudioPadding(max_length=10*args.sample_rate, sample_rate=args.sample_rate, random_shift=False),
+                    AudioClip(max_length=10*args.sample_rate, mode='head', is_random=False),
+                ])
             ]
         )
     else:
@@ -165,15 +175,22 @@ if __name__ == '__main__':
         name=f'{constants.architecture_dic[args.arch]}-{constants.hubert_level_dic[args.model_level]}-{constants.dataset_dic[args.dataset]}-{args.corruption_type}-{args.corruption_level}', 
         mode='online' if args.wandb else 'disabled', config=args, tags=['Audio Classification', args.dataset, 'Test-time Adaptation'])
     
-    test_set = corrupt_data(
-        args=args, orgin_set=VocalSound(
-            root_path=args.dataset_root_path, mode='test', include_rate=False, version='16k',
-            data_tf=Components(transforms=[
-                AudioPadding(max_length=10*args.sample_rate, sample_rate=args.sample_rate, random_shift=False),
-                AudioClip(max_length=10*args.sample_rate, mode='head', is_random=False),
-            ])
+    if args.corruption_type == 'TST':
+        test_set = corrupt_data(
+            args=args, orgin_set=VocalSound(
+                root_path=args.dataset_root_path, mode='test', include_rate=False, version='16k',
+            )
         )
-    )
+    else:
+        test_set = corrupt_data(
+            args=args, orgin_set=VocalSound(
+                root_path=args.dataset_root_path, mode='test', include_rate=False, version='16k',
+                data_tf=Components(transforms=[
+                    AudioPadding(max_length=10*args.sample_rate, sample_rate=args.sample_rate, random_shift=False),
+                    AudioClip(max_length=10*args.sample_rate, mode='head', is_random=False),
+                ])
+            )
+        )
     dataset_root_path = os.path.join(args.cache_path, args.dataset)
     index_file_name = 'metaInfo.csv'
     if args.corruption_type == 'PSH':
@@ -183,7 +200,7 @@ if __name__ == '__main__':
         )
     else:
         batch_store_to(
-            data_loader=DataLoader(dataset=test_set, batch_size=32, shuffle=False, drop_last=False, num_workers=4),
+            data_loader=DataLoader(dataset=test_set, batch_size=32, shuffle=False, drop_last=False, num_workers=8),
             root_path=dataset_root_path, index_file_name=index_file_name, f_num=1
         )
     test_set = mlt_load_from(
