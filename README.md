@@ -20,6 +20,7 @@ conda activate DHAuDS
 # CUDA 12.8
 pip install torch==2.7.0 torchvision==0.22.0 torchaudio==2.7.0 --index-url https://download.pytorch.org/whl/cu128
 pip install torchmetrics==1.7.4
+# pip install transformers==4.53.3
 pip install tqdm==4.67.1
 pip install pandas==2.3.1
 pip install matplotlib==3.10.3
