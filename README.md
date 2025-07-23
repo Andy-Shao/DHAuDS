@@ -20,9 +20,15 @@ conda activate DHAuDS
 # CUDA 12.8
 pip install torch==2.7.0 torchvision==0.22.0 torchaudio==2.7.0 --index-url https://download.pytorch.org/whl/cu128
 pip install torchmetrics==1.7.4
+pip install tqdm==4.67.1
+pip install pandas==2.3.1
 pip install matplotlib==3.10.3
 pip install jupyter==1.1.1
 pip install wandb==0.21.0
+```
+In some cloud platforms, such as [Google Cloud](https://cloud.google.com). You should install more:
+```shell
+pip install soundfile
 ```
 
 ## Datasets
