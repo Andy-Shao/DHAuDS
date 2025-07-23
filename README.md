@@ -1,7 +1,7 @@
 # A Dynamic and Heterogeneous Audio Domain Shift (DHAuDS) for Test-time Adaptation on Audio Classification
 
 ## Software Environment
-Docker image id: nvidia/cuda:12.4.0-runtime-ubuntu22.04
+Docker image: nvidia/cuda:12.4.0-runtime-ubuntu22.04
 ```shell
 conda create --name DHAuDS python=3.12 -y
 conda activate DHAuDS
@@ -12,6 +12,17 @@ conda install -c conda-forge torchmetrics==1.7.4 -y
 conda install matplotlib==3.10.0 -y
 conda install jupyter==1.1.1 -y
 pip install wandb==0.19.11
+```
+
+```shell
+conda create --name DHAuDS python=3.13 -y
+conda activate DHAuDS
+# CUDA 12.8
+pip install torch==2.7.0 torchvision==0.22.0 torchaudio==2.7.0 --index-url https://download.pytorch.org/whl/cu128
+pip install torchmetrics==1.7.4
+pip install matplotlib==3.10.3
+pip install jupyter==1.1.1
+pip install wandb==0.21.0
 ```
 
 ## Datasets
