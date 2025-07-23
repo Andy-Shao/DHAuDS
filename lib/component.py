@@ -3,7 +3,6 @@ import numpy as np
 
 import torch 
 from torch import nn
-from transformers import AutoFeatureExtractor
 
 class time_shift(nn.Module):
     def __init__(self, shift_limit: float, is_random=True, is_bidirection=False) -> None:
@@ -159,19 +158,20 @@ class DoNothing(nn.Module):
     def forward(self, x:torch.Tensor) -> torch.Tensor:
         return x
     
-class ASTFeatureExt(nn.Module):
-    def __init__(self, feature_extractor:AutoFeatureExtractor, sample_rate:int, mode:str='single'):
-        super().__init__()
-        assert mode in ['batch', 'single']
-        self.mode = mode
-        self.feature_extractor = feature_extractor
-        self.sample_rate = sample_rate
+# class ASTFeatureExt(nn.Module):
+#     from transformers import AutoFeatureExtractor
+#     def __init__(self, feature_extractor:AutoFeatureExtractor, sample_rate:int, mode:str='single'):
+#         super().__init__()
+#         assert mode in ['batch', 'single']
+#         self.mode = mode
+#         self.feature_extractor = feature_extractor
+#         self.sample_rate = sample_rate
 
-    def forward(self, x:torch.Tensor) -> torch.Tensor:
-        x = self.feature_extractor(x.numpy(), sampling_rate=self.sample_rate, return_tensors="pt", padding=False)['input_values']
-        if self.mode == 'batch':
-            x = torch.squeeze(x, dim=0)
-        return x
+#     def forward(self, x:torch.Tensor) -> torch.Tensor:
+#         x = self.feature_extractor(x.numpy(), sampling_rate=self.sample_rate, return_tensors="pt", padding=False)['input_values']
+#         if self.mode == 'batch':
+#             x = torch.squeeze(x, dim=0)
+#         return x
 
 class Stereo2Mono(nn.Module):
     def __init__(self):
