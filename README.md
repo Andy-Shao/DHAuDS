@@ -1,7 +1,8 @@
 # A Dynamic and Heterogeneous Audio Domain Shift (DHAuDS) for Test-time Adaptation on Audio Classification
 
 ## Software Environment
-Docker image: nvidia/cuda:12.4.0-runtime-ubuntu22.04
++ Docker image: nvidia/cuda:12.4.0-runtime-ubuntu22.04
++ GPU: RTX 4090
 ```shell
 conda create --name DHAuDS python=3.12 -y
 conda activate DHAuDS
@@ -14,6 +15,8 @@ conda install jupyter==1.1.1 -y
 pip install wandb==0.19.11
 ```
 
++ Docker image: nvidia/cuda:12.8.0-cudnn-runtime-ubuntu22.04
++ GPU: RTX 5090
 ```shell
 conda create --name DHAuDS python=3.13 -y
 conda activate DHAuDS
