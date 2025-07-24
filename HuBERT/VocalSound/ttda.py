@@ -93,7 +93,7 @@ def corrupt_data(args:argparse.Namespace, orgin_set:Dataset) -> Dataset:
                 DynEN(noise_list=end_noises(args=args, noise_modes=noise_modes), lsnr=snrs[0], step=snrs[1], rsnr=snrs[2])
             ]
         )
-    elif args.corruption_typ == 'END2':
+    elif args.corruption_type == 'END2':
         noise_modes = ['DLIVING', 'NRIVER', 'OHALLWAY', 'PSTATION', 'SPSQUARE', 'TMETRO']
         test_set = MultiTFDataset(
             dataset=orgin_set, tfs=[
