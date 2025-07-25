@@ -67,8 +67,39 @@ def load_weigth(args:argparse.Namespace, hubert:nn.Module, clsf:nn.Module, mode:
     if mode == 'origin':
         hub_pth = args.hub_wght_pth
         clsf_pth = args.clsf_wght_pth
+    elif mode == 'adaption':
+        hub_pth = args.adpt_hub_wght_pth
+        clsf_pth = args.adpt_clsf_wght_pth
     hubert.load_state_dict(state_dict=torch.load(hub_pth, weights_only=True))
     clsf.load_state_dict(state_dict=torch.load(clsf_pth, weights_only=True))
+
+def vs_corruption_data(args:argparse.Namespace) -> Dataset:
+    if args.corruption_type == 'TST':
+        test_set = corrupt_data(
+            args=args, orgin_set=VocalSound(
+                root_path=args.dataset_root_path, mode='test', include_rate=False, version='16k',
+            )
+        )
+        test_set = MultiTFDataset(
+            dataset=test_set, 
+            tfs=[
+                Components(transforms=[
+                    AudioPadding(max_length=10*args.sample_rate, sample_rate=args.sample_rate, random_shift=False),
+                    AudioClip(max_length=10*args.sample_rate, mode='head', is_random=False),
+                ])
+            ]
+        )
+    else:
+        test_set = corrupt_data(
+            args=args, orgin_set=VocalSound(
+                root_path=args.dataset_root_path, mode='test', include_rate=False, version='16k',
+                data_tf=Components(transforms=[
+                    AudioPadding(max_length=10*args.sample_rate, sample_rate=args.sample_rate, random_shift=False),
+                    AudioClip(max_length=10*args.sample_rate, mode='head', is_random=False),
+                ])
+            )
+        )
+    return test_set
 
 def corrupt_data(args:argparse.Namespace, orgin_set:Dataset) -> Dataset:
     if args.corruption_level == 'L1':
@@ -116,11 +147,7 @@ def corrupt_data(args:argparse.Namespace, orgin_set:Dataset) -> Dataset:
     elif args.corruption_type == 'TST':
         test_set = MultiTFDataset(
             dataset=orgin_set, tfs=[
-                Components(transforms=[
-                    DynTST(min_rate=rates[0], step=rates[1], max_rate=rates[2], is_bidirection=True),
-                    AudioPadding(max_length=10*args.sample_rate, sample_rate=args.sample_rate, random_shift=False),
-                    AudioClip(max_length=10*args.sample_rate, mode='head', is_random=False),
-                ])
+                DynTST(min_rate=rates[0], step=rates[1], max_rate=rates[2], is_bidirection=True)
             ]
         )
     else:
@@ -182,22 +209,7 @@ if __name__ == '__main__':
         name=f'{constants.architecture_dic[args.arch]}-{constants.hubert_level_dic[args.model_level]}-{constants.dataset_dic[args.dataset]}-{args.corruption_type}-{args.corruption_level}', 
         mode='online' if args.wandb else 'disabled', config=args, tags=['Audio Classification', args.dataset, 'Test-time Adaptation'])
     
-    if args.corruption_type == 'TST':
-        test_set = corrupt_data(
-            args=args, orgin_set=VocalSound(
-                root_path=args.dataset_root_path, mode='test', include_rate=False, version='16k',
-            )
-        )
-    else:
-        test_set = corrupt_data(
-            args=args, orgin_set=VocalSound(
-                root_path=args.dataset_root_path, mode='test', include_rate=False, version='16k',
-                data_tf=Components(transforms=[
-                    AudioPadding(max_length=10*args.sample_rate, sample_rate=args.sample_rate, random_shift=False),
-                    AudioClip(max_length=10*args.sample_rate, mode='head', is_random=False),
-                ])
-            )
-        )
+    test_set = vs_corruption_data(args)
     dataset_root_path = os.path.join(args.cache_path, args.dataset)
     index_file_name = 'metaInfo.csv'
     if args.corruption_type == 'PSH':
