@@ -1,12 +1,15 @@
 import argparse
 import os
 import pandas as pd
+from typing import Callable
 
 import torch
-from torch.utils.data import DataLoader
+from torch.utils.data import DataLoader, Dataset
 
 from lib.utils import make_unless_exits, print_argparse, count_ttl_params
 from lib import constants
+from lib.component import DoNothing, ReduceChannel
+from lib.dataset import mlt_load_from, mlt_store_to, batch_store_to
 from HuBERT.VocalSound.ttda import vs_corruption_data, load_weigth
 
 def inferencing(args:argparse.Namespace, data_loader:DataLoader, mode:str='origin') -> tuple[float, int]:
@@ -18,18 +21,41 @@ def inferencing(args:argparse.Namespace, data_loader:DataLoader, mode:str='origi
     param_no = count_ttl_params(hubert) + count_ttl_params(clsf)
     return accuracy, param_no
 
-def analyze(inferencing:function, prepare_data:function, args:argparse.Namespace) -> pd.DataFrame:
+def analyze(
+        inferencing:Callable[[argparse.Namespace, DataLoader, str], tuple[float, int]], 
+        prepare_data:Callable[[argparse.Namespace], Dataset], args:argparse.Namespace) -> pd.DataFrame:
     records = pd.DataFrame(columns=['idx', 'Dataset', 'Alg.', 'Param No.', 'Crpt-type', 'Crpt-level', 'No-adpt-accu', 'Adpt-accu'])
 
     for idx in range(args.repeat_time):
-        data_loader = prepare_data(args)
-        print('No-adapted analyzing...')
+        corrupted_set = prepare_data(args)
+        dataset_root_path = os.path.join(args.cache_path, args.dataset)
+        index_file_name = 'metaInfo.csv'
+        if args.corruption_type == 'PSH':
+            mlt_store_to(
+                dataset=corrupted_set, root_path=dataset_root_path, index_file_name=index_file_name, 
+                data_tfs=[DoNothing()]
+            )
+        else:
+            batch_store_to(
+                data_loader=DataLoader(dataset=corrupted_set, batch_size=32, shuffle=False, drop_last=False, num_workers=8),
+                root_path=dataset_root_path, index_file_name=index_file_name, f_num=1
+            )
+        corrupted_set = mlt_load_from(root_path=dataset_root_path, index_file_name=index_file_name, data_tfs=[ReduceChannel()])
+        data_loader = DataLoader(
+            dataset=corrupted_set, batch_size=args.batch_size, shuffle=False, drop_last=False, pin_memory=True,
+            num_workers=args.num_workers
+        )
+        print(f'{idx}: No-adapted analyzing...')
         no_adpt_accu, param_no = inferencing(args, mode='origin', data_loader=data_loader)
         print(f'No-adapted accuracy is: {no_adpt_accu:.4f}%, param no. is: {param_no}')
-        print('Adapted analyzing...')
+        print(f'{idx}: Adapted analyzing...')
         adpt_accu, _ = inferencing(args, mode='adaption', data_loader=data_loader)
         print(f'Adapted accuracy is: {adpt_accu:.4f}%, param no is: {param_no}')
         records.loc[len(records)] = [idx, args.dataset, args.arch, param_no, args.corruption_type, args.corruption_level, no_adpt_accu, adpt_accu]
+    no_adpt_accu = records['No-adpt-accu'].mean()
+    adpt_accu = records['Adpt-accu'].mean()
+    records.loc[len(records)] = ['TTL', args.dataset, args.arch, param_no, args.corruption_type, args.corruption_level, no_adpt_accu, adpt_accu]
+    print(f'TTL no-adapted accuracy: {no_adpt_accu:.4f}%, adapted accuracy: {adpt_accu:.4f}%')
     return records
 
 if __name__ == '__main__':

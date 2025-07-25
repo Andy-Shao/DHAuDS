@@ -258,7 +258,7 @@ if __name__ == '__main__':
                 os.path.join(args.output_path, f'hubert-{args.model_level}-{constants.dataset_dic[args.dataset]}-{args.corruption_type}-{args.corruption_level}{args.file_suffix}.pt')
             )
             torch.save(
-                hubert.state_dict(), 
+                clsf.state_dict(), 
                 os.path.join(args.output_path, f'clsModel-{args.model_level}-{constants.dataset_dic[args.dataset]}-{args.corruption_type}-{args.corruption_level}{args.file_suffix}.pt')
             )
         return accuracy, max_accu
