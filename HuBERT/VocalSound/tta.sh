@@ -17,7 +17,6 @@ export BASE_PATH=${BASE_PATH:-'/root'}
 #     --hub_wght_pth './result/VocalSound/HuBERT/train/hubert-base-VS.pt' \
 #     --clsf_wght_pth './result/VocalSound/HuBERT/train/clsModel-base-VS.pt' --wandb
 
-# # Optimized
 # python -m HuBERT.VocalSound.ttda --dataset 'VocalSound' --dataset_root_path $BASE_PATH'/data/vocalsound_16k' \
 #     --cache_path $BASE_PATH'/tmp' --noise_path $BASE_PATH'/data/DEMAND_16k' \
 #     --max_epoch 20 --lr_cardinality 50 --batch_size 32 --lr '1e-4' --hub_lr_decay 0.55 --num_workers 16 \
