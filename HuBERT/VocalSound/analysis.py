@@ -27,20 +27,7 @@ def analyze(
     records = pd.DataFrame(columns=['idx', 'Dataset', 'Alg.', 'Param No.', 'Crpt-type', 'Crpt-level', 'No-adpt-accu', 'Adpt-accu'])
 
     for idx in range(args.repeat_time):
-        corrupted_set = prepare_data(args)
-        dataset_root_path = os.path.join(args.cache_path, args.dataset)
-        index_file_name = 'metaInfo.csv'
-        if args.corruption_type == 'PSH':
-            mlt_store_to(
-                dataset=corrupted_set, root_path=dataset_root_path, index_file_name=index_file_name, 
-                data_tfs=[DoNothing()]
-            )
-        else:
-            batch_store_to(
-                data_loader=DataLoader(dataset=corrupted_set, batch_size=32, shuffle=False, drop_last=False, num_workers=8),
-                root_path=dataset_root_path, index_file_name=index_file_name, f_num=1
-            )
-        corrupted_set = mlt_load_from(root_path=dataset_root_path, index_file_name=index_file_name, data_tfs=[ReduceChannel()])
+        corrupted_set, _ = prepare_data(args)
         data_loader = DataLoader(
             dataset=corrupted_set, batch_size=args.batch_size, shuffle=False, drop_last=False, pin_memory=True,
             num_workers=args.num_workers

@@ -99,7 +99,32 @@ def vs_corruption_data(args:argparse.Namespace) -> Dataset:
                 ])
             )
         )
-    return test_set
+    dataset_root_path = os.path.join(args.cache_path, args.dataset)
+    index_file_name = 'metaInfo.csv'
+    if args.corruption_type == 'PSH':
+        mlt_store_to(
+            dataset=test_set, root_path=dataset_root_path, index_file_name=index_file_name, 
+            data_tfs=[DoNothing()]
+        )
+    else:
+        batch_store_to(
+            data_loader=DataLoader(dataset=test_set, batch_size=32, shuffle=False, drop_last=False, num_workers=8),
+            root_path=dataset_root_path, index_file_name=index_file_name, f_num=1
+        )
+    test_set = mlt_load_from(
+        root_path=dataset_root_path, index_file_name=index_file_name, 
+        data_tfs=[ ReduceChannel() ]
+    )
+    adapt_set = mlt_load_from(
+        root_path=dataset_root_path, index_file_name=index_file_name, 
+        data_tfs=[
+            Components(transforms=[
+                time_shift(shift_limit=.17, is_random=True, is_bidirection=True),
+                ReduceChannel()
+            ])
+        ]
+    )
+    return test_set, adapt_set
 
 def corrupt_data(args:argparse.Namespace, orgin_set:Dataset) -> Dataset:
     if args.corruption_level == 'L1':
@@ -209,35 +234,10 @@ if __name__ == '__main__':
         name=f'{constants.architecture_dic[args.arch]}-{constants.hubert_level_dic[args.model_level]}-{constants.dataset_dic[args.dataset]}-{args.corruption_type}-{args.corruption_level}', 
         mode='online' if args.wandb else 'disabled', config=args, tags=['Audio Classification', args.dataset, 'Test-time Adaptation'])
     
-    test_set = vs_corruption_data(args)
-    dataset_root_path = os.path.join(args.cache_path, args.dataset)
-    index_file_name = 'metaInfo.csv'
-    if args.corruption_type == 'PSH':
-        mlt_store_to(
-            dataset=test_set, root_path=dataset_root_path, index_file_name=index_file_name, 
-            data_tfs=[DoNothing()]
-        )
-    else:
-        batch_store_to(
-            data_loader=DataLoader(dataset=test_set, batch_size=32, shuffle=False, drop_last=False, num_workers=8),
-            root_path=dataset_root_path, index_file_name=index_file_name, f_num=1
-        )
-    test_set = mlt_load_from(
-        root_path=dataset_root_path, index_file_name=index_file_name, 
-        data_tfs=[ ReduceChannel() ]
-    )
+    test_set, adapt_set = vs_corruption_data(args)
     test_loader = DataLoader(
         dataset=test_set, batch_size=args.batch_size, shuffle=False, drop_last=False, pin_memory=True,
         num_workers=args.num_workers
-    )
-    adapt_set = mlt_load_from(
-        root_path=dataset_root_path, index_file_name=index_file_name, 
-        data_tfs=[
-            Components(transforms=[
-                time_shift(shift_limit=.17, is_random=True, is_bidirection=True),
-                ReduceChannel()
-            ])
-        ]
     )
     adapt_loader = DataLoader(
         dataset=adapt_set, batch_size=args.batch_size, shuffle=True, drop_last=False, pin_memory=True,

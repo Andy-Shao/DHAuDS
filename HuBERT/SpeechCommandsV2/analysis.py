@@ -21,30 +21,6 @@ def inferencing(args:argparse.Namespace, data_loader:DataLoader, mode:str='origi
     param_no = count_ttl_params(hubert) + count_ttl_params(clsf)
     return accuracy, param_no
 
-def analyze(
-        inferencing:Callable[[argparse.Namespace, DataLoader, str], tuple[float, int]], 
-        prepare_data:Callable[[argparse.Namespace], Dataset], args:argparse.Namespace) -> pd.DataFrame:
-    records = pd.DataFrame(columns=['idx', 'Dataset', 'Alg.', 'Param No.', 'Crpt-type', 'Crpt-level', 'No-adpt-accu', 'Adpt-accu'])
-
-    for idx in range(args.repeat_time):
-        corrupted_set, _ = prepare_data(args)
-        data_loader = DataLoader(
-            dataset=corrupted_set, batch_size=args.batch_size, shuffle=False, drop_last=False, pin_memory=True,
-            num_workers=args.num_workers
-        )
-        print(f'{idx}: No-adapted analyzing...')
-        no_adpt_accu, param_no = inferencing(args, mode='origin', data_loader=data_loader)
-        print(f'No-adapted accuracy is: {no_adpt_accu:.4f}%, param no. is: {param_no}')
-        print(f'{idx}: Adapted analyzing...')
-        adpt_accu, _ = inferencing(args, mode='adaption', data_loader=data_loader)
-        print(f'Adapted accuracy is: {adpt_accu:.4f}%, param no is: {param_no}')
-        records.loc[len(records)] = [idx, args.dataset, args.arch, param_no, args.corruption_type, args.corruption_level, no_adpt_accu, adpt_accu]
-    no_adpt_accu = records['No-adpt-accu'].mean()
-    adpt_accu = records['Adpt-accu'].mean()
-    records.loc[len(records)] = ['TTL', args.dataset, args.arch, param_no, args.corruption_type, args.corruption_level, no_adpt_accu, adpt_accu]
-    print(f'TTL no-adapted accuracy: {no_adpt_accu:.4f}%, adapted accuracy: {adpt_accu:.4f}%')
-    return records
-
 if __name__ == '__main__':
     ap = argparse.ArgumentParser()
     ap.add_argument('--dataset', type=str, default='SpeechCommandsV2', choices=['SpeechCommandsV2'])
