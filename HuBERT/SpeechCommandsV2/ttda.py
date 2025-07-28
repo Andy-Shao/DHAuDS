@@ -15,18 +15,33 @@ from lib.spdataset import SpeechCommandsV2
 from lib.component import Components, AudioPadding, ReduceChannel, time_shift, DoNothing
 from lib.lr_utils import build_optimizer, lr_scheduler
 from lib.loss import nucnm, g_entropy, entropy
-from HuBERT.VocalSound.ttda import corrupt_data, load_weigth
+from lib.corruption import DynTST
+from HuBERT.VocalSound.ttda import load_weigth
 from HuBERT.SpeechCommandsV2.train import build_model, inference
 
 def sc_corruption_set(args:argparse.Namespace) -> tuple[Dataset, Dataset]:
-    test_set = corrupt_data(
-        args=args, orgin_set=SpeechCommandsV2(
+    from HuBERT.VocalSound.ttda import corrupt_data as corrupt_data_tmp
+    if args.corruption_type == 'TST':
+        if args.corruption_level == 'L1':
+            rates = [.06, .01, .1]
+        elif args.corruption_level == 'L2':
+            rates = [.08, .01, .12]
+        test_set = SpeechCommandsV2(
             root_path=args.dataset_root_path, mode='testing', download=True,
             data_tf=Components(transforms=[
+                DynTST(min_rate=rates[0], step=rates[1], max_rate=rates[2], is_bidirection=False),
                 AudioPadding(max_length=args.sample_rate, sample_rate=args.sample_rate, random_shift=False)
             ])
         )
-    )
+    else:
+        test_set = corrupt_data_tmp(
+            args=args, orgin_set=SpeechCommandsV2(
+                root_path=args.dataset_root_path, mode='testing', download=True,
+                data_tf=Components(transforms=[
+                    AudioPadding(max_length=args.sample_rate, sample_rate=args.sample_rate, random_shift=False)
+                ])
+            )
+        )
 
     dataset_root_path = os.path.join(args.cache_path, args.dataset)
     index_file_name = 'metaInfo.csv'
@@ -61,7 +76,7 @@ if __name__ == '__main__':
     ap.add_argument('--dataset', type=str, default='SpeechCommandsV2', choices=['SpeechCommandsV2'])
     ap.add_argument('--dataset_root_path', type=str)
     ap.add_argument('--noise_path', type=str)
-    ap.add_argument('--corruption_type', type=str, choices=['WHN', 'ENQ', 'END1', 'END2', 'ENSC', 'PSH'])
+    ap.add_argument('--corruption_type', type=str, choices=['WHN', 'ENQ', 'END1', 'END2', 'ENSC', 'PSH', 'TST'])
     ap.add_argument('--corruption_level', type=str, choices=['L1', 'L2'])
     ap.add_argument('--num_workers', type=int, default=16)
     ap.add_argument('--output_path', type=str, default='./result')
