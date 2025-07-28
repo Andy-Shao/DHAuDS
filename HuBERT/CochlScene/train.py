@@ -1,52 +1,21 @@
 import argparse
-import os
 import numpy as np
 import random
+import os
 import wandb
 from tqdm import tqdm
 
 import torch
-from torch import nn, optim
 from torch.utils.data import DataLoader
-import torchaudio
-from torchaudio import transforms
+from torchaudio.transforms import Resample
 
-from lib.utils import print_argparse, make_unless_exits, ConfigDict, store_model_structure_to_txt
 from lib import constants
+from lib.utils import print_argparse, make_unless_exits, store_model_structure_to_txt
 from lib.acousticDataset import CochlScene
-from lib.component import Components, AudioPadding, ReduceChannel, time_shift, AudioClip
-from AuT.lib.model import AudioClassifier
+from lib.component import Components, AudioPadding, time_shift, ReduceChannel
+from lib.lr_utils import build_optimizer, lr_scheduler
 from AuT.lib.loss import CrossEntropyLabelSmooth
-from AuT.speech_commands.train import build_optimizer, lr_scheduler
-
-def inference(args:argparse.Namespace, hubert:nn.Module, clsModel:nn.Module, data_loader:DataLoader):
-    hubert.eval(); clsModel.eval()
-    ttl_corr = 0.; ttl_size = 0.
-    for features, labels in tqdm(data_loader):
-        features, labels = features.to(args.device), labels.to(args.device)
-
-        with torch.no_grad():
-            outputs, _ = clsModel(hubert(features)[0])
-        ttl_size += labels.shape[0]
-        _, preds = torch.max(input=outputs.detach(), dim=1)
-        ttl_corr += (preds == labels).sum().cpu().item()
-    return ttl_corr / ttl_size * 100.
-
-def build_model(args:argparse.Namespace, pre_weight:bool=True) -> tuple[torchaudio.models.Wav2Vec2Model, AudioClassifier]:
-    bundle = torchaudio.pipelines.HUBERT_BASE
-    if pre_weight:
-        hubert = bundle.get_model().to(device=args.device)
-    else:
-        hubert = torchaudio.models.hubert_base().to(device=args.device)
-    cfg = ConfigDict()
-    cfg.classifier = ConfigDict()
-    cfg.classifier.class_num = args.class_num
-    cfg.classifier.extend_size = 2048
-    cfg.classifier.convergent_size = 256
-    cfg.embedding = ConfigDict()
-    cfg.embedding.embed_size = bundle._params['encoder_embed_dim']
-    classifier = AudioClassifier(config=cfg).to(device=args.device)
-    return hubert, classifier
+from HuBERT.VocalSound.train import build_model, inference
 
 if __name__ == '__main__':
     ap = argparse.ArgumentParser()
@@ -56,6 +25,8 @@ if __name__ == '__main__':
     ap.add_argument('--lr', type=float, default=1e-3)
     ap.add_argument('--lr_cardinality', type=int, default=40)
     ap.add_argument('--lr_gamma', type=float, default=10)
+    ap.add_argument('--hub_lr_decay', type=float, default=1.0)
+    ap.add_argument('--clsf_lr_decay', type=float, default=1.0)
     ap.add_argument('--num_workers', type=int, default=16)
     ap.add_argument('--max_epoch', type=int, default=30)
     ap.add_argument('--interval', type=int, default=1, help='interval number')
@@ -98,22 +69,22 @@ if __name__ == '__main__':
     train_set = CochlScene(
         root_path=args.dataset_root_path, mode='train', include_rate=False, 
         data_tf=Components(transforms=[
-            transforms.Resample(orig_freq=args.org_sample_rate, new_freq=args.sample_rate),
-            AudioClip(max_length=4*args.sample_rate, is_random=True),
+            Resample(orig_freq=args.org_sample_rate, new_freq=args.sample_rate), 
+            AudioPadding(max_length=10*args.sample_rate, sample_rate=args.sample_rate, random_shift=True),
             time_shift(shift_limit=.17, is_random=True, is_bidirection=True),
             ReduceChannel()
         ])
     )
     train_loader = DataLoader(
-        dataset=train_set, batch_size=args.batch_size, shuffle=True, drop_last=False, num_workers=args.num_workers,
-        pin_memory=True
+        dataset=train_set, batch_size=args.batch_size, shuffle=True, drop_last=False, pin_memory=True,
+        num_workers=args.num_workers
     )
 
     val_set = CochlScene(
-        root_path=args.dataset_root_path, mode='validation', include_rate=False, 
+        root_path=args.dataset_root_path, mode='validation', include_rate=False,
         data_tf=Components(transforms=[
-            transforms.Resample(orig_freq=args.org_sample_rate, new_freq=args.sample_rate),
-            AudioClip(max_length=4*args.sample_rate, mode='head', is_random=False),
+            Resample(orig_freq=args.org_sample_rate, new_freq=args.sample_rate),
+            AudioPadding(max_length=10*args.sample_rate, sample_rate=args.sample_rate, random_shift=False),
             ReduceChannel()
         ])
     )
@@ -122,10 +93,11 @@ if __name__ == '__main__':
         num_workers=args.num_workers
     )
 
+    # If the base level cannot achieve it, we can try the large or x-large one.
     hubert, clsModel = build_model(args=args, pre_weight=args.use_pre_trained_weigth)
     store_model_structure_to_txt(model=hubert, output_path=os.path.join(args.output_path, f'hubert-{args.model_level}-{constants.dataset_dic[args.dataset]}.txt'))
     store_model_structure_to_txt(model=clsModel, output_path=os.path.join(args.output_path, f'clsModel-{args.model_level}-{constants.dataset_dic[args.dataset]}.txt'))
-    optimizer = build_optimizer(args=args, auT=hubert, auC=clsModel)
+    optimizer = build_optimizer(lr=args.lr, auT=hubert, auC=clsModel, auT_decay=args.hub_lr_decay, auC_decay=args.clsf_lr_decay)
     loss_fn = CrossEntropyLabelSmooth(num_classes=args.class_num, use_gpu=torch.cuda.is_available(), epsilon=args.smooth)
 
     max_accu = 0.
@@ -138,7 +110,7 @@ if __name__ == '__main__':
             features, labels = features.to(args.device), labels.to(args.device)
 
             optimizer.zero_grad()
-            outputs, _ = clsModel(hubert(features)[0])
+            outputs = clsModel(hubert(features)[0][:, :2, :])
             loss = loss_fn(outputs, labels)
             loss.backward()
             optimizer.step()
