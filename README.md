@@ -22,8 +22,9 @@ conda create --name DHAuDS python=3.13 -y
 conda activate DHAuDS
 # CUDA 12.8
 pip install torch==2.7.0 torchvision==0.22.0 torchaudio==2.7.0 --index-url https://download.pytorch.org/whl/cu128
-pip install torchmetrics==1.7.4
+# pip install torchmetrics==1.7.4
 # pip install transformers==4.53.3
+# pip install scikit-learn==1.7.1
 pip install tqdm==4.67.1
 pip install pandas==2.3.1
 pip install matplotlib==3.10.3
@@ -46,21 +47,6 @@ This repository contains code and data used in the Interpretation and Explanatio
   
 [Official Audio MNIST Link](https://github.com/soerenab/AudioMNIST/tree/master)<br/>
 [Dataset Hosting Link](https://drive.google.com/file/d/1kq5_qCKRUTHmViDIziSRKPjW4fIoyT9u/view?usp=drive_link)
-<!-- ### SpeechCommands V1
-The dataset (1.4 GB) comprises 65,000 one-second-long utterances of 30 short words, contributed by thousands of different people through the AIY website. This is a set of one-second .wav audio files, each containing a single spoken English word.
-
-In both versions, ten of them are used as commands by convention: "Yes", "No", "Up", "Down", "Left",
-"Right", "On", "Off", "Stop", "Go". Other words are considered to be auxiliary (in the current implementation,
-it is marked by the `True` value of `the "is_unknown"` feature). Their function is to teach a model to distinguish core words
-from unrecognized ones.
-
-+ Sample size: 64721 (train: 51088, test: 6835, validation: 6798)
-+ Sampling rate: 16000
-+ Class Number: 30
-+ One sample length: 1 second
-
-[Speech Commands Dataset Link](https://research.google/blog/launching-the-speech-commands-dataset/)<br/>
-[Dataset Download Link](http://download.tensorflow.org/data/speech_commands_v0.01.tar.gz) -->
 
 ### SpeechCommands V2
 The SpeechCommands V2 (2.26GB) is a speech audio set that includes 35 English words. 
@@ -85,15 +71,26 @@ Download command:
 wget -O vocalsound_16k.zip https://www.dropbox.com/s/c5ace70qh1vbyzb/vs_release_16k.zip?dl=1
 ```
 
-### ReefSet
-This dataset contains strongly labeled audio clips from coral reef habitats, taken across 16 unique datasets from 11 countries. This dataset can be used to test transfer learning performance of audio embedding models. This folder includes: - 57074 WAV files that make up ReefSet_v1.0. Each file is 1.88 seconds in length, sampled at 16 kHz. All files have an associated label. - reefset_annotations.json, which contains the associated label, file ID, filename, data sharer, dataset and recorder type used for each sample in ReefSet_v1.0. This information is also indicated in the filename of each file. - 'reefset_labels_by_dataset.csv' provides a table containing the counts of each label class within each dataset.
+<!-- ### ReefSet
+ReefSet is a multi-labeled and imbalance datasets. ReefSet compiled a diverse meta-dataset of 57084 labelled coral reef bioacoustic recordings across 37 classes and from 16 individual datasets over 12 countries. During the annotation of each dataset, longer recording periods were segmented into samples of shorter windows (1.88 s) to fit within two window lengths of the industry standard networks. Later, for evaluation, classifiers were trained on a maximum of 32 samples per class for each dataset, with a minimum of 10 samples from each class held out for testing. Therefore, classes with less than 42 samples in any given dataset were merged by applying only a primary label (biophony, geophony or anthrophony). Where the count of samples merged under the primary label class still did not total 42 or more samples in a given dataset, these samples were discarded. This yielded the final meta-dataset of 57074 labelled samples, split across the four primary labels: biophony (79.20%), anthrophony (10.39%), geophony (0.09%) and ambient (10.32%), with 33 secondary labels.
 
 + Sample rate: 16 kHz
 + Sample size: 57074
 + One sample length: 1.88s
 + Class Number: 36
 
-[Official Link](https://zenodo.org/records/11071202)
+[Official Link](https://zenodo.org/records/11071202) -->
+
+### CochlScene
+Cochl Acoustic Scene Dataset, or CochlScene, is a new acoustic scene dataset whose recordings are fully collected from crowdsourcing participants. Most of the initial plans and guidelines for the processes were provided by researchers in the field of audio signal processing and machine learning, including the authors. The actual process was performed using a crowdsourcing platform developed by SelectStar, a Korean crowdsourcing data company. During the process, the initial plans were reinforced and modified based on the discussion about the actual difficulties in the collection process. After extracting a subset of the total collections based on the data's purpose, we collected 76,115 10-second files from 13 different acoustic scenes involving 831 participants.
+
++ Sample rate: 44100
++ Sample size: 76115 (Train: 60855, validation: 7573, test: 7687)
++ One sample length: 10 seconds
++ Class number: 13
+
+[Github Link](https://github.com/cochlearai/cochlscene)<br/>
+[Dataset Link](https://zenodo.org/records/7080122)
 
 ### QUT-NOISE
 QUT-NOISE is an environmental acoustic dataset for environmental background noise. QUT-NOISE comprises five distinct types of background noise: CAFE, CAR, HOME, REVERB, and STREET. Each type of noise includes five noise files.
