@@ -40,7 +40,7 @@ pip install soundfile
 This repository contains code and data used in the Interpretation and Explanation of Deep Neural Networks for Classifying Audio Signals. The dataset consists of 30,000 audio samples of spoken digits (0–9) from 60 different speakers. Additionally, it contains the audioMNIST_meta.txt file, which provides meta information such as the gender or age of each speaker.
 
 + Sample size: 30000 (Train: 18000, Validation: 6000, Test: 6000)
-+ Sample rate: 48000
++ Sample rate: 48 kHz
 + Audio length: 1 second
 + Class Number: 10
   
@@ -65,7 +65,7 @@ from unrecognized ones.
 ### SpeechCommands V2
 The SpeechCommands V2 (2.26GB) is a speech audio set that includes 35 English words. 
 + Sample size: 105829 (train: 84843, test: 11005, validation: 9981)
-+ Sampling rate: 16000
++ Sampling rate: 16 kHz
 + Class Number: 35
 + One sample length: 1 second
   
@@ -75,7 +75,7 @@ The SpeechCommands V2 (2.26GB) is a speech audio set that includes 35 English wo
 ### VocalSound
 VocalSound is a free dataset consisting of 21,024 crowdsourced recordings of laughter, sighs, coughs, throat clearing, sneezes, and sniffs from 3,365 unique subjects. The VocalSound dataset also contains meta-information such as speaker age, gender, native language, country, and health condition.
 + Sample Size: 20977 (Train: 15531, validation: 1855, test: 3591)
-+ Sample rate: 16000
++ Sample rate: 16 kHz
 + One sample length: less than 12 seconds
 + Class number: 6
 
@@ -88,7 +88,7 @@ wget -O vocalsound_16k.zip https://www.dropbox.com/s/c5ace70qh1vbyzb/vs_release_
 ### ReefSet
 This dataset contains strongly labeled audio clips from coral reef habitats, taken across 16 unique datasets from 11 countries. This dataset can be used to test transfer learning performance of audio embedding models. This folder includes: - 57074 WAV files that make up ReefSet_v1.0. Each file is 1.88 seconds in length, sampled at 16 kHz. All files have an associated label. - reefset_annotations.json, which contains the associated label, file ID, filename, data sharer, dataset and recorder type used for each sample in ReefSet_v1.0. This information is also indicated in the filename of each file. - 'reefset_labels_by_dataset.csv' provides a table containing the counts of each label class within each dataset.
 
-+ Sample rate: 16000
++ Sample rate: 16 kHz
 + Sample size: 57074
 + One sample length: 1.88s
 + Class Number: 36
@@ -97,7 +97,7 @@ This dataset contains strongly labeled audio clips from coral reef habitats, tak
 
 ### QUT-NOISE
 QUT-NOISE is an environmental acoustic dataset for environmental background noise. QUT-NOISE comprises five distinct types of background noise: CAFE, CAR, HOME, REVERB, and STREET. Each type of noise includes five noise files.
-+ Sample rate: 48000
++ Sample rate: 48 kHz
 + Sample size: 20
 + One sample length: greater than 1990s (33m 10s)
 + Class Number: 5
@@ -106,7 +106,7 @@ QUT-NOISE is an environmental acoustic dataset for environmental background nois
 
 ### DEMAND
 A database of 16-channel environmental noise recordings. 
-+ Sample rate: 16000/48000
++ Sample rate: 16 kHz/48 kHz 
 + Sample size: 272
 + One sample length: 300s
 + Class Number: 16
