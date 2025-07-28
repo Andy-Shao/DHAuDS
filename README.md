@@ -86,12 +86,12 @@ wget -O vocalsound_16k.zip https://www.dropbox.com/s/c5ace70qh1vbyzb/vs_release_
 ```
 
 ### ReefSet
-This dataset contains strongly labeled audio clips from coral reef habitats, taken across 16 unique datasets from 11 countries. This dataset can be used to test transfer learning performance of audio embedding models. This folder includes: - 57,084 WAV files that make up ReefSet_v1.0. Each file is 1.88 seconds in length, sampled at 16 kHz. All files have an associated label. - reefset_annotations.json, which contains the associated label, file ID, filename, data sharer, dataset and recorder type used for each sample in ReefSet_v1.0. This information is also indicated in the filename of each file. - 'reefset_labels_by_dataset.csv' provides a table containing the counts of each label class within each dataset.
+This dataset contains strongly labeled audio clips from coral reef habitats, taken across 16 unique datasets from 11 countries. This dataset can be used to test transfer learning performance of audio embedding models. This folder includes: - 57074 WAV files that make up ReefSet_v1.0. Each file is 1.88 seconds in length, sampled at 16 kHz. All files have an associated label. - reefset_annotations.json, which contains the associated label, file ID, filename, data sharer, dataset and recorder type used for each sample in ReefSet_v1.0. This information is also indicated in the filename of each file. - 'reefset_labels_by_dataset.csv' provides a table containing the counts of each label class within each dataset.
 
 + Sample rate: 16000
-+ Sample size: ???
++ Sample size: 57074
 + One sample length: 1.88s
-+ Class Number: ???
++ Class Number: 36
 
 [Official Link](https://zenodo.org/records/11071202)
 
