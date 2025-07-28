@@ -24,7 +24,7 @@ conda activate DHAuDS
 pip install torch==2.7.0 torchvision==0.22.0 torchaudio==2.7.0 --index-url https://download.pytorch.org/whl/cu128
 # pip install torchmetrics==1.7.4
 # pip install transformers==4.53.3
-# pip install scikit-learn==1.7.1
+pip install scikit-learn==1.7.1
 pip install tqdm==4.67.1
 pip install pandas==2.3.1
 pip install matplotlib==3.10.3
@@ -71,7 +71,7 @@ Download command:
 wget -O vocalsound_16k.zip https://www.dropbox.com/s/c5ace70qh1vbyzb/vs_release_16k.zip?dl=1
 ```
 
-<!-- ### ReefSet
+### ReefSet
 ReefSet is a multi-labeled and imbalance datasets. ReefSet compiled a diverse meta-dataset of 57084 labelled coral reef bioacoustic recordings across 37 classes and from 16 individual datasets over 12 countries. During the annotation of each dataset, longer recording periods were segmented into samples of shorter windows (1.88 s) to fit within two window lengths of the industry standard networks. Later, for evaluation, classifiers were trained on a maximum of 32 samples per class for each dataset, with a minimum of 10 samples from each class held out for testing. Therefore, classes with less than 42 samples in any given dataset were merged by applying only a primary label (biophony, geophony or anthrophony). Where the count of samples merged under the primary label class still did not total 42 or more samples in a given dataset, these samples were discarded. This yielded the final meta-dataset of 57074 labelled samples, split across the four primary labels: biophony (79.20%), anthrophony (10.39%), geophony (0.09%) and ambient (10.32%), with 33 secondary labels.
 
 + Sample rate: 16 kHz
@@ -79,7 +79,7 @@ ReefSet is a multi-labeled and imbalance datasets. ReefSet compiled a diverse me
 + One sample length: 1.88s
 + Class Number: 36
 
-[Official Link](https://zenodo.org/records/11071202) -->
+[Official Link](https://zenodo.org/records/11071202)
 
 ### CochlScene
 Cochl Acoustic Scene Dataset, or CochlScene, is a new acoustic scene dataset whose recordings are fully collected from crowdsourcing participants. Most of the initial plans and guidelines for the processes were provided by researchers in the field of audio signal processing and machine learning, including the authors. The actual process was performed using a crowdsourcing platform developed by SelectStar, a Korean crowdsourcing data company. During the process, the initial plans were reinforced and modified based on the discussion about the actual difficulties in the collection process. After extracting a subset of the total collections based on the data's purpose, we collected 76,115 10-second files from 13 different acoustic scenes involving 831 participants.
