@@ -32,7 +32,12 @@ def inference(args:argparse.Namespace, hubert:nn.Module, clsModel:nn.Module, dat
     return ttl_corr / ttl_size * 100.
 
 def build_model(args:argparse.Namespace, pre_weight:bool=True) -> tuple[torchaudio.models.Wav2Vec2Model, FCEClassifier]:
-    bundle = torchaudio.pipelines.HUBERT_BASE
+    if args.model_level == 'base':
+        bundle = torchaudio.pipelines.HUBERT_BASE
+    elif args.model_level == 'large':
+        bundle = torchaudio.pipelines.HUBERT_LARGE
+    elif args.model_level == 'x-large':
+        bundle = torchaudio.pipelines.HUBERT_XLARGE
     if pre_weight:
         hubert = bundle.get_model().to(device=args.device)
     else:
