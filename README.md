@@ -63,7 +63,7 @@ ReefSet is a multi-labeled and imbalanced dataset. ReefSet compiled a diverse me
 + Sample rate: 16 kHz
 + Sample size: 57074
 + One sample length: 1.88s
-+ Class Number: 37 (4 primary labels and 33 secondary labels)
++ Class Number: 36 (4 primary labels and 33 secondary labels, total number of labels is 36 since anthrophony is without independent label)
 
 [Official Link](https://zenodo.org/records/11071202)
 
