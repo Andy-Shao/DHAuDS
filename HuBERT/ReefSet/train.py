@@ -59,6 +59,7 @@ if __name__ == '__main__':
     ap.add_argument('--lr', type=float, default=1e-3)
     ap.add_argument('--lr_cardinality', type=int, default=40)
     ap.add_argument('--lr_gamma', type=float, default=10)
+    ap.add_argument('--lr_threshold', type=int, default=1)
     ap.add_argument('--hub_lr_decay', type=float, default=1.0)
     ap.add_argument('--clsf_lr_decay', type=float, default=1.0)
     ap.add_argument('--num_workers', type=int, default=16)
@@ -160,7 +161,7 @@ if __name__ == '__main__':
 
         learning_rate = optimizer.param_groups[0]['lr']
         if epoch % args.interval == 0:
-            lr_scheduler(optimizer=optimizer, epoch=epoch, lr_cardinality=args.lr_cardinality, gamma=args.lr_gamma)
+            lr_scheduler(optimizer=optimizer, epoch=epoch, lr_cardinality=args.lr_cardinality, gamma=args.lr_gamma, threshold=args.lr_threshold)
 
         print('Validating...')
         val_roc_auc = inference(args=args, hubert=hubert, clsModel=clsModel, data_loader=val_loader)
