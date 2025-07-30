@@ -1,19 +1,6 @@
 # A Dynamic and Heterogeneous Audio Domain Shift (DHAuDS) for Test-time Adaptation on Audio Classification
 
 ## Software Environment
-<!-- + Docker image: nvidia/cuda:12.4.0-runtime-ubuntu22.04
-+ GPU: RTX 4090
-```shell
-conda create --name DHAuDS python=3.12 -y
-conda activate DHAuDS
-# CUDA 12.4
-conda install pytorch==2.4.1 torchvision==0.19.1 torchaudio==2.4.1 pytorch-cuda=12.4 -c pytorch -c nvidia -y
-conda install conda-forge::transformers==4.52.4 -y
-conda install -c conda-forge torchmetrics==1.7.4 -y
-conda install matplotlib==3.10.0 -y
-conda install jupyter==1.1.1 -y
-pip install wandb==0.19.11
-``` -->
 
 + Docker image: nvidia/cuda:12.8.0-cudnn-runtime-ubuntu22.04
 + GPU: RTX 5090
@@ -22,7 +9,6 @@ conda create --name DHAuDS python=3.13 -y
 conda activate DHAuDS
 # CUDA 12.8
 pip install torch==2.7.0 torchvision==0.22.0 torchaudio==2.7.0 --index-url https://download.pytorch.org/whl/cu128
-# pip install torchmetrics==1.7.4
 # pip install transformers==4.53.3
 pip install scikit-learn==1.7.1
 pip install tqdm==4.67.1
@@ -81,7 +67,7 @@ ReefSet is a multi-labeled and imbalanced dataset. ReefSet compiled a diverse me
 
 [Official Link](https://zenodo.org/records/11071202)
 
-### CochlScene
+<!-- ### CochlScene
 Cochl Acoustic Scene Dataset, or CochlScene, is a new acoustic scene dataset whose recordings are fully collected from crowdsourcing participants. Most of the initial plans and guidelines for the processes were provided by researchers in the field of audio signal processing and machine learning, including the authors. The actual process was performed using a crowdsourcing platform developed by SelectStar, a Korean crowdsourcing data company. During the process, the initial plans were reinforced and modified based on the discussion about the actual difficulties in the collection process. After extracting a subset of the total collections based on the data's purpose, we collected 76,115 10-second files from 13 different acoustic scenes involving 831 participants.
 
 + Sample rate: 44100
@@ -90,7 +76,7 @@ Cochl Acoustic Scene Dataset, or CochlScene, is a new acoustic scene dataset who
 + Class number: 13
 
 [Github Link](https://github.com/cochlearai/cochlscene)<br/>
-[Dataset Link](https://zenodo.org/records/7080122)
+[Dataset Link](https://zenodo.org/records/7080122) -->
 
 ### QUT-NOISE
 QUT-NOISE is an environmental acoustic dataset for environmental background noise. QUT-NOISE comprises five distinct types of background noise: CAFE, CAR, HOME, REVERB, and STREET. Each type of noise includes five noise files.
