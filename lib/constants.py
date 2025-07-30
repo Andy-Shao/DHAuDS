@@ -7,7 +7,8 @@ dataset_dic = {
     'SpeechCommandsV1': 'SC1',
     'VocalSound': 'VS',
     'CochlScene': 'CS',
-    'AudioMNIST': 'AM'
+    'AudioMNIST': 'AM',
+    'ReefSet': 'RS'
 }
 
 architecture_dic = {
