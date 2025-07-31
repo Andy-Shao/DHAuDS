@@ -10,6 +10,8 @@ from torch.utils.data import Dataset, DataLoader
 from torch import nn
 import torch
 
+from lib.utils import one_hot_to_hex, hex_to_one_hot
+
 class TransferDataset(Dataset):
     def __init__(self, dataset: Dataset, data_tf:nn.Module=None, label_tf:nn.Module=None, device='cpu', keep_cpu=True) -> None:
         super().__init__()
@@ -77,25 +79,28 @@ class RandomChoiceSet(Dataset):
         i = random.randint(0, len(self.data_list)-1)
         return self.dataset[self.data_list[i]]
 
-def store_to(dataset: Dataset, root_path: str, index_file_name: str, data_transf=None, label_transf=None) -> None:
-    print(f'Store dataset into {root_path}, meta file is: {index_file_name}')
-    data_index = pd.DataFrame(columns=['data_path', 'label'])
-    try: 
-        if os.path.exists(root_path): shutil.rmtree(root_path)
-        os.makedirs(root_path)
-    except:
-        print('remove directory has an error.')
-    for index, (feature, label) in tqdm(enumerate(dataset), total=len(dataset)):
-        if data_transf is not None:
-            feature = data_transf(feature)
-        if label_transf is not None:
-            label = data_transf(feature)
-        data_path = f'{index}_{label}.dt'
-        data_index.loc[len(data_index)] = [data_path, label]
-        torch.save(feature, os.path.join(root_path, data_path))
-    data_index.to_csv(os.path.join(root_path, index_file_name))
+# def store_to(dataset: Dataset, root_path: str, index_file_name: str, data_transf=None, label_transf=None) -> None:
+#     print(f'Store dataset into {root_path}, meta file is: {index_file_name}')
+#     data_index = pd.DataFrame(columns=['data_path', 'label'])
+#     try: 
+#         if os.path.exists(root_path): shutil.rmtree(root_path)
+#         os.makedirs(root_path)
+#     except:
+#         print('remove directory has an error.')
+#     for index, (feature, label) in tqdm(enumerate(dataset), total=len(dataset)):
+#         if data_transf is not None:
+#             feature = data_transf(feature)
+#         if label_transf is not None:
+#             label = data_transf(feature)
+#         data_path = f'{index}_{label}.dt'
+#         data_index.loc[len(data_index)] = [data_path, label]
+#         torch.save(feature, os.path.join(root_path, data_path))
+#     data_index.to_csv(os.path.join(root_path, index_file_name))
 
-def mlt_store_to(dataset:Dataset, root_path:str, index_file_name:str, data_tfs:list[nn.Module], label_tf:nn.Module=None) -> None:
+def mlt_store_to(
+    dataset:Dataset, root_path:str, index_file_name:str, data_tfs:list[nn.Module], label_tf:nn.Module=None,
+    is_one_hot_label:bool=False
+) -> None:
     print(f'Store dataset into {root_path}, meta file is: {index_file_name}')
     columns = []
     for i in range(len(data_tfs)):
@@ -108,7 +113,7 @@ def mlt_store_to(dataset:Dataset, root_path:str, index_file_name:str, data_tfs:l
     except:
         raise Exception('remove director has an error')
     for idx, data in tqdm(enumerate(dataset), total=len(dataset)):
-        label = data[-1]
+        label = data[-1] if not is_one_hot_label else one_hot_to_hex(data[-1])
         if label_tf is not None:
             label = label_tf(label)
         row = []
@@ -123,7 +128,7 @@ def mlt_store_to(dataset:Dataset, root_path:str, index_file_name:str, data_tfs:l
         data_index.loc[len(data_index)] = row
     data_index.to_csv(os.path.join(root_path, index_file_name))
 
-def batch_store_to(data_loader:DataLoader, root_path:str, index_file_name:str, f_num:int=1) -> None:
+def batch_store_to(data_loader:DataLoader, root_path:str, index_file_name:str, f_num:int=1, is_one_hot_label:bool=False) -> None:
     print(f'Store dataset into {root_path}, meta file is: {index_file_name}')
     columns = []
     for i in range(f_num):
@@ -139,7 +144,7 @@ def batch_store_to(data_loader:DataLoader, root_path:str, index_file_name:str, f
         labels = mlt_data[-1]
         batch_size = labels.shape[0]
         for j in range(batch_size):
-            label = labels[j].item()
+            label = labels[j].item() if not is_one_hot_label else one_hot_to_hex(labels[j])
             row = []
             for k in range(len(mlt_data)-1):
                 feature = mlt_data[k][j]
@@ -150,30 +155,33 @@ def batch_store_to(data_loader:DataLoader, root_path:str, index_file_name:str, f
             data_index.loc[len(data_index)] = row
     data_index.to_csv(os.path.join(root_path, index_file_name))
 
-def load_from(root_path: str, index_file_name: str, data_tf=None, label_tf=None) -> Dataset:
-    class LoadDs(Dataset):
-        def __init__(self) -> None:
-            super().__init__()
-            data_index = pd.read_csv(os.path.join(root_path, index_file_name))
-            self.data_meta = []
-            for idx in range(len(data_index)):
-                self.data_meta.append([data_index['data_path'][idx], data_index['label'][idx]]) 
+# def load_from(root_path: str, index_file_name: str, data_tf=None, label_tf=None) -> Dataset:
+#     class LoadDs(Dataset):
+#         def __init__(self) -> None:
+#             super().__init__()
+#             data_index = pd.read_csv(os.path.join(root_path, index_file_name))
+#             self.data_meta = []
+#             for idx in range(len(data_index)):
+#                 self.data_meta.append([data_index['data_path'][idx], data_index['label'][idx]]) 
         
-        def __len__(self):
-            return len(self.data_meta)
+#         def __len__(self):
+#             return len(self.data_meta)
         
-        def __getitem__(self, index) -> Any:
-            data_path = self.data_meta[index][0]
-            feature = torch.load(os.path.join(root_path, data_path), weights_only=False)
-            label = int(self.data_meta[index][1])
-            if data_tf is not None:
-                feature = data_tf(feature)
-            if label_tf is not None:
-                label = label_tf(label)
-            return feature, label
-    return LoadDs()
+#         def __getitem__(self, index) -> Any:
+#             data_path = self.data_meta[index][0]
+#             feature = torch.load(os.path.join(root_path, data_path), weights_only=False)
+#             label = int(self.data_meta[index][1])
+#             if data_tf is not None:
+#                 feature = data_tf(feature)
+#             if label_tf is not None:
+#                 label = label_tf(label)
+#             return feature, label
+#     return LoadDs()
 
-def mlt_load_from(root_path:str, index_file_name:str, data_tfs:list[nn.Module]=None, label_tf=None) -> Dataset:
+def mlt_load_from(
+    root_path:str, index_file_name:str, data_tfs:list[nn.Module]=None, label_tf=None,
+    is_one_hot_label:bool=False, class_num:int=-1
+) -> Dataset:
     class MltLoadDs(Dataset):
         def __init__(self):
             super().__init__()
@@ -192,7 +200,7 @@ def mlt_load_from(root_path:str, index_file_name:str, data_tfs:list[nn.Module]=N
                 if data_tfs is not None:
                     feature = data_tfs[i](feature)
                 ret.append(feature)
-            label = int(row['label'])
+            label = int(row['label']) if not is_one_hot_label else hex_to_one_hot(hex_str=row['label'], length=class_num)
             if label_tf is not None:
                 label = label_tf(label)
             ret.append(label)
