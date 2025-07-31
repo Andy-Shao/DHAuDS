@@ -98,5 +98,5 @@ A database of 16-channel environmental noise recordings.
 
 ## Code Reference
 + [AMAuT](https://github.com/Andy-Shao/AMAuT)
-+ [SSAST](https://github.com/YuanGongND/ssast/tree/main)
+<!-- + [SSAST](https://github.com/YuanGongND/ssast/tree/main) -->
 + [HuBERT](https://github.com/facebookresearch/fairseq/tree/main/examples/hubert)
