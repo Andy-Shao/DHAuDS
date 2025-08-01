@@ -130,7 +130,7 @@ def corrupt_data(args:argparse.Namespace, orgin_set:Dataset) -> Dataset:
     if args.corruption_level == 'L1':
         snrs = [7, 1, 10]
         n_steps = [4, 5]
-        rates = [.06, .01, .08]
+        rates = [.07, .01, .1]
     elif args.corruption_level == 'L2':
         snrs = [5, .5, 7]
         n_steps = [5, 7]
