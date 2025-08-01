@@ -129,11 +129,11 @@ def vs_corruption_data(args:argparse.Namespace) -> Dataset:
 def corrupt_data(args:argparse.Namespace, orgin_set:Dataset) -> Dataset:
     if args.corruption_level == 'L1':
         snrs = [7, 1, 10]
-        n_steps = [2, 5]
+        n_steps = [3, 4]
         rates = [.06, .01, .1]
     elif args.corruption_level == 'L2':
         snrs = [5, .5, 7]
-        n_steps = [4, 7]
+        n_steps = [4, 6]
         rates = [.08, .01, .12]
     if args.corruption_type == 'WHN':
         test_set = MultiTFDataset(dataset=orgin_set, tfs=[WHN(lsnr=snrs[0], rsnr=snrs[2], step=snrs[1])])
