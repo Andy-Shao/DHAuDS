@@ -128,11 +128,11 @@ def vs_corruption_data(args:argparse.Namespace) -> Dataset:
 
 def corrupt_data(args:argparse.Namespace, orgin_set:Dataset) -> Dataset:
     if args.corruption_level == 'L1':
-        snrs = [3, 1, 7]
+        snrs = [7, 1, 10]
         n_steps = [2, 5]
         rates = [.06, .01, .1]
     elif args.corruption_level == 'L2':
-        snrs = [2, .5, 4]
+        snrs = [5, .5, 7]
         n_steps = [4, 7]
         rates = [.08, .01, .12]
     if args.corruption_type == 'WHN':
