@@ -129,36 +129,36 @@ def vs_corruption_data(args:argparse.Namespace) -> Dataset:
 
 def corrupt_data(args:argparse.Namespace, orgin_set:Dataset) -> Dataset:
     if args.corruption_level == 'L1':
-        snrs = constants.corruption.DYN_SNR_L1
-        n_steps = constants.corruption.DYN_PSH_L1
-        rates = constants.corruption.DYN_TST_L1
+        snrs = constants.DYN_SNR_L1
+        n_steps = constants.DYN_PSH_L1
+        rates = constants.DYN_TST_L1
     elif args.corruption_level == 'L2':
-        snrs = constants.corruption.DYN_SNR_L2
-        n_steps = constants.corruption.DYN_PSH_L2
-        rates = constants.corruption.DYN_TST_L2
+        snrs = constants.DYN_SNR_L2
+        n_steps = constants.DYN_PSH_L2
+        rates = constants.DYN_TST_L2
     if args.corruption_type == 'WHN':
         test_set = MultiTFDataset(dataset=orgin_set, tfs=[WHN(lsnr=snrs[0], rsnr=snrs[2], step=snrs[1])])
     elif args.corruption_type == 'ENQ':
-        noise_modes = constants.corruption.ENQ_NOISE_LIST
+        noise_modes = constants.ENQ_NOISE_LIST
         test_set = MultiTFDataset(dataset=orgin_set, tfs=[
             DynEN(noise_list=enq_noises(args=args, noise_modes=noise_modes), lsnr=snrs[0], step=snrs[1], rsnr=snrs[2])
         ])
     elif args.corruption_type == 'END1':
-        noise_modes = constants.corruption.END1_NOISE_LIST
+        noise_modes = constants.END1_NOISE_LIST
         test_set = MultiTFDataset(
             dataset=orgin_set, tfs=[
                 DynEN(noise_list=end_noises(args=args, noise_modes=noise_modes), lsnr=snrs[0], step=snrs[1], rsnr=snrs[2])
             ]
         )
     elif args.corruption_type == 'END2':
-        noise_modes = constants.corruption.END2_NOISE_LIST
+        noise_modes = constants.END2_NOISE_LIST
         test_set = MultiTFDataset(
             dataset=orgin_set, tfs=[
                 DynEN(noise_list=end_noises(args=args, noise_modes=noise_modes), lsnr=snrs[0], step=snrs[1], rsnr=snrs[2])
             ]
         )
     elif args.corruption_type == 'ENSC':
-        noise_modes = constants.corruption.ENSC_NOISE_LIST
+        noise_modes = constants.ENSC_NOISE_LIST
         test_set = MultiTFDataset(
             dataset=orgin_set, tfs=[
                 DynEN(noise_list=ensc_noises(args=args, noise_modes=noise_modes), lsnr=snrs[0], step=snrs[1], rsnr=snrs[2])

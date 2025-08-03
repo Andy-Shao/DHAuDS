@@ -23,9 +23,9 @@ def sc_corruption_set(args:argparse.Namespace) -> tuple[Dataset, Dataset]:
     from HuBERT.VocalSound.ttda import corrupt_data as corrupt_data_tmp
     if args.corruption_type == 'TST':
         if args.corruption_level == 'L1':
-            rates = constants.corruption.DYN_TST_L1
+            rates = constants.DYN_TST_L1
         elif args.corruption_level == 'L2':
-            rates = constants.corruption.DYN_TST_L2
+            rates = constants.DYN_TST_L2
         test_set = SpeechCommandsV2(
             root_path=args.dataset_root_path, mode='testing', download=True,
             data_tf=Components(transforms=[
