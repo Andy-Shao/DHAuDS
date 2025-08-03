@@ -181,7 +181,7 @@ if __name__ == '__main__':
             os2, _ = clsf(hubert(fs2)[0])
 
             nucnm_loss = nucnm(args, os1) + nucnm(args, os2)
-            ent_loss = entropy(args, os1) + entropy(args, os2)
+            ent_loss = entropy(args, os1, epsilon=1e-8) + entropy(args, os2, epsilon=1e-8)
             gent_loss = g_entropy(args, os1, q=args.gent_q) + g_entropy(args, os1, q=args.gent_q)
 
             loss = nucnm_loss + ent_loss + gent_loss
