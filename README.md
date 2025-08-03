@@ -23,7 +23,7 @@ pip install soundfile
 ```
 
 ## Datasets
-### AudioMNIST
+<!--### AudioMNIST
 This repository contains code and data used in the Interpretation and Explanation of Deep Neural Networks for Classifying Audio Signals. The dataset consists of 30,000 audio samples of spoken digits (0–9) from 60 different speakers. Additionally, it contains the audioMNIST_meta.txt file, which provides meta information such as the gender or age of each speaker.
 
 + Sample size: 30000 (Train: 18000, Validation: 6000, Test: 6000)
@@ -32,8 +32,7 @@ This repository contains code and data used in the Interpretation and Explanatio
 + Class Number: 10
   
 [Official Audio MNIST Link](https://github.com/soerenab/AudioMNIST/tree/master)<br/>
-[Dataset Hosting Link](https://www.kaggle.com/datasets/sripaadsrinivasan/audio-mnist)
-<!--[Dataset Hosting Link](https://drive.google.com/file/d/1kq5_qCKRUTHmViDIziSRKPjW4fIoyT9u/view?usp=drive_link)-->
+[Dataset Hosting Link](https://www.kaggle.com/datasets/sripaadsrinivasan/audio-mnist)-->
 
 ### SpeechCommands V2
 The SpeechCommands V2 (2.26GB) is a speech audio set that includes 35 English words. 
