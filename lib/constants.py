@@ -10,7 +10,8 @@ dataset_dic = {
     'VocalSound': 'VS',
     'CochlScene': 'CS',
     'AudioMNIST': 'AM',
-    'ReefSet': 'RS'
+    'ReefSet': 'RS',
+    'UrbanSound8K': 'US8'
 }
 
 architecture_dic = {

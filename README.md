@@ -63,7 +63,7 @@ wget -O vocalsound_16k.zip https://www.dropbox.com/s/c5ace70qh1vbyzb/vs_release_
 This dataset contains 8732 labeled sound excerpts (<=4s) of urban sounds from 10 classes: air_conditioner, car_horn, children_playing, dog_bark, drilling, enginge_idling, gun_shot, jackhammer, siren, and street_music. The classes are drawn from the urban sound taxonomy.
 
 + Sample size: 8732
-+ Sample rate: 48 kHz
++ Sample rate: less than 192000 (different audio different sample rate)
 + One sample length: less than 4 seconds
 + Class number: 10
 
