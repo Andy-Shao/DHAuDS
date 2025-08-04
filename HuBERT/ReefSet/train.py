@@ -165,7 +165,7 @@ if __name__ == '__main__':
 
         print('Validating...')
         val_roc_auc = inference(args=args, hubert=hubert, clsModel=clsModel, data_loader=val_loader)
-        print(f'Validation accuracy is: {val_roc_auc:.4f}, sample size is: {len(val_set)}')
+        print(f'Validation Mean ROC-AUC is: {val_roc_auc:.4f}, sample size is: {len(val_set)}')
 
         wandb_run.log(data={
             'Train/Loss': train_loss / len(train_loader),
