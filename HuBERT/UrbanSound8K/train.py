@@ -118,8 +118,8 @@ if __name__ == '__main__':
         root_path=args.dataset_root_path, include_rate=False, folds=[8, 9, 10], sample_rate=args.sample_rate,
         data_tf=Components(transforms=[
             Stereo2Mono(),
-            AudioPadding(max_length=args.audio_length, sample_rate=args.sample_rate, random_shift=True), 
-            AudioClip(max_length=args.audio_length, mode='head', is_random=False),
+            AudioPadding(max_length=args.audio_length, sample_rate=args.sample_rate, random_shift=False), 
+            AudioClip(max_length=args.audio_length, mode='mid', is_random=False),
             ReduceChannel()
         ])
     )
