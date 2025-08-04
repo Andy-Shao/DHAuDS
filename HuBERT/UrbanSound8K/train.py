@@ -13,12 +13,12 @@ import torchaudio
 from torchaudio.models import Wav2Vec2Model
 
 from lib import constants
-from lib.utils import print_argparse, make_unless_exits, store_model_structure_to_txt, ConfigDict
+from lib.utils import print_argparse, make_unless_exits, store_model_structure_to_txt
 from lib.enDataset import UrbanSound8K
 from lib.component import Components, AudioPadding, Stereo2Mono, ReduceChannel, time_shift, AudioClip
-from lib.lr_utils import build_optimizer, lr_scheduler
-from AuT.lib.model import AudioClassifier
+from lib.lr_utils import lr_scheduler, build_optimizer
 from AuT.lib.loss import CrossEntropyLabelSmooth
+from HuBERT.lib.model import UrbanSound8KClassifier
 
 def inference(args:argparse.Namespace, hubert:nn.Module, clsModel:nn.Module, data_loader:DataLoader):
     hubert.eval(); clsModel.eval()
@@ -26,7 +26,7 @@ def inference(args:argparse.Namespace, hubert:nn.Module, clsModel:nn.Module, dat
         features, labels = features.to(args.device), labels.to(args.device)
 
         with torch.inference_mode():
-            outputs, _ = clsModel(hubert(features)[0])
+            outputs = clsModel(hubert(features)[0])
         _, preds = torch.max(outputs.detach().cpu(), dim=1)
         
         if idx == 0:
@@ -38,20 +38,13 @@ def inference(args:argparse.Namespace, hubert:nn.Module, clsModel:nn.Module, dat
     val_f1 = f1_score(y_true=y_true.numpy(), y_pred=y_pred.numpy(), average='macro')
     return val_f1
 
-def build_model(args:argparse.Namespace, pre_weight:bool=True) -> tuple[Wav2Vec2Model, AudioClassifier]:
+def build_model(args:argparse.Namespace, pre_weight:bool=True) -> tuple[Wav2Vec2Model, UrbanSound8KClassifier]:
     bundle = torchaudio.pipelines.HUBERT_BASE
     if pre_weight:
         hubert = bundle.get_model().to(device=args.device)
     else:
         hubert = torchaudio.models.hubert_base().to(device=args.device)
-    cfg = ConfigDict()
-    cfg.classifier = ConfigDict()
-    cfg.classifier.class_num = args.class_num
-    cfg.classifier['extend_size'] = 2048
-    cfg.classifier['convergent_size'] = 256
-    cfg.embedding = ConfigDict()
-    cfg.embedding.embed_size = bundle._params['encoder_embed_dim']
-    classifier = AudioClassifier(config=cfg).to(device=args.device)
+    classifier = UrbanSound8KClassifier(embed_size=bundle._params['encoder_embed_dim'], class_num=args.class_num, num_layers=[2]).to(device=args.device)
     return hubert, classifier
 
 if __name__ == '__main__':
@@ -146,9 +139,10 @@ if __name__ == '__main__':
         train_loss = 0.
         for idx, (features, labels) in tqdm(enumerate(train_loader), total=len(train_loader)):
             features, labels = features.to(args.device), labels.to(args.device)
-
+            
             optimizer.zero_grad()
-            outputs, _ = clsModel(hubert(features)[0])
+            attens, _ = hubert(features)
+            outputs = clsModel(attens)
             loss = loss_fn(outputs, labels)
             loss.backward()
             optimizer.step()
