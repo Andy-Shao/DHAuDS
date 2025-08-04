@@ -3,7 +3,7 @@ from torch import nn
 
 from AuT.lib.embed import StdConv1d, FCEResNetBlock
 
-class UrbanSound8KClassifier(nn.Module):
+class HuBClassifier(nn.Module):
     def __init__(self, embed_size:int, class_num:int, num_layers=[6,8]):
         super().__init__()
 

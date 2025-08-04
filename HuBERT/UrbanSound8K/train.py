@@ -18,7 +18,7 @@ from lib.enDataset import UrbanSound8K
 from lib.component import Components, AudioPadding, Stereo2Mono, ReduceChannel, time_shift, AudioClip
 from lib.lr_utils import lr_scheduler, build_optimizer
 from AuT.lib.loss import CrossEntropyLabelSmooth
-from HuBERT.lib.model import UrbanSound8KClassifier
+from HuBERT.lib.model import HuBClassifier
 
 def inference(args:argparse.Namespace, hubert:nn.Module, clsModel:nn.Module, data_loader:DataLoader):
     hubert.eval(); clsModel.eval()
@@ -38,13 +38,13 @@ def inference(args:argparse.Namespace, hubert:nn.Module, clsModel:nn.Module, dat
     val_f1 = f1_score(y_true=y_true.numpy(), y_pred=y_pred.numpy(), average='macro')
     return val_f1
 
-def build_model(args:argparse.Namespace, pre_weight:bool=True) -> tuple[Wav2Vec2Model, UrbanSound8KClassifier]:
+def build_model(args:argparse.Namespace, pre_weight:bool=True) -> tuple[Wav2Vec2Model, HuBClassifier]:
     bundle = torchaudio.pipelines.HUBERT_BASE
     if pre_weight:
         hubert = bundle.get_model().to(device=args.device)
     else:
         hubert = torchaudio.models.hubert_base().to(device=args.device)
-    classifier = UrbanSound8KClassifier(embed_size=bundle._params['encoder_embed_dim'], class_num=args.class_num, num_layers=[2]).to(device=args.device)
+    classifier = HuBClassifier(embed_size=bundle._params['encoder_embed_dim'], class_num=args.class_num, num_layers=[2]).to(device=args.device)
     return hubert, classifier
 
 if __name__ == '__main__':
