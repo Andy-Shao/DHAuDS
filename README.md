@@ -48,7 +48,7 @@ The SpeechCommands V2 (2.26GB) is a speech audio set that includes 35 English wo
 
 ### VocalSound
 VocalSound is a free dataset consisting of 21,024 crowdsourced recordings of laughter, sighs, coughs, throat clearing, sneezes, and sniffs from 3,365 unique subjects. The VocalSound dataset also contains meta-information such as speaker age, gender, native language, country, and health condition.
-+ Sample Size: 20977 (Train: 15531, validation: 1855, test: 3591)
++ Sample size: 20977 (Train: 15531, validation: 1855, test: 3591)
 + Sample rate: 16 kHz
 + One sample length: less than 12 seconds
 + Class number: 6
@@ -57,6 +57,34 @@ VocalSound is a free dataset consisting of 21,024 crowdsourced recordings of lau
 Download command:
 ```shell
 wget -O vocalsound_16k.zip https://www.dropbox.com/s/c5ace70qh1vbyzb/vs_release_16k.zip?dl=1
+```
+
+### UrbanSound8K
+This dataset contains 8732 labeled sound excerpts (<=4s) of urban sounds from 10 classes: air_conditioner, car_horn, children_playing, dog_bark, drilling, enginge_idling, gun_shot, jackhammer, siren, and street_music. The classes are drawn from the urban sound taxonomy.
+
++ Sample size: 8732
++ Sample rate: 48 kHz
++ One sample length: less than 4 seconds
++ Class number: 10
+
+Dataset download:
+```shell
+pip install soundata
+```
+```python
+import soundata
+
+# learn wich datasets are available in soundata
+print(soundata.list_datasets())
+
+# choose a dataset and download it
+dataset = soundata.initialize('urbansound8k', data_home='/choose/where/data/live')
+dataset.download()
+
+# get annotations and audio for a random clip
+example_clip = dataset.choice_clip()
+tags = example_clip.tags
+y, sr = example_clip.audio
 ```
 
 ### ReefSet
