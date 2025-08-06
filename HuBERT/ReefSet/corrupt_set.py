@@ -25,17 +25,20 @@ def store_to(dataset:Dataset, root_path:str, sample_rate:int, data_tf:nn.Module=
     for feature, file_name in tqdm(dataset):
         if data_tf is not None:
             feature = data_tf(feature)
-        torchaudio.save(uri=os.path.join(root_path, file_name), src=feature, sample_rate=sample_rate)
+        torchaudio.save(
+            uri=os.path.join(root_path, file_name), src=feature.detach(), sample_rate=sample_rate, encoding='PCM_S',
+            bits_per_sample=16
+        )
 
-def batch_store_to(data_loader:DataLoader, root_path:str, sample_rate:int, data_tf:nn.Module=None) -> None:
-    print(f'Store dataset into {root_path}')
-    for fs, fns in tqdm(data_loader, total=len(data_loader)):
-        for idx in range(len(fns)):
-            feature = fs[idx]
-            file_name = fns[idx]
-            if data_tf is not None:
-                feature = data_tf(feature)
-            torchaudio.save(uri=os.path.join(root_path, file_name), src=feature, sample_rate=sample_rate)
+# def batch_store_to(data_loader:DataLoader, root_path:str, sample_rate:int, data_tf:nn.Module=None) -> None:
+#     print(f'Store dataset into {root_path}')
+#     for fs, fns in tqdm(data_loader, total=len(data_loader)):
+#         for idx in range(len(fns)):
+#             feature = fs[idx]
+#             file_name = fns[idx]
+#             if data_tf is not None:
+#                 feature = data_tf(feature)
+#             torchaudio.save(uri=os.path.join(root_path, file_name), src=feature, sample_rate=sample_rate)
 
 class ReefSet(Dataset):
     def __init__(self, root_path:str, meta_file:str, data_tf:nn.Module=None):
