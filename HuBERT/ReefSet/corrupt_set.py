@@ -200,7 +200,7 @@ if __name__ == '__main__':
             corrupted_set = corrupt_data(args=args, orgin_set=ReefSet(
                 root_path=args.dataset_root_path, meta_file=meta_file
             ))
-            corrupt_set = MultiTFDataset(
+            corrupted_set = MultiTFDataset(
                 dataset=corrupted_set,
                 tfs=[
                     Components(transforms=[
@@ -216,7 +216,7 @@ if __name__ == '__main__':
                 ])
             )
             corrupted_set = corrupt_data(args=args, orgin_set=test_set)
-        store_to(dataset=corrupt_set, root_path=ops_path, sample_rate=args.sample_rate)
+        store_to(dataset=corrupted_set, root_path=ops_path, sample_rate=args.sample_rate)
     shutil.copyfile(src=meta_file, dst=os.path.join(args.output_path, 'test_annotations.csv'))
 
     print('Testing...')
