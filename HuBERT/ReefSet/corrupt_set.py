@@ -196,10 +196,18 @@ if __name__ == '__main__':
         ops_path = os.path.join(args.output_path, cmeta.type, cmeta.level)
         args.corruption_type = cmeta.type
         args.corruption_level = cmeta.level
-        if cmeta.type != 'WHN':
-            continue
         if cmeta.type == 'TST':
-            pass
+            corrupted_set = corrupt_data(args=args, orgin_set=ReefSet(
+                root_path=args.dataset_root_path, meta_file=meta_file
+            ))
+            corrupt_set = MultiTFDataset(
+                dataset=corrupted_set,
+                tfs=[
+                    Components(transforms=[
+                        AudioPadding(max_length=args.audio_length, sample_rate=args.sample_rate, random_shift=False)
+                    ])
+                ]
+            )
         else:
             test_set = ReefSet(
                 root_path=args.dataset_root_path, meta_file=meta_file, 
@@ -208,9 +216,7 @@ if __name__ == '__main__':
                 ])
             )
             corrupted_set = corrupt_data(args=args, orgin_set=test_set)
-            batch_store_to(
-                data_loader=DataLoader(dataset=corrupted_set, batch_size=args.batch_size, shuffle=False, drop_last=False, num_workers=args.num_workers), 
-                root_path=ops_path, sample_rate=args.sample_rate)
+        store_to(dataset=corrupt_set, root_path=ops_path, sample_rate=args.sample_rate)
     shutil.copyfile(src=meta_file, dst=os.path.join(args.output_path, 'test_annotations.csv'))
 
     print('Testing...')
