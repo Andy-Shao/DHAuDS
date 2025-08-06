@@ -21,7 +21,7 @@ class ReefSet(Dataset):
         self.data_tf = data_tf
         self.label_tf = label_tf
         self.meta_info = pd.read_csv(train_annotations_file) if mode == 'train' else pd.read_csv(test_annotations_file)
-        self.label_dic = self.__label_dic__(label_mode)
+        self.label_dic = ReefSet.__label_dic__(label_mode)
 
     def __len__(self):
         return len(self.meta_info)
@@ -42,7 +42,8 @@ class ReefSet(Dataset):
         else:
             return wavform, label
     
-    def __label_dic__(self, label_mode) -> dict:
+    @staticmethod
+    def __label_dic__(label_mode) -> dict:
         if label_mode == 'multiple':
             return {
             'ambient': [0], 
