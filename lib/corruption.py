@@ -133,7 +133,10 @@ class ReefSetC(Dataset):
         wavform, sample_rate = torchaudio.load(
             uri=os.path.join(self.root_path, self.corruption_type, self.corruption_level, meta['file_name']), normalize=True
         )
-        label = self.label_dic[meta['label']]
+        eye_matrix = torch.eye(len(self.label_dic), dtype=float)
+        label = torch.zeros_like(eye_matrix[0], dtype=float)
+        for k in self.label_dic[meta['label']]:
+            label += eye_matrix[k]
         if self.data_tf is not None:
             wavform = self.data_tf(wavform)
         if self.label_tf is not None:
