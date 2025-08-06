@@ -8,7 +8,7 @@ from tqdm import tqdm
 
 import torch
 from torch import nn
-from torch.utils.data import Dataset
+from torch.utils.data import Dataset, DataLoader
 import torchaudio
 from torchaudio.transforms import Resample
 
@@ -26,6 +26,16 @@ def store_to(dataset:Dataset, root_path:str, sample_rate:int, data_tf:nn.Module=
         if data_tf is not None:
             feature = data_tf(feature)
         torchaudio.save(uri=os.path.join(root_path, file_name), src=feature, sample_rate=sample_rate)
+
+def batch_store_to(data_loader:DataLoader, root_path:str, sample_rate:int, data_tf:nn.Module=None) -> None:
+    print(f'Store dataset into {root_path}')
+    for fs, fns in tqdm(data_loader, total=len(data_loader)):
+        for idx in range(len(fns)):
+            feature = fs[idx]
+            file_name = fns[idx]
+            if data_tf is not None:
+                feature = data_tf(feature)
+            torchaudio.save(uri=os.path.join(root_path, file_name), src=feature, sample_rate=sample_rate)
 
 class ReefSet(Dataset):
     def __init__(self, root_path:str, meta_file:str, data_tf:nn.Module=None):
@@ -198,7 +208,9 @@ if __name__ == '__main__':
                 ])
             )
             corrupted_set = corrupt_data(args=args, orgin_set=test_set)
-            store_to(dataset=test_set, root_path=ops_path, sample_rate=args.sample_rate)
+            batch_store_to(
+                data_loader=DataLoader(dataset=corrupted_set, batch_size=args.batch_size, shuffle=False, drop_last=False, num_workers=args.num_workers), 
+                root_path=ops_path, sample_rate=args.sample_rate)
     shutil.copyfile(src=meta_file, dst=os.path.join(args.output_path, 'test_annotations.csv'))
 
     print('Testing...')

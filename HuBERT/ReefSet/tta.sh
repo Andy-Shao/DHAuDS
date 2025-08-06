@@ -3,7 +3,7 @@ export BASE_PATH=${BASE_PATH:-'/root'}
 
 ## Generate Corruption sets
 python -m HuBERT.ReefSet.corruption --dataset 'ReefSet' --dataset_root_path $BASE_PATH'/data/ReefSet_v1.0' \
-    --batch_size 33 --output_path $BASE_PATH'/data/ReefSet-C' --seed 2025 \
+    --batch_size 33 --output_path $BASE_PATH'/data/ReefSet-C' --seed 2025 --num_workers 8 \
     --enq_path $BASE_PATH'/data/QUT-NOISE' \
     --end_path $BASE_PATH'/data/DEMAND_16k' \
     --ensc_path $BASE_PATH'/data'
@@ -16,7 +16,7 @@ python -m HuBERT.ReefSet.corruption --dataset 'ReefSet' --dataset_root_path $BAS
 #     --nucnm_rate 1.0 --lr_gamma 30 --lr_threshold 35 \
 #     --ent_rate 0.0 --gent_rate 0.0 --gent_q 1.1 --corruption_type 'WHN' --corruption_level 'L2' \
 #     --hub_wght_pth './result/ReefSet/HuBERT/train/hubert-base-RS.pt' \
-#     --clsf_wght_pth './result/ReefSet/HuBERT/train/clsModel-base-RS.pt' --wandb
+#     --clsf_wght_pth './result/ReefSet/HuBERT/train/clsModel-base-RS.pt'
 
 # python -m HuBERT.ReefSet.ttda --dataset 'ReefSet' --dataset_root_path $BASE_PATH'/data/ReefSet_v1.0' \
 #     --cache_path $BASE_PATH'/tmp' --noise_path $BASE_PATH'/data' \
