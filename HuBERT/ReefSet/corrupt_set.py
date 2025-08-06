@@ -18,7 +18,7 @@ from lib.corruption import corruption_meta, WHN, DynEN, DynPSH, DynTST, ReefSetC
 from lib.spdataset import SpeechCommandsV2, SpeechCommandsBackgroundNoise
 from lib.acousticDataset import DEMAND, QUTNOISE
 from lib.dataset import MergSet, MultiTFDataset, GpuMultiTFDataset
-from lib.component import Components, Stereo2Mono, AudioPadding
+from lib.component import Components, Stereo2Mono, AudioPadding, AudioClip
 
 def store_to(dataset:Dataset, root_path:str, sample_rate:int, data_tf:nn.Module=None) -> None:
     print(f'Store dataset into {root_path}')
@@ -30,15 +30,18 @@ def store_to(dataset:Dataset, root_path:str, sample_rate:int, data_tf:nn.Module=
             bits_per_sample=16
         )
 
-# def batch_store_to(data_loader:DataLoader, root_path:str, sample_rate:int, data_tf:nn.Module=None) -> None:
-#     print(f'Store dataset into {root_path}')
-#     for fs, fns in tqdm(data_loader, total=len(data_loader)):
-#         for idx in range(len(fns)):
-#             feature = fs[idx]
-#             file_name = fns[idx]
-#             if data_tf is not None:
-#                 feature = data_tf(feature)
-#             torchaudio.save(uri=os.path.join(root_path, file_name), src=feature, sample_rate=sample_rate)
+def batch_store_to(data_loader:DataLoader, root_path:str, sample_rate:int, data_tf:nn.Module=None) -> None:
+    print(f'Store dataset into {root_path}')
+    for fs, fns in tqdm(data_loader, total=len(data_loader)):
+        for idx in range(len(fns)):
+            feature = fs[idx]
+            file_name = fns[idx]
+            if data_tf is not None:
+                feature = data_tf(feature)
+            torchaudio.save(
+                uri=os.path.join(root_path, file_name), src=feature, sample_rate=sample_rate, encoding='PCM_S',
+                bits_per_sample=16
+            )
 
 class ReefSet(Dataset):
     def __init__(self, root_path:str, meta_file:str, data_tf:nn.Module=None):
@@ -203,11 +206,18 @@ if __name__ == '__main__':
             corrupted_set = corrupt_data(args=args, orgin_set=ReefSet(
                 root_path=args.dataset_root_path, meta_file=meta_file
             ))
+            if cmeta.level == 'L1':
+                max_length = int((1.+constants.DYN_TST_L1[2])*args.audio_length)
+            elif cmeta.level == 'L2':
+                max_length = int((1.+constants.DYN_TST_L2[2])*args.audio_length)
+            else:
+                raise Exception('No support')
             corrupted_set = MultiTFDataset(
                 dataset=corrupted_set,
                 tfs=[
                     Components(transforms=[
-                        AudioPadding(max_length=args.audio_length, sample_rate=args.sample_rate, random_shift=False)
+                        AudioPadding(max_length=max_length, sample_rate=args.sample_rate, random_shift=False),
+                        AudioClip(max_length=max_length, mode='mid', is_random=False)
                     ])
                 ]
             )
@@ -219,9 +229,18 @@ if __name__ == '__main__':
                 ])
             )
             corrupted_set = corrupt_data(args=args, orgin_set=test_set)
-        store_to(dataset=corrupted_set, root_path=ops_path, sample_rate=args.sample_rate)
+        if cmeta.type == 'PSH':
+            store_to(dataset=corrupted_set, root_path=ops_path, sample_rate=args.sample_rate)
+        else:
+            batch_store_to(
+                data_loader=DataLoader(dataset=corrupted_set, batch_size=args.batch_size, shuffle=False,
+                    drop_last=False, num_workers=args.num_workers),
+                root_path=ops_path, sample_rate=args.sample_rate
+            )
     shutil.copyfile(src=meta_file, dst=os.path.join(args.output_path, 'test_annotations.csv'))
 
     print('Testing...')
-    for feature, label in tqdm(ReefSetC(root_path=args.output_path, corruption_type='WHN', corruption_level='L1')):
-        pass
+    for cmet in corruption_metas:
+        print(f'Test {cmet.type}-{cmet.level}')
+        for feature, label in tqdm(ReefSetC(root_path=args.output_path, corruption_type=cmet.type, corruption_level=cmet.level)):
+            pass
