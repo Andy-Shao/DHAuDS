@@ -10,15 +10,12 @@ import torch
 from torch import nn
 from torch.utils.data import Dataset, DataLoader
 import torchaudio
-from torchaudio.transforms import Resample
 
 from lib import constants
 from lib.utils import print_argparse
-from lib.corruption import corruption_meta, WHN, DynEN, DynPSH, DynTST, ReefSetC
-from lib.spdataset import SpeechCommandsV2, SpeechCommandsBackgroundNoise
-from lib.acousticDataset import DEMAND, QUTNOISE
-from lib.dataset import MergSet, MultiTFDataset, GpuMultiTFDataset
-from lib.component import Components, Stereo2Mono, AudioPadding, AudioClip
+from lib.corruption import corruption_meta, ReefSetC, corrupt_data
+from lib.dataset import MultiTFDataset
+from lib.component import Components, AudioPadding, AudioClip
 
 def store_to(dataset:Dataset, root_path:str, sample_rate:int, data_tf:nn.Module=None) -> None:
     print(f'Store dataset into {root_path}')
@@ -59,100 +56,6 @@ class ReefSet(Dataset):
         if self.data_tf is not None:
             wavform = self.data_tf(wavform)
         return wavform, meta['file_name']
-
-def corrupt_data(args:argparse.Namespace, orgin_set:Dataset) -> Dataset:
-    if args.corruption_level == 'L1':
-        snrs = constants.DYN_SNR_L1
-        n_steps = constants.DYN_PSH_L1
-        rates = constants.DYN_TST_L1
-    elif args.corruption_level == 'L2':
-        snrs = constants.DYN_SNR_L2
-        n_steps = constants.DYN_PSH_L2
-        rates = constants.DYN_TST_L2
-    if args.corruption_type == 'WHN':
-        test_set = MultiTFDataset(dataset=orgin_set, tfs=[WHN(lsnr=snrs[0], rsnr=snrs[2], step=snrs[1])])
-    elif args.corruption_type == 'ENQ':
-        noise_modes = constants.ENQ_NOISE_LIST
-        test_set = MultiTFDataset(dataset=orgin_set, tfs=[
-            DynEN(noise_list=enq_noises(args=args, noise_modes=noise_modes), lsnr=snrs[0], step=snrs[1], rsnr=snrs[2])
-        ])
-    elif args.corruption_type == 'END1':
-        noise_modes = constants.END1_NOISE_LIST
-        test_set = MultiTFDataset(
-            dataset=orgin_set, tfs=[
-                DynEN(noise_list=end_noises(args=args, noise_modes=noise_modes), lsnr=snrs[0], step=snrs[1], rsnr=snrs[2])
-            ]
-        )
-    elif args.corruption_type == 'END2':
-        noise_modes = constants.END2_NOISE_LIST
-        test_set = MultiTFDataset(
-            dataset=orgin_set, tfs=[
-                DynEN(noise_list=end_noises(args=args, noise_modes=noise_modes), lsnr=snrs[0], step=snrs[1], rsnr=snrs[2])
-            ]
-        )
-    elif args.corruption_type == 'ENSC':
-        noise_modes = constants.ENSC_NOISE_LIST
-        test_set = MultiTFDataset(
-            dataset=orgin_set, tfs=[
-                DynEN(noise_list=ensc_noises(args=args, noise_modes=noise_modes), lsnr=snrs[0], step=snrs[1], rsnr=snrs[2])
-            ]
-        )
-    elif args.corruption_type == 'PSH':
-        test_set = GpuMultiTFDataset(
-            dataset=orgin_set, tfs=[
-                DynPSH(sample_rate=args.sample_rate, min_steps=n_steps[0], max_steps=n_steps[1], is_bidirection=True)
-            ]
-        )
-    elif args.corruption_type == 'TST':
-        test_set = MultiTFDataset(
-            dataset=orgin_set, tfs=[
-                DynTST(min_rate=rates[0], step=rates[1], max_rate=rates[2], is_bidirection=True)
-            ]
-        )
-    else:
-        raise Exception('No support')
-    return test_set
-
-def ensc_noises(args:argparse.Namespace, noise_modes:list[str]) -> list[torch.Tensor]:
-    SpeechCommandsV2(root_path=args.ensc_path, mode='testing', download=True)
-    noise_set = SpeechCommandsBackgroundNoise(
-        root_path=os.path.join(args.ensc_path, 'speech_commands_v0.02', 'speech_commands_v0.02'), 
-        include_rate=False
-    )
-    print('Loading noise files...')
-    noises = []
-    for noise, noise_type in tqdm(noise_set):
-        if noise_type in noise_modes:
-            noises.append(noise)
-    print(f'TTL noise size is: {len(noises)}')
-    return noises
-
-def end_noises(args:argparse.Namespace, noise_modes:list[str] = ['DKITCHEN', 'NFIELD', 'OOFFICE', 'PRESTO', 'TCAR']) -> list[torch.Tensor]:
-    noises = []
-    print('Loading noise files...')
-    demand_set = MergSet([DEMAND(root_path=args.end_path, mode=md, include_rate=False) for md in noise_modes])
-    for wavform in tqdm(demand_set):
-        noises.append(wavform)
-    print(f'TTL noise size is: {len(noises)}')
-    return noises
-
-def enq_noises(args:argparse.Namespace, noise_modes:list[str] = ['CAFE', 'HOME', 'STREET']) -> list[torch.Tensor]:
-    background_path = args.enq_path
-    noises = []
-    print('Loading noise files...')
-    qutnoise_set = MergSet([
-        QUTNOISE(
-            root_path=background_path, mode=md, include_rate=False,
-            data_tf=Components(transforms=[
-                Resample(orig_freq=48000, new_freq=args.sample_rate),
-                Stereo2Mono()
-            ])
-        ) for md in noise_modes
-    ])
-    for wavform in tqdm(qutnoise_set):
-        noises.append(wavform)
-    print(f'TTL noise size is: {len(noises)}')
-    return noises
 
 if __name__ == '__main__':
     ap = argparse.ArgumentParser()
@@ -200,12 +103,14 @@ if __name__ == '__main__':
 
     for cmeta in corruption_metas:
         ops_path = os.path.join(args.output_path, cmeta.type, cmeta.level)
-        args.corruption_type = cmeta.type
-        args.corruption_level = cmeta.level
         if cmeta.type == 'TST':
-            corrupted_set = corrupt_data(args=args, orgin_set=ReefSet(
-                root_path=args.dataset_root_path, meta_file=meta_file
-            ))
+            corrupted_set = corrupt_data(
+                orgin_set=ReefSet(
+                    root_path=args.dataset_root_path, meta_file=meta_file
+                ), corruption_type=cmeta.type, corruption_level=cmeta.level, 
+                enq_path=args.enq_path, sample_rate=args.sample_rate, end_path=args.end_path,
+                ensc_path=args.ensc_path
+            )
             if cmeta.level == 'L1':
                 max_length = int((1.+constants.DYN_TST_L1[2])*args.audio_length)
             elif cmeta.level == 'L2':
@@ -228,7 +133,10 @@ if __name__ == '__main__':
                     AudioPadding(max_length=args.audio_length, sample_rate=args.sample_rate, random_shift=False)
                 ])
             )
-            corrupted_set = corrupt_data(args=args, orgin_set=test_set)
+            corrupted_set = corrupt_data(
+                orgin_set=test_set, corruption_level=cmeta.level, corruption_type=cmeta.type, enq_path=args.enq_path,
+                sample_rate=args.sample_rate, end_path=args.end_path, ensc_path=args.ensc_path
+            )
         if cmeta.type == 'PSH':
             store_to(dataset=corrupted_set, root_path=ops_path, sample_rate=args.sample_rate)
         else:
