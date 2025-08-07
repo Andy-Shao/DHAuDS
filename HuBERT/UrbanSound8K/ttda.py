@@ -53,7 +53,7 @@ def us8_corrupt_data(args:argparse.Namespace) -> tuple[Dataset, Dataset]:
     if args.corruption_type == 'PSH':
         mlt_store_to(
             dataset=test_set, root_path=dataset_root_path, index_file_name=index_file_name, data_tfs=[DoNothing()],
-            is_one_hot_label=True
+            is_one_hot_label=False
         )
     else:
         batch_store_to(
