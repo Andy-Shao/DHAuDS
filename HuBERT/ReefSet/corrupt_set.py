@@ -122,7 +122,7 @@ if __name__ == '__main__':
                 tfs=[
                     Components(transforms=[
                         AudioPadding(max_length=max_length, sample_rate=args.sample_rate, random_shift=False),
-                        AudioClip(max_length=max_length, mode='mid', is_random=False)
+                        AudioClip(max_length=max_length, mode='head', is_random=False)
                     ])
                 ]
             )
