@@ -83,7 +83,7 @@ if __name__ == '__main__':
     ap.add_argument('--dataset', type=str, default='UrbanSound8K', choices=['UrbanSound8K'])
     ap.add_argument('--dataset_root_path', type=str)
     ap.add_argument('--noise_path', type=str)
-    ap.add_argument('--corruption_type', type=str, choices=['WHN', 'ENQ', 'END1', 'END2', 'ENSC', 'PSH', 'TST'])
+    ap.add_argument('--corruption_type', type=str, choices=['WHN', 'ENSC', 'PSH', 'TST'])
     ap.add_argument('--corruption_level', type=str, choices=['L1', 'L2'])
     ap.add_argument('--num_workers', type=int, default=16)
     ap.add_argument('--output_path', type=str, default='./result')
