@@ -172,7 +172,7 @@ if __name__ == '__main__':
         print('Inferencing...')
         val_roc_auc, max_roc_auc = inferecing(max_roc_auc)
 
-        print('Adaptating...')
+        print('Adapting...')
         hubert.train(); clsf.train()
         ttl_size = 0.; ttl_loss = 0.; ttl_nucnm_loss = 0.
         ttl_ent_loss = 0.; ttl_gent_loss = 0.
