@@ -55,7 +55,7 @@ class UrbanSound8K(Dataset):
         label = int(meta.classID)
         audio_path = os.path.join(self.root_path, 'audio', f'fold{meta.fold}', meta.slice_file_name)
         wavform, sample_rate = torchaudio.load(audio_path, normalize=True)
-        if self.sample_rate != -1: 
+        if self.sample_rate != -1 and sample_rate != self.sample_rate: 
             resample_ops = Resample(orig_freq=sample_rate, new_freq=self.sample_rate)
             wavform = resample_ops(wavform)
         if self.label_tf is not None:

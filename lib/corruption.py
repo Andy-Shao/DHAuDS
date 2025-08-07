@@ -60,7 +60,7 @@ def corrupt_data(
     elif corruption_type == 'ENSC':
         test_set = MultiTFDataset(
             dataset=orgin_set, tfs=[
-                DynEN(noise_list=ensc_noises(noise_modes=constants.ENSC_NOISE_LIST, ensc_path=ensc_path), lsnr=snrs[0], step=snrs[1], rsnr=snrs[2])
+                DynEN(noise_list=ensc_noises(noise_modes=constants.ENSC_NOISE_LIST, ensc_path=ensc_path, sample_rate=sample_rate), lsnr=snrs[0], step=snrs[1], rsnr=snrs[2])
             ]
         )
     elif corruption_type == 'PSH':
@@ -79,12 +79,18 @@ def corrupt_data(
         raise Exception('No support')
     return test_set
 
-def ensc_noises(ensc_path:str, noise_modes:list[str]) -> list[torch.Tensor]:
+def ensc_noises(ensc_path:str, noise_modes:list[str], sample_rate:int=16000) -> list[torch.Tensor]:
     SpeechCommandsV2(root_path=ensc_path, mode='testing', download=True)
-    noise_set = SpeechCommandsBackgroundNoise(
-        root_path=os.path.join(ensc_path, 'speech_commands_v0.02', 'speech_commands_v0.02'), 
-        include_rate=False
-    )
+    if sample_rate == 16000:
+        noise_set = SpeechCommandsBackgroundNoise(
+            root_path=os.path.join(ensc_path, 'speech_commands_v0.02', 'speech_commands_v0.02'), 
+            include_rate=False
+        )
+    else: 
+        noise_set = SpeechCommandsBackgroundNoise(
+            root_path=os.path.join(ensc_path, 'speech_commands_v0.02', 'speech_commands_v0.02'), include_rate=False,
+            data_tf=Resample(orig_freq=16000, new_freq=sample_rate)
+        )
     print('Loading noise files...')
     noises = []
     for noise, noise_type in tqdm(noise_set):
@@ -263,6 +269,35 @@ class ReefSetC(Dataset):
         label = torch.zeros_like(eye_matrix[0], dtype=float)
         for k in self.label_dic[meta['label']]:
             label += eye_matrix[k]
+        if self.data_tf is not None:
+            wavform = self.data_tf(wavform)
+        if self.label_tf is not None:
+            label = self.label_tf(label)
+        return wavform, label
+    
+class UrbanSound8KC(Dataset):
+    meta_file = os.path.join('metadata', 'UrbanSound8K.csv')
+    def __init__(self, root_path:str, corruption_type:str, corruption_level:str, data_tf:nn.Module=None, label_tf:nn.Module=None):
+        super().__init__()
+        self.root_path = root_path
+        self.corruption_type = corruption_type
+        self.corruption_level = corruption_level
+        self.data_tf = data_tf
+        self.label_tf = label_tf
+        self.data_ls = pd.read_csv(os.path.join(root_path, self.meta_file), header=0)
+
+    def __len__(self):
+        return len(self.data_ls)
+    
+    def __getitem__(self, index):
+        meta_info = self.data_ls.iloc[index]
+        wavform, sample_rate = torchaudio.load(
+            uri=os.path.join(
+                self.root_path, 'audio', self.corruption_type, self.corruption_level, f'fold{meta_info['fold']}', 
+                meta_info['slice_file_name']
+            ), normalize=True
+        )
+        label = int(meta_info['classID'])
         if self.data_tf is not None:
             wavform = self.data_tf(wavform)
         if self.label_tf is not None:
