@@ -2,12 +2,138 @@ import random
 from dataclasses import dataclass
 import pandas as pd
 import os
+from tqdm import tqdm
 
 import torch
 from torch import nn
 from torch.utils.data import Dataset
 import torchaudio
 from torchaudio.functional import add_noise, pitch_shift
+from torchaudio.transforms import Resample
+
+from lib import constants
+from lib.spdataset import SpeechCommandsBackgroundNoise, SpeechCommandsV2
+from lib.acousticDataset import DEMAND, QUTNOISE
+from lib.dataset import MergSet, MultiTFDataset, GpuMultiTFDataset
+from lib.component import Components, Stereo2Mono
+
+def corrupt_data(
+        orgin_set:Dataset, corruption_level:str, corruption_type:str, enq_path:str, sample_rate:int,
+        end_path:str, ensc_path:str, end_mode='16k'
+    ) -> Dataset:
+    assert end_mode in ['16k', '48k'], 'No support'
+    if corruption_level == 'L1':
+        snrs = constants.DYN_SNR_L1
+        n_steps = constants.DYN_PSH_L1
+        rates = constants.DYN_TST_L1
+    elif corruption_level == 'L2':
+        snrs = constants.DYN_SNR_L2
+        n_steps = constants.DYN_PSH_L2
+        rates = constants.DYN_TST_L2
+    if corruption_type == 'WHN':
+        test_set = MultiTFDataset(dataset=orgin_set, tfs=[WHN(lsnr=snrs[0], rsnr=snrs[2], step=snrs[1])])
+    elif corruption_type == 'ENQ':
+        noise_modes = constants.ENQ_NOISE_LIST
+        test_set = MultiTFDataset(dataset=orgin_set, tfs=[
+            DynEN(noise_list=enq_noises(noise_modes=noise_modes, enq_path=enq_path, sample_rate=sample_rate), lsnr=snrs[0], step=snrs[1], rsnr=snrs[2])
+        ])
+    elif corruption_type == 'END1':
+        if end_mode == '16k':
+            n_ls = end_noises(noise_modes=constants.END1_NOISE_LIST, end_path=end_path)
+        elif end_mode == '48k':
+            n_ls = end_noise_48k(noise_modes=constants.END1_NOISE_LIST, end_path=end_path, sample_rate=sample_rate)
+        test_set = MultiTFDataset(
+            dataset=orgin_set, tfs=[
+                DynEN(noise_list=n_ls, lsnr=snrs[0], step=snrs[1], rsnr=snrs[2])
+            ]
+        )
+    elif corruption_type == 'END2':
+        if end_mode == '16k':
+            n_ls = end_noises(noise_modes=constants.END2_NOISE_LIST, end_path=end_path)
+        elif end_mode == '48k':
+            n_ls = end_noise_48k(noise_modes=constants.END2_NOISE_LIST, end_path=end_path, sample_rate=sample_rate)
+        test_set = MultiTFDataset(
+            dataset=orgin_set, tfs=[
+                DynEN(noise_list=n_ls, lsnr=snrs[0], step=snrs[1], rsnr=snrs[2])
+            ]
+        )
+    elif corruption_type == 'ENSC':
+        test_set = MultiTFDataset(
+            dataset=orgin_set, tfs=[
+                DynEN(noise_list=ensc_noises(noise_modes=constants.ENSC_NOISE_LIST, ensc_path=ensc_path), lsnr=snrs[0], step=snrs[1], rsnr=snrs[2])
+            ]
+        )
+    elif corruption_type == 'PSH':
+        test_set = GpuMultiTFDataset(
+            dataset=orgin_set, tfs=[
+                DynPSH(sample_rate=sample_rate, min_steps=n_steps[0], max_steps=n_steps[1], is_bidirection=True)
+            ]
+        )
+    elif corruption_type == 'TST':
+        test_set = MultiTFDataset(
+            dataset=orgin_set, tfs=[
+                DynTST(min_rate=rates[0], step=rates[1], max_rate=rates[2], is_bidirection=True)
+            ]
+        )
+    else:
+        raise Exception('No support')
+    return test_set
+
+def ensc_noises(ensc_path:str, noise_modes:list[str]) -> list[torch.Tensor]:
+    SpeechCommandsV2(root_path=ensc_path, mode='testing', download=True)
+    noise_set = SpeechCommandsBackgroundNoise(
+        root_path=os.path.join(ensc_path, 'speech_commands_v0.02', 'speech_commands_v0.02'), 
+        include_rate=False
+    )
+    print('Loading noise files...')
+    noises = []
+    for noise, noise_type in tqdm(noise_set):
+        if noise_type in noise_modes:
+            noises.append(noise)
+    print(f'TTL noise size is: {len(noises)}')
+    return noises
+
+def end_noises(end_path:str, noise_modes:list[str] = ['DKITCHEN', 'NFIELD', 'OOFFICE', 'PRESTO', 'TCAR']) -> list[torch.Tensor]:
+    noises = []
+    print('Loading noise files...')
+    demand_set = MergSet([DEMAND(root_path=end_path, mode=md, include_rate=False) for md in noise_modes])
+    for wavform in tqdm(demand_set):
+        noises.append(wavform)
+    print(f'TTL noise size is: {len(noises)}')
+    return noises
+
+def end_noise_48k(end_path:str, sample_rate:int, noise_modes:list[str] = ['DKITCHEN', 'NFIELD', 'OOFFICE', 'PRESTO', 'TCAR']) -> list[torch.Tensor]:
+    noises = []
+    print('Loading noise files...')
+    demand_set = MergSet([
+        DEMAND(
+            root_path=end_path, mode=md, include_rate=False,
+            data_tf=Components(transforms=[
+                Resample(orig_freq=48000, new_freq=sample_rate)
+            ])
+        ) for md in noise_modes])
+    for wavform in tqdm(demand_set):
+        noises.append(wavform)
+    print(f'TTL noise size is: {len(noises)}')
+    return noises
+
+def enq_noises(enq_path:str, sample_rate:int, noise_modes:list[str] = ['CAFE', 'HOME', 'STREET']) -> list[torch.Tensor]:
+    background_path = enq_path
+    noises = []
+    print('Loading noise files...')
+    qutnoise_set = MergSet([
+        QUTNOISE(
+            root_path=background_path, mode=md, include_rate=False,
+            data_tf=Components(transforms=[
+                Resample(orig_freq=48000, new_freq=sample_rate),
+                Stereo2Mono()
+            ])
+        ) for md in noise_modes
+    ])
+    for wavform in tqdm(qutnoise_set):
+        noises.append(wavform)
+    print(f'TTL noise size is: {len(noises)}')
+    return noises
 
 @dataclass
 class CorruptionMeta:

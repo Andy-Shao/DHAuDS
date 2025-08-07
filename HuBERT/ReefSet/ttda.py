@@ -15,15 +15,17 @@ from lib.dataset import MultiTFDataset, batch_store_to, mlt_load_from, mlt_store
 from lib.component import AudioPadding, ReduceChannel, Components, AudioClip, DoNothing, time_shift
 from lib.lr_utils import build_optimizer, lr_scheduler
 from lib.loss import nucnm, g_entropy, entropy
-from HuBERT.VocalSound.ttda import corrupt_data, load_weigth
+from HuBERT.VocalSound.ttda import load_weigth
 from HuBERT.ReefSet.train import build_model, inference
 
 def rs_corrupt_data(args:argparse.Namespace) -> tuple[Dataset, Dataset]:
+    from lib.corruption import corrupt_data
     if args.corruption_type == 'TST':
         test_set = corrupt_data(
-            args=args, orgin_set=ReefSet(
+            orgin_set=ReefSet(
                 root_path=args.dataset_root_path, mode='test', include_rate=False
-            )
+            ), corruption_level=args.corruption_level, corruption_type=args.corruption_type, enq_path=args.noise_path,
+            sample_rate=args.sample_rate, end_path=args.noise_path, ensc_path=args.noise_path
         )
         test_set = MultiTFDataset(
             dataset=test_set, tfs=[
@@ -35,13 +37,14 @@ def rs_corrupt_data(args:argparse.Namespace) -> tuple[Dataset, Dataset]:
         )
     else: 
         test_set = corrupt_data(
-            args=args, orgin_set=ReefSet(
+            orgin_set=ReefSet(
                 root_path=args.dataset_root_path, mode='test', include_rate=False,
                 data_tf=Components(transforms=[
                     AudioPadding(max_length=args.audio_length, sample_rate=args.sample_rate, random_shift=False),
                     AudioClip(max_length=args.audio_length, mode='head', is_random=False)
                 ])
-            )
+            ), corruption_level=args.corruption_level, corruption_type=args.corruption_type, enq_path=args.noise_path,
+            sample_rate=args.sample_rate, end_path=args.noise_path, ensc_path=args.noise_path
         )
     dataset_root_path = os.path.join(args.cache_path, args.dataset)
     index_file_name = 'metaInfo.csv'

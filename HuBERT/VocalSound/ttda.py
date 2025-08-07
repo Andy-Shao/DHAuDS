@@ -23,46 +23,46 @@ from lib.loss import entropy, g_entropy, nucnm
 from lib.lr_utils import build_optimizer, lr_scheduler
 from HuBERT.VocalSound.train import build_model, inference
 
-def ensc_noises(args:argparse.Namespace, noise_modes:list[str]) -> list[torch.Tensor]:
-    SpeechCommandsV2(root_path=args.noise_path, mode='testing', download=True)
-    noise_set = SpeechCommandsBackgroundNoise(
-        root_path=os.path.join(args.noise_path, 'speech_commands_v0.02', 'speech_commands_v0.02'), 
-        include_rate=False
-    )
-    print('Loading noise files...')
-    noises = []
-    for noise, noise_type in tqdm(noise_set):
-        if noise_type in noise_modes:
-            noises.append(noise)
-    print(f'TTL noise size is: {len(noises)}')
-    return noises
+# def ensc_noises(args:argparse.Namespace, noise_modes:list[str]) -> list[torch.Tensor]:
+#     SpeechCommandsV2(root_path=args.noise_path, mode='testing', download=True)
+#     noise_set = SpeechCommandsBackgroundNoise(
+#         root_path=os.path.join(args.noise_path, 'speech_commands_v0.02', 'speech_commands_v0.02'), 
+#         include_rate=False
+#     )
+#     print('Loading noise files...')
+#     noises = []
+#     for noise, noise_type in tqdm(noise_set):
+#         if noise_type in noise_modes:
+#             noises.append(noise)
+#     print(f'TTL noise size is: {len(noises)}')
+#     return noises
 
-def end_noises(args:argparse.Namespace, noise_modes:list[str] = ['DKITCHEN', 'NFIELD', 'OOFFICE', 'PRESTO', 'TCAR']) -> list[torch.Tensor]:
-    noises = []
-    print('Loading noise files...')
-    demand_set = MergSet([DEMAND(root_path=args.noise_path, mode=md, include_rate=False) for md in noise_modes])
-    for wavform in tqdm(demand_set):
-        noises.append(wavform)
-    print(f'TTL noise size is: {len(noises)}')
-    return noises
+# def end_noises(args:argparse.Namespace, noise_modes:list[str] = ['DKITCHEN', 'NFIELD', 'OOFFICE', 'PRESTO', 'TCAR']) -> list[torch.Tensor]:
+#     noises = []
+#     print('Loading noise files...')
+#     demand_set = MergSet([DEMAND(root_path=args.noise_path, mode=md, include_rate=False) for md in noise_modes])
+#     for wavform in tqdm(demand_set):
+#         noises.append(wavform)
+#     print(f'TTL noise size is: {len(noises)}')
+#     return noises
 
-def enq_noises(args:argparse.Namespace, noise_modes:list[str] = ['CAFE', 'HOME', 'STREET']) -> list[torch.Tensor]:
-    background_path = args.noise_path
-    noises = []
-    print('Loading noise files...')
-    qutnoise_set = MergSet([
-        QUTNOISE(
-            root_path=background_path, mode=md, include_rate=False,
-            data_tf=Components(transforms=[
-                transforms.Resample(orig_freq=48000, new_freq=args.sample_rate),
-                Stereo2Mono()
-            ])
-        ) for md in noise_modes
-    ])
-    for wavform in tqdm(qutnoise_set):
-        noises.append(wavform)
-    print(f'TTL noise size is: {len(noises)}')
-    return noises
+# def enq_noises(args:argparse.Namespace, noise_modes:list[str] = ['CAFE', 'HOME', 'STREET']) -> list[torch.Tensor]:
+#     background_path = args.noise_path
+#     noises = []
+#     print('Loading noise files...')
+#     qutnoise_set = MergSet([
+#         QUTNOISE(
+#             root_path=background_path, mode=md, include_rate=False,
+#             data_tf=Components(transforms=[
+#                 transforms.Resample(orig_freq=48000, new_freq=args.sample_rate),
+#                 Stereo2Mono()
+#             ])
+#         ) for md in noise_modes
+#     ])
+#     for wavform in tqdm(qutnoise_set):
+#         noises.append(wavform)
+#     print(f'TTL noise size is: {len(noises)}')
+#     return noises
 
 def load_weigth(args:argparse.Namespace, hubert:nn.Module, clsf:nn.Module, mode:str='origin') -> None:
     if mode == 'origin':
@@ -75,11 +75,13 @@ def load_weigth(args:argparse.Namespace, hubert:nn.Module, clsf:nn.Module, mode:
     clsf.load_state_dict(state_dict=torch.load(clsf_pth, weights_only=True))
 
 def vs_corruption_data(args:argparse.Namespace) -> Dataset:
+    from lib.corruption import corrupt_data
     if args.corruption_type == 'TST':
         test_set = corrupt_data(
-            args=args, orgin_set=VocalSound(
+            orgin_set=VocalSound(
                 root_path=args.dataset_root_path, mode='test', include_rate=False, version='16k',
-            )
+            ), corruption_level=args.corruption_level, corruption_type=args.corruption_type, enq_path=args.noise_path,
+            sample_rate=args.sample_rate, end_path=args.noise_path, ensc_path=args.noise_path
         )
         test_set = MultiTFDataset(
             dataset=test_set, 
@@ -92,13 +94,14 @@ def vs_corruption_data(args:argparse.Namespace) -> Dataset:
         )
     else:
         test_set = corrupt_data(
-            args=args, orgin_set=VocalSound(
+            orgin_set=VocalSound(
                 root_path=args.dataset_root_path, mode='test', include_rate=False, version='16k',
                 data_tf=Components(transforms=[
                     AudioPadding(max_length=10*args.sample_rate, sample_rate=args.sample_rate, random_shift=False),
                     AudioClip(max_length=10*args.sample_rate, mode='head', is_random=False),
                 ])
-            )
+            ), corruption_level=args.corruption_level, corruption_type=args.corruption_type, enq_path=args.noise_path,
+            sample_rate=args.sample_rate, end_path=args.noise_path, ensc_path=args.noise_path
         )
     dataset_root_path = os.path.join(args.cache_path, args.dataset)
     index_file_name = 'metaInfo.csv'
@@ -127,58 +130,58 @@ def vs_corruption_data(args:argparse.Namespace) -> Dataset:
     )
     return test_set, adapt_set
 
-def corrupt_data(args:argparse.Namespace, orgin_set:Dataset) -> Dataset:
-    if args.corruption_level == 'L1':
-        snrs = constants.DYN_SNR_L1
-        n_steps = constants.DYN_PSH_L1
-        rates = constants.DYN_TST_L1
-    elif args.corruption_level == 'L2':
-        snrs = constants.DYN_SNR_L2
-        n_steps = constants.DYN_PSH_L2
-        rates = constants.DYN_TST_L2
-    if args.corruption_type == 'WHN':
-        test_set = MultiTFDataset(dataset=orgin_set, tfs=[WHN(lsnr=snrs[0], rsnr=snrs[2], step=snrs[1])])
-    elif args.corruption_type == 'ENQ':
-        noise_modes = constants.ENQ_NOISE_LIST
-        test_set = MultiTFDataset(dataset=orgin_set, tfs=[
-            DynEN(noise_list=enq_noises(args=args, noise_modes=noise_modes), lsnr=snrs[0], step=snrs[1], rsnr=snrs[2])
-        ])
-    elif args.corruption_type == 'END1':
-        noise_modes = constants.END1_NOISE_LIST
-        test_set = MultiTFDataset(
-            dataset=orgin_set, tfs=[
-                DynEN(noise_list=end_noises(args=args, noise_modes=noise_modes), lsnr=snrs[0], step=snrs[1], rsnr=snrs[2])
-            ]
-        )
-    elif args.corruption_type == 'END2':
-        noise_modes = constants.END2_NOISE_LIST
-        test_set = MultiTFDataset(
-            dataset=orgin_set, tfs=[
-                DynEN(noise_list=end_noises(args=args, noise_modes=noise_modes), lsnr=snrs[0], step=snrs[1], rsnr=snrs[2])
-            ]
-        )
-    elif args.corruption_type == 'ENSC':
-        noise_modes = constants.ENSC_NOISE_LIST
-        test_set = MultiTFDataset(
-            dataset=orgin_set, tfs=[
-                DynEN(noise_list=ensc_noises(args=args, noise_modes=noise_modes), lsnr=snrs[0], step=snrs[1], rsnr=snrs[2])
-            ]
-        )
-    elif args.corruption_type == 'PSH':
-        test_set = GpuMultiTFDataset(
-            dataset=orgin_set, tfs=[
-                DynPSH(sample_rate=args.sample_rate, min_steps=n_steps[0], max_steps=n_steps[1], is_bidirection=True)
-            ]
-        )
-    elif args.corruption_type == 'TST':
-        test_set = MultiTFDataset(
-            dataset=orgin_set, tfs=[
-                DynTST(min_rate=rates[0], step=rates[1], max_rate=rates[2], is_bidirection=True)
-            ]
-        )
-    else:
-        raise Exception('No support')
-    return test_set
+# def corrupt_data(args:argparse.Namespace, orgin_set:Dataset) -> Dataset:
+#     if args.corruption_level == 'L1':
+#         snrs = constants.DYN_SNR_L1
+#         n_steps = constants.DYN_PSH_L1
+#         rates = constants.DYN_TST_L1
+#     elif args.corruption_level == 'L2':
+#         snrs = constants.DYN_SNR_L2
+#         n_steps = constants.DYN_PSH_L2
+#         rates = constants.DYN_TST_L2
+#     if args.corruption_type == 'WHN':
+#         test_set = MultiTFDataset(dataset=orgin_set, tfs=[WHN(lsnr=snrs[0], rsnr=snrs[2], step=snrs[1])])
+#     elif args.corruption_type == 'ENQ':
+#         noise_modes = constants.ENQ_NOISE_LIST
+#         test_set = MultiTFDataset(dataset=orgin_set, tfs=[
+#             DynEN(noise_list=enq_noises(args=args, noise_modes=noise_modes), lsnr=snrs[0], step=snrs[1], rsnr=snrs[2])
+#         ])
+#     elif args.corruption_type == 'END1':
+#         noise_modes = constants.END1_NOISE_LIST
+#         test_set = MultiTFDataset(
+#             dataset=orgin_set, tfs=[
+#                 DynEN(noise_list=end_noises(args=args, noise_modes=noise_modes), lsnr=snrs[0], step=snrs[1], rsnr=snrs[2])
+#             ]
+#         )
+#     elif args.corruption_type == 'END2':
+#         noise_modes = constants.END2_NOISE_LIST
+#         test_set = MultiTFDataset(
+#             dataset=orgin_set, tfs=[
+#                 DynEN(noise_list=end_noises(args=args, noise_modes=noise_modes), lsnr=snrs[0], step=snrs[1], rsnr=snrs[2])
+#             ]
+#         )
+#     elif args.corruption_type == 'ENSC':
+#         noise_modes = constants.ENSC_NOISE_LIST
+#         test_set = MultiTFDataset(
+#             dataset=orgin_set, tfs=[
+#                 DynEN(noise_list=ensc_noises(args=args, noise_modes=noise_modes), lsnr=snrs[0], step=snrs[1], rsnr=snrs[2])
+#             ]
+#         )
+#     elif args.corruption_type == 'PSH':
+#         test_set = GpuMultiTFDataset(
+#             dataset=orgin_set, tfs=[
+#                 DynPSH(sample_rate=args.sample_rate, min_steps=n_steps[0], max_steps=n_steps[1], is_bidirection=True)
+#             ]
+#         )
+#     elif args.corruption_type == 'TST':
+#         test_set = MultiTFDataset(
+#             dataset=orgin_set, tfs=[
+#                 DynTST(min_rate=rates[0], step=rates[1], max_rate=rates[2], is_bidirection=True)
+#             ]
+#         )
+#     else:
+#         raise Exception('No support')
+#     return test_set
 
 if __name__ == '__main__':
     ap = argparse.ArgumentParser()

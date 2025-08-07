@@ -20,7 +20,7 @@ from HuBERT.VocalSound.ttda import load_weigth
 from HuBERT.SpeechCommandsV2.train import build_model, inference
 
 def sc_corruption_set(args:argparse.Namespace) -> tuple[Dataset, Dataset]:
-    from HuBERT.VocalSound.ttda import corrupt_data as corrupt_data_tmp
+    from lib.corruption import corrupt_data as corrupt_data_tmp
     if args.corruption_type == 'TST':
         if args.corruption_level == 'L1':
             rates = constants.DYN_TST_L1
@@ -35,12 +35,13 @@ def sc_corruption_set(args:argparse.Namespace) -> tuple[Dataset, Dataset]:
         )
     else:
         test_set = corrupt_data_tmp(
-            args=args, orgin_set=SpeechCommandsV2(
+            orgin_set=SpeechCommandsV2(
                 root_path=args.dataset_root_path, mode='testing', download=True,
                 data_tf=Components(transforms=[
                     AudioPadding(max_length=args.sample_rate, sample_rate=args.sample_rate, random_shift=False)
                 ])
-            )
+            ), corruption_level=args.corruption_level, corruption_type=args.corruption_type, enq_path=args.noise_path,
+            sample_rate=args.sample_rate, end_path=args.noise_path, ensc_path=args.noise_path
         )
 
     dataset_root_path = os.path.join(args.cache_path, args.dataset)
