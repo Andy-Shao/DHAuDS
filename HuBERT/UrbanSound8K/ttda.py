@@ -32,7 +32,7 @@ def us8_corrupt_data(args:argparse.Namespace) -> tuple[Dataset, Dataset]:
             dataset=test_set, tfs=[
                 Components(transforms=[
                     AudioPadding(max_length=args.audio_length, sample_rate=args.sample_rate, random_shift=False),
-                    AudioClip(max_length=args.audio_length, mode='mid', is_random=False)
+                    AudioClip(max_length=args.audio_length, mode='head', is_random=False)
                 ])
             ]
         )
@@ -43,7 +43,7 @@ def us8_corrupt_data(args:argparse.Namespace) -> tuple[Dataset, Dataset]:
                 data_tf=Components(transforms=[
                     Stereo2Mono(),
                     AudioPadding(max_length=args.audio_length, sample_rate=args.sample_rate, random_shift=False),
-                    AudioClip(max_length=args.audio_length, mode='mid', is_random=False)
+                    AudioClip(max_length=args.audio_length, mode='head', is_random=False)
                 ])
             ), corruption_level=args.corruption_level, corruption_type=args.corruption_type, enq_path=args.noise_path,
             sample_rate=args.sample_rate, end_path=args.noise_path, ensc_path=args.noise_path
