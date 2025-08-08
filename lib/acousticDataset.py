@@ -14,6 +14,7 @@ class ReefSet(Dataset):
             test_annotations_file:str='./data/ReefSet/test_annotations.csv', label_mode:str='single'
         ):
         super().__init__()
+        assert label_mode in ['multiple', 'single'], 'No support'
         self.root_path = root_path
         assert mode in ['train', 'test'], 'No support'
         self.mode = mode
