@@ -15,7 +15,7 @@ from lib import constants
 from lib.spdataset import SpeechCommandsBackgroundNoise, SpeechCommandsV2
 from lib.acousticDataset import DEMAND, QUTNOISE
 from lib.dataset import MergSet, MultiTFDataset, GpuMultiTFDataset
-from lib.component import Components, Stereo2Mono
+from lib.component import Components, Stereo2Mono, DoNothing
 
 def corrupt_data(
         orgin_set:Dataset, corruption_level:str, corruption_type:str, enq_path:str, sample_rate:int,
@@ -39,7 +39,7 @@ def corrupt_data(
         ])
     elif corruption_type == 'END1':
         if end_mode == '16k':
-            n_ls = end_noises(noise_modes=constants.END1_NOISE_LIST, end_path=end_path)
+            n_ls = end_noises(noise_modes=constants.END1_NOISE_LIST, end_path=end_path, sample_rate=sample_rate)
         elif end_mode == '48k':
             n_ls = end_noise_48k(noise_modes=constants.END1_NOISE_LIST, end_path=end_path, sample_rate=sample_rate)
         test_set = MultiTFDataset(
@@ -49,7 +49,7 @@ def corrupt_data(
         )
     elif corruption_type == 'END2':
         if end_mode == '16k':
-            n_ls = end_noises(noise_modes=constants.END2_NOISE_LIST, end_path=end_path)
+            n_ls = end_noises(noise_modes=constants.END2_NOISE_LIST, end_path=end_path, sample_rate=sample_rate)
         elif end_mode == '48k':
             n_ls = end_noise_48k(noise_modes=constants.END2_NOISE_LIST, end_path=end_path, sample_rate=sample_rate)
         test_set = MultiTFDataset(
@@ -99,10 +99,15 @@ def ensc_noises(ensc_path:str, noise_modes:list[str], sample_rate:int=16000) -> 
     print(f'TTL noise size is: {len(noises)}')
     return noises
 
-def end_noises(end_path:str, noise_modes:list[str] = ['DKITCHEN', 'NFIELD', 'OOFFICE', 'PRESTO', 'TCAR']) -> list[torch.Tensor]:
+def end_noises(end_path:str, sample_rate:int, noise_modes:list[str] = ['DKITCHEN', 'NFIELD', 'OOFFICE', 'PRESTO', 'TCAR']) -> list[torch.Tensor]:
     noises = []
     print('Loading noise files...')
-    demand_set = MergSet([DEMAND(root_path=end_path, mode=md, include_rate=False) for md in noise_modes])
+    demand_set = MergSet([
+        DEMAND(
+            root_path=end_path, mode=md, include_rate=False,
+            data_tf=Resample(orig_freq=16000, new_freq=sample_rate) if sample_rate != 16000 else DoNothing()
+        ) for md in noise_modes
+    ])
     for wavform in tqdm(demand_set):
         noises.append(wavform)
     print(f'TTL noise size is: {len(noises)}')
@@ -115,7 +120,7 @@ def end_noise_48k(end_path:str, sample_rate:int, noise_modes:list[str] = ['DKITC
         DEMAND(
             root_path=end_path, mode=md, include_rate=False,
             data_tf=Components(transforms=[
-                Resample(orig_freq=48000, new_freq=sample_rate)
+                Resample(orig_freq=48000, new_freq=sample_rate) if sample_rate != 48000 else DoNothing()
             ])
         ) for md in noise_modes])
     for wavform in tqdm(demand_set):
@@ -131,7 +136,7 @@ def enq_noises(enq_path:str, sample_rate:int, noise_modes:list[str] = ['CAFE', '
         QUTNOISE(
             root_path=background_path, mode=md, include_rate=False,
             data_tf=Components(transforms=[
-                Resample(orig_freq=48000, new_freq=sample_rate),
+                Resample(orig_freq=48000, new_freq=sample_rate) if sample_rate != 48000 else DoNothing(),
                 Stereo2Mono()
             ])
         ) for md in noise_modes
