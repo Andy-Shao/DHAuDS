@@ -24,7 +24,7 @@ hubert_level_dic = {
     'base': 'B', 'large': 'L', 'x-large': 'XL'
 }
 
-DYN_SNR_L1 = [7, 1, 10]
+DYN_SNR_L1 = [6, 1, 7]
 DYN_SNR_L2 = [5, .5, 7]
 DYN_PSH_L1 = [4, 5]
 DYN_PSH_L2 = [5, 7]
