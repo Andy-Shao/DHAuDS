@@ -144,7 +144,7 @@ if __name__ == '__main__':
 
     def inferecing(max_accu:float) -> tuple[float, float]:
         accuracy = inference(args=args, hubert=hubert, clsModel=clsf, data_loader=test_loader)
-        print(f'Accuracy is: {accuracy:.4f}%, sample size is: {len(adapt_set)}')
+        print(f'Accuracy is: {accuracy:.4f}, sample size is: {len(adapt_set)}')
         if accuracy >= max_accu:
             max_accu = accuracy
             torch.save(
