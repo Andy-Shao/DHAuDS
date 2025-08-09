@@ -29,7 +29,7 @@ def inference(args:argparse.Namespace, hubert:nn.Module, clsModel:nn.Module, dat
         ttl_size += labels.shape[0]
         _, preds = torch.max(input=outputs.detach(), dim=1)
         ttl_corr += (preds == labels).sum().cpu().item()
-    return ttl_corr / ttl_size * 100.
+    return ttl_corr / ttl_size
 
 def build_model(args:argparse.Namespace, pre_weight:bool=True) -> tuple[torchaudio.models.Wav2Vec2Model, AudioClassifier]:
     bundle = torchaudio.pipelines.HUBERT_BASE
@@ -145,8 +145,8 @@ if __name__ == '__main__':
             _, preds = torch.max(input=outputs.detach(), dim=1)
             ttl_corr += (preds == labels).sum().cpu().item()
             train_loss += loss.cpu().item()
-        train_accu = ttl_corr/ttl_size * 100.
-        print(f'Training accuracy is: {train_accu:.4f}%, sample size is: {len(train_set)}')
+        train_accu = ttl_corr/ttl_size
+        print(f'Training accuracy is: {train_accu:.4f}, sample size is: {len(train_set)}')
 
         learning_rate = optimizer.param_groups[0]['lr']
         if epoch % args.interval == 0:
@@ -154,7 +154,7 @@ if __name__ == '__main__':
 
         print('Validating...')
         val_accu = inference(args=args, hubert=hubert, clsModel=clsModel, data_loader=val_loader)
-        print(f'Validation accuracy is: {val_accu:.4f}%, sample size is: {len(val_set)}')
+        print(f'Validation accuracy is: {val_accu:.4f}, sample size is: {len(val_set)}')
 
         wandb_run.log(data={
             'Train/Loss': train_loss / len(train_loader),
