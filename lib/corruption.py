@@ -154,9 +154,9 @@ class CorruptionMeta:
     type:str
     level:str
 
-def corruption_meta(corrupytion_types:list[str], corruption_levels:list[str]) -> list[CorruptionMeta]:
+def corruption_meta(corruption_types:list[str], corruption_levels:list[str]) -> list[CorruptionMeta]:
     ret = []
-    for ctype in corrupytion_types:
+    for ctype in corruption_types:
         for l in corruption_levels:
             meta = CorruptionMeta(type=ctype, level=l)
             ret.append(meta)
@@ -306,6 +306,38 @@ class UrbanSound8KC(Dataset):
             ), normalize=True
         )
         label = int(meta_info['classID'])
+        if self.data_tf is not None:
+            wavform = self.data_tf(wavform)
+        if self.label_tf is not None:
+            label = self.label_tf(label)
+        return wavform, label
+    
+class SpeechCommandsV2C(Dataset):
+    meta_file = 'testing_list.txt'
+    def __init__(self, root_path:str, corruption_level:str, corruption_type:str, data_tf:nn.Module=None, label_tf:nn.Module=None):
+        super().__init__()
+        self.root_path = root_path
+        self.corruption_type = corruption_type
+        self.corruption_level = corruption_level
+        self.data_tf = data_tf
+        self.label_tf = label_tf
+        self.data_ls = self.__cal_data_list__()
+
+    def __cal_data_list__(self):
+        with open(os.path.join(self.root_path, SpeechCommandsV2C.meta_file), 'r') as f:
+            data_list = f.readlines()
+        return [it.strip() for it in data_list]
+
+    def __len__(self):
+        return len(self.data_ls)
+    
+    def __getitem__(self, index):
+        meta_info = self.data_ls[index]
+        label = int(SpeechCommandsV2.label_dict[meta_info.split('/')[0]])
+        wavform, sample_rate = torchaudio.load(
+            os.path.join(self.root_path, self.corruption_type, self.corruption_level, meta_info), 
+            normalize=True
+        )
         if self.data_tf is not None:
             wavform = self.data_tf(wavform)
         if self.label_tf is not None:

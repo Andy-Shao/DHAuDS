@@ -110,7 +110,7 @@ if __name__ == '__main__':
     ##########################################
     meta_file = os.path.join(args.output_path, 'metadata', 'UrbanSound8K.csv')
     corruption_metas = corruption_meta(
-        corrupytion_types=['WHN', 'ENSC', 'PSH', 'TST'],
+        corruption_types=['WHN', 'ENSC', 'PSH', 'TST'],
         corruption_levels=['L1', 'L2']
     )
     #makedirs

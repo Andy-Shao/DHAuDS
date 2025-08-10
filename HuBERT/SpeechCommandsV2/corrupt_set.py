@@ -1,21 +1,20 @@
 import argparse
 import os
+import shutil
 import numpy as np
 import random
-import pandas as pd
-import shutil
 from tqdm import tqdm
 
-import torch
+import torch 
 from torch import nn
 from torch.utils.data import Dataset, DataLoader
 import torchaudio
 
 from lib import constants
 from lib.utils import print_argparse
-from lib.corruption import corruption_meta, ReefSetC, corrupt_data
-from lib.dataset import MultiTFDataset
-from lib.component import Components, AudioPadding, AudioClip
+from lib.spdataset import SpeechCommandsV2 as SC2
+from lib.corruption import corruption_meta, corrupt_data, DynTST, SpeechCommandsV2C
+from lib.component import Components, AudioPadding
 
 def store_to(dataset:Dataset, root_path:str, sample_rate:int, data_tf:nn.Module=None) -> None:
     print(f'Store dataset into {root_path}')
@@ -40,26 +39,32 @@ def batch_store_to(data_loader:DataLoader, root_path:str, sample_rate:int, data_
                 bits_per_sample=16
             )
 
-class ReefSet(Dataset):
-    def __init__(self, root_path:str, meta_file:str, data_tf:nn.Module=None):
+class SpeechCommandsV2(Dataset):
+    meta_file = os.path.join('testing_list.txt')
+    def __init__(self, root_path:str, data_tf:nn.Module=None):
         super().__init__()
         self.root_path = root_path
-        self.meta_info = pd.read_csv(meta_file, header=0)
         self.data_tf = data_tf
+        self.data_list = self.__cal_data_list_()
+
+    def __cal_data_list_(self):
+        with open(os.path.join(self.root_path, SpeechCommandsV2.meta_file), 'r') as f:
+            data_list = f.readlines()
+        return [it.strip() for it in data_list]
     
     def __len__(self):
-        return len(self.meta_info)
+        return len(self.data_list)
     
     def __getitem__(self, index):
-        meta = self.meta_info.iloc[index]
-        wavform, sample_rate = torchaudio.load(os.path.join(self.root_path, 'full_dataset', meta['file_name']), normalize=True)
+        file_path = self.data_list[index]
+        wavform, sample_rate = torchaudio.load(os.path.join(self.root_path, file_path), normalize=True)
         if self.data_tf is not None:
             wavform = self.data_tf(wavform)
-        return wavform, meta['file_name']
+        return wavform, file_path
 
 if __name__ == '__main__':
     ap = argparse.ArgumentParser()
-    ap.add_argument('--dataset', type=str, default='ReefSet', choices=['ReefSet'])
+    ap.add_argument('--dataset', type=str, default='SpeechCommandsV2', choices=['SpeechCommandsV2'])
     ap.add_argument('--dataset_root_path', type=str)
     ap.add_argument('--num_workers', type=int, default=16)
     ap.add_argument('--output_path', type=str, default='./result')
@@ -71,10 +76,9 @@ if __name__ == '__main__':
     ap.add_argument('--ensc_path', type=str)
 
     args = ap.parse_args()
-    if args.dataset == 'ReefSet':
-        args.class_num = 37
+    if args.dataset == 'SpeechCommandsV2':
+        args.class_num = 35
         args.sample_rate = 16000
-        args.audio_length = int(1.88 * 16000)
     else:
         raise Exception('No support!')
     args.device = 'cuda' if torch.cuda.is_available() else 'cpu'
@@ -90,7 +94,8 @@ if __name__ == '__main__':
 
     print_argparse(args)
     ##########################################
-    meta_file = './data/ReefSet/test_annotations.csv'
+    SC2(root_path=args.dataset_root_path, mode='testing', download=True)
+    dataset_root_path = os.path.join(args.dataset_root_path, 'speech_commands_v0.02', 'speech_commands_v0.02')
     corruption_metas = corruption_meta(
         corruption_types=['WHN', 'ENQ', 'END1', 'END2', 'ENSC', 'PSH', 'TST'],
         corruption_levels=['L1', 'L2']
@@ -99,56 +104,46 @@ if __name__ == '__main__':
     #makedirs
     for cmeta in corruption_metas:
         ops_path = os.path.join(args.output_path, cmeta.type, cmeta.level)
-        os.makedirs(ops_path)
+        for k,v in SC2.label_dict.items():
+            os.makedirs(os.path.join(ops_path, k))
 
     for cmeta in corruption_metas:
         ops_path = os.path.join(args.output_path, cmeta.type, cmeta.level)
         if cmeta.type == 'TST':
-            corrupted_set = corrupt_data(
-                orgin_set=ReefSet(
-                    root_path=args.dataset_root_path, meta_file=meta_file
-                ), corruption_type=cmeta.type, corruption_level=cmeta.level, 
-                enq_path=args.enq_path, sample_rate=args.sample_rate, end_path=args.end_path,
-                ensc_path=args.ensc_path
-            )
             if cmeta.level == 'L1':
-                max_length = int((1.+constants.DYN_TST_L1[2])*args.audio_length)
+                rates = constants.DYN_TST_L1
             elif cmeta.level == 'L2':
-                max_length = int((1.+constants.DYN_TST_L2[2])*args.audio_length)
-            else:
-                raise Exception('No support')
-            corrupted_set = MultiTFDataset(
-                dataset=corrupted_set,
-                tfs=[
-                    Components(transforms=[
-                        AudioPadding(max_length=max_length, sample_rate=args.sample_rate, random_shift=False),
-                        AudioClip(max_length=max_length, mode='head', is_random=False)
-                    ])
-                ]
-            )
-        else:
-            test_set = ReefSet(
-                root_path=args.dataset_root_path, meta_file=meta_file, 
+                rates = constants.DYN_TST_L2
+            test_set = SpeechCommandsV2(
+                root_path=dataset_root_path, 
                 data_tf=Components(transforms=[
-                    AudioPadding(max_length=args.audio_length, sample_rate=args.sample_rate, random_shift=False)
+                    DynTST(min_rate=rates[0], step=rates[1], max_rate=rates[2], is_bidirection=False),
+                    AudioPadding(max_length=args.sample_rate, sample_rate=args.sample_rate, random_shift=False)
                 ])
             )
-            corrupted_set = corrupt_data(
-                orgin_set=test_set, corruption_level=cmeta.level, corruption_type=cmeta.type, enq_path=args.enq_path,
-                sample_rate=args.sample_rate, end_path=args.end_path, ensc_path=args.ensc_path
+        else:
+            test_set = corrupt_data(
+                orgin_set=SpeechCommandsV2(
+                    root_path=dataset_root_path,
+                    data_tf=AudioPadding(max_length=args.sample_rate, sample_rate=args.sample_rate, random_shift=False)
+                ),
+                corruption_level=cmeta.level, corruption_type=cmeta.type, enq_path=args.enq_path, sample_rate=args.sample_rate,
+                end_path=args.end_path, ensc_path=args.ensc_path
             )
+
         if cmeta.type == 'PSH':
-            store_to(dataset=corrupted_set, root_path=ops_path, sample_rate=args.sample_rate)
+            store_to(dataset=test_set, root_path=ops_path, sample_rate=args.sample_rate)
         else:
             batch_store_to(
-                data_loader=DataLoader(dataset=corrupted_set, batch_size=args.batch_size, shuffle=False,
-                    drop_last=False, num_workers=args.num_workers),
+                data_loader=DataLoader(dataset=test_set, batch_size=args.batch_size, shuffle=False, drop_last=False, 
+                    num_workers=args.num_workers),
                 root_path=ops_path, sample_rate=args.sample_rate
             )
-    shutil.copyfile(src=meta_file, dst=os.path.join(args.output_path, 'test_annotations.csv'))
+    
+    shutil.copy(src=os.path.join(dataset_root_path, SpeechCommandsV2.meta_file), dst=os.path.join(args.output_path, SpeechCommandsV2.meta_file))
 
     print('Testing...')
     for cmet in corruption_metas:
         print(f'Test {cmet.type}-{cmet.level}')
-        for feature, label in tqdm(ReefSetC(root_path=args.output_path, corruption_type=cmet.type, corruption_level=cmet.level)):
+        for feature, label in tqdm(SpeechCommandsV2C(root_path=args.output_path, corruption_type=cmet.type, corruption_level=cmet.level)):
             pass
