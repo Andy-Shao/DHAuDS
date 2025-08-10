@@ -15,7 +15,7 @@ from HuBERT.ReefSet.train import build_model, inference
 
 def analyzing(args:argparse.Namespace, corruption_types:list[str], corruption_levels:list[str]) -> None:
     records = pd.DataFrame(columns=['Dataset',  'Algorithm', 'Param No.', 'Corruption', 'Non-adapted', 'Adapted'])
-    corruption_metas = corruption_meta(corrupytion_types=corruption_types, corruption_levels=corruption_levels)
+    corruption_metas = corruption_meta(corruption_types=corruption_types, corruption_levels=corruption_levels)
     hubert, clsf = build_model(args=args, pre_weight=args.use_pre_trained_weigth)
     load_weight(args=args, hubert=hubert, clsf=clsf, mode='origin')
     param_no = count_ttl_params(hubert) + count_ttl_params(clsf)
