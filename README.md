@@ -15,7 +15,7 @@ pip install tqdm==4.67.1
 pip install pandas==2.3.1
 pip install matplotlib==3.10.3
 pip install jupyter==1.1.1
-pip install soundfile
+pip install soundfile==0.13.1
 pip install wandb==0.21.0
 ```
 
