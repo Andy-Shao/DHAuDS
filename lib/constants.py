@@ -24,7 +24,7 @@ hubert_level_dic = {
     'base': 'B', 'large': 'L', 'x-large': 'XL'
 }
 
-DYN_SNR_L1 = [5, 1, 6]
+DYN_SNR_L1 = [5, .5, 7]
 DYN_SNR_L2 = [5, .5, 7]
 DYN_PSH_L1 = [4, 5]
 DYN_PSH_L2 = [5, 7]
@@ -35,6 +35,6 @@ ENQ_NOISE_L1_LIST = ['CAFE', 'CAR', 'HOME']
 END1_NOISE_L2_LIST = ['DKITCHEN', 'NFIELD', 'STRAFFIC', 'PRESTO', 'TCAR', 'OOFFICE']
 END1_NOISE_L1_LIST = ['DKITCHEN', 'NFIELD', 'STRAFFIC', 'PRESTO']
 END2_NOISE_L2_LIST = ['DLIVING', 'NRIVER', 'OHALLWAY', 'PSTATION', 'SPSQUARE', 'TMETRO']
-END2_NOISE_L1_LIST = ['DLIVING', 'NRIVER', 'OHALLWAY', 'PSTATION']
+END2_NOISE_L1_LIST = ['DLIVING', 'OHALLWAY', 'SPSQUARE', 'TMETRO']
 ENSC_NOISE_L2_LIST = ['doing_the_dishes', 'exercise_bike', 'running_tap', 'white_noise', 'dude_miaowing', 'pink_noise']
 ENSC_NOISE_L1_LIST = ['doing_the_dishes', 'exercise_bike', 'running_tap', 'white_noise']
