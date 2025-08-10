@@ -15,27 +15,11 @@ pip install tqdm==4.67.1
 pip install pandas==2.3.1
 pip install matplotlib==3.10.3
 pip install jupyter==1.1.1
-pip install wandb==0.21.0
-```
-In some cloud platforms, such as [Google Cloud](https://cloud.google.com). You should install more:
-```shell
 pip install soundfile
+pip install wandb==0.21.0
 ```
 
 ## Datasets
-<!--
-### AudioMNIST
-This repository contains code and data used in the Interpretation and Explanation of Deep Neural Networks for Classifying Audio Signals. The dataset consists of 30,000 audio samples of spoken digits (0–9) from 60 different speakers. Additionally, it contains the audioMNIST_meta.txt file, which provides meta information such as the gender or age of each speaker.
-
-+ Sample size: 30000 (Train: 18000, Validation: 6000, Test: 6000)
-+ Sample rate: 48 kHz
-+ Audio length: 1 second
-+ Class Number: 10
-  
-[Official Audio MNIST Link](https://github.com/soerenab/AudioMNIST/tree/master)<br/>
-[Dataset Hosting Link](https://www.kaggle.com/datasets/sripaadsrinivasan/audio-mnist)
--->
-
 ### SpeechCommands V2
 The SpeechCommands V2 (2.26GB) is a speech audio set that includes 35 English words. 
 + Sample size: 105829 (train: 84843, test: 11005, validation: 9981)
@@ -97,17 +81,6 @@ ReefSet is a multi-labeled and imbalanced dataset. ReefSet compiled a diverse me
 
 [Official Link](https://zenodo.org/records/11071202)
 
-<!-- ### CochlScene
-Cochl Acoustic Scene Dataset, or CochlScene, is a new acoustic scene dataset whose recordings are fully collected from crowdsourcing participants. Most of the initial plans and guidelines for the processes were provided by researchers in the field of audio signal processing and machine learning, including the authors. The actual process was performed using a crowdsourcing platform developed by SelectStar, a Korean crowdsourcing data company. During the process, the initial plans were reinforced and modified based on the discussion about the actual difficulties in the collection process. After extracting a subset of the total collections based on the data's purpose, we collected 76,115 10-second files from 13 different acoustic scenes involving 831 participants.
-
-+ Sample rate: 44100
-+ Sample size: 76115 (Train: 60855, validation: 7573, test: 7687)
-+ One sample length: 10 seconds
-+ Class number: 13
-
-[Github Link](https://github.com/cochlearai/cochlscene)<br/>
-[Dataset Link](https://zenodo.org/records/7080122) -->
-
 ### QUT-NOISE
 QUT-NOISE is an environmental acoustic dataset for environmental background noise. QUT-NOISE comprises five distinct types of background noise: CAFE, CAR, HOME, REVERB, and STREET. Each type of noise includes five noise files.
 + Sample rate: 48 kHz
@@ -129,4 +102,3 @@ A database of 16-channel environmental noise recordings.
 ## Code Reference
 + [AMAuT](https://github.com/Andy-Shao/AMAuT)
 + [HuBERT](https://github.com/facebookresearch/fairseq/tree/main/examples/hubert)
-<!-- + [SSAST](https://github.com/YuanGongND/ssast/tree/main) -->
