@@ -23,11 +23,11 @@ def corrupt_data(
     ) -> Dataset:
     assert end_mode in ['16k', '48k'], 'No support'
     if corruption_level == 'L1':
-        snrs = constants.DYN_SNR_L1
+        snrs = constants.DYN_SNR_L1 if corruption_type != 'WHN' else constants.DYN_WHN_L1
         n_steps = constants.DYN_PSH_L1
         rates = constants.DYN_TST_L1
     elif corruption_level == 'L2':
-        snrs = constants.DYN_SNR_L2
+        snrs = constants.DYN_SNR_L2 if corruption_type != 'WHN' else constants.DYN_WHN_L2
         n_steps = constants.DYN_PSH_L2
         rates = constants.DYN_TST_L2
     if corruption_type == 'WHN':
