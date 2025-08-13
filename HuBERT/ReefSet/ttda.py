@@ -96,6 +96,7 @@ if __name__ == '__main__':
     ap.add_argument('--lr_cardinality', type=int, default=40)
     ap.add_argument('--lr_gamma', type=int, default=10)
     ap.add_argument('--lr_threshold', type=int, default=1)
+    ap.add_argument('--lr_momentum', type=float, default=.9)
     ap.add_argument('--hub_lr_decay', type=float, default=1.0)
     ap.add_argument('--clsf_lr_decay', type=float, default=1.0)
     ap.add_argument('--nucnm_rate', type=float, default=1.)
@@ -199,7 +200,10 @@ if __name__ == '__main__':
 
         learning_rate = optimizer.param_groups[0]['lr']
         if epoch % args.interval == 0:
-            lr_scheduler(optimizer=optimizer, epoch=epoch, lr_cardinality=args.lr_cardinality, gamma=args.lr_gamma, threshold=args.lr_threshold)
+            lr_scheduler(
+                optimizer=optimizer, epoch=epoch, lr_cardinality=args.lr_cardinality, gamma=args.lr_gamma, 
+                threshold=args.lr_threshold, momentum=args.lr_momentum
+            )
 
         wandb_run.log(
             data={
