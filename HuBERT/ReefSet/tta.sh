@@ -33,13 +33,13 @@ export BASE_PATH=${BASE_PATH:-'/root'}
 #     --hub_wght_pth './result/ReefSet/HuBERT/train/hubert-base-RS.pt' \
 #     --clsf_wght_pth './result/ReefSet/HuBERT/train/clsModel-base-RS.pt' --wandb
 
-python -m HuBERT.ReefSet.ttda --dataset 'ReefSet' --dataset_root_path $BASE_PATH'/data/ReefSet_v1.0' \
-    --cache_path $BASE_PATH'/tmp' \
-    --max_epoch 20 --lr_cardinality 50 --batch_size 70 --lr '1e-5' --hub_lr_decay 0.35 --num_workers 16 \
-    --nucnm_rate 1.0 --lr_gamma 30 --lr_threshold 35 --lr_momentum 0.75 \
-    --ent_rate 0.0 --gent_rate 0.0 --gent_q 1.1 --corruption_type 'PSH' --corruption_level 'L2' \
-    --hub_wght_pth './result/ReefSet/HuBERT/train/hubert-base-RS.pt' \
-    --clsf_wght_pth './result/ReefSet/HuBERT/train/clsModel-base-RS.pt' --wandb
+# python -m HuBERT.ReefSet.ttda --dataset 'ReefSet' --dataset_root_path $BASE_PATH'/data/ReefSet_v1.0' \
+#     --cache_path $BASE_PATH'/tmp' \
+#     --max_epoch 20 --lr_cardinality 50 --batch_size 70 --lr '1e-5' --hub_lr_decay 0.35 --num_workers 16 \
+#     --nucnm_rate 1.0 --lr_gamma 30 --lr_threshold 35 --lr_momentum 0.75 \
+#     --ent_rate 0.0 --gent_rate 0.0 --gent_q 1.1 --corruption_type 'PSH' --corruption_level 'L2' \
+#     --hub_wght_pth './result/ReefSet/HuBERT/train/hubert-base-RS.pt' \
+#     --clsf_wght_pth './result/ReefSet/HuBERT/train/clsModel-base-RS.pt' --wandb
 
 # python -m HuBERT.ReefSet.ttda --dataset 'ReefSet' --dataset_root_path $BASE_PATH'/data/ReefSet_v1.0' \
 #     --cache_path $BASE_PATH'/tmp' \
@@ -56,6 +56,14 @@ python -m HuBERT.ReefSet.ttda --dataset 'ReefSet' --dataset_root_path $BASE_PATH
 #     --ent_rate 0.0 --gent_rate 0.0 --gent_q 1.1 --corruption_type 'TST' --corruption_level 'L2' \
 #     --hub_wght_pth './result/ReefSet/HuBERT/train/hubert-base-RS.pt' \
 #     --clsf_wght_pth './result/ReefSet/HuBERT/train/clsModel-base-RS.pt' --wandb
+
+python -m HuBERT.ReefSet.ttda --dataset 'ReefSet' --dataset_root_path $BASE_PATH'/data/ReefSet_v1.0' \
+    --cache_path $BASE_PATH'/tmp' \
+    --max_epoch 15 --lr_cardinality 50 --batch_size 70 --lr '1e-4' --hub_lr_decay 0.35 --num_workers 16 \
+    --nucnm_rate 1.0 --lr_gamma 30 --lr_threshold 35 \
+    --ent_rate 0.0 --gent_rate 0.0 --gent_q 1.1 --corruption_type 'TST' --corruption_level 'L1' \
+    --hub_wght_pth './result/ReefSet/HuBERT/train/hubert-base-RS.pt' \
+    --clsf_wght_pth './result/ReefSet/HuBERT/train/clsModel-base-RS.pt' --wandb
 
 # python -m HuBERT.ReefSet.ttda --dataset 'ReefSet' --dataset_root_path $BASE_PATH'/data/ReefSet_v1.0' \
 #     --cache_path $BASE_PATH'/tmp' --noise_path $BASE_PATH'/data/QUT-NOISE' \
