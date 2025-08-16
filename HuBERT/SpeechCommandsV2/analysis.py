@@ -12,7 +12,7 @@ from HuBERT.ReefSet.analysis import load_weight
 from HuBERT.SpeechCommandsV2.train import build_model, inference
 
 def analyzing(args:argparse.Namespace, corruption_types:list[str], corruption_levels:list[str]) -> None:
-    records = pd.DataFrame(columns=['Dataset',  'Algorithm', 'Param No.', 'Corruption', 'Non-adapted', 'Adapted'])
+    records = pd.DataFrame(columns=['Dataset',  'Algorithm', 'Param No.', 'Corruption', 'Non-adapted', 'Adapted', 'Improved'])
     corruption_metas = corruption_meta(corruption_types=corruption_types, corruption_levels=corruption_levels)
     hubert, clsf = build_model(args=args, pre_weight=args.use_pre_trained_weigth)
     load_weight(args=args, hubert=hubert, clsf=clsf, mode='origin')
@@ -37,7 +37,7 @@ def analyzing(args:argparse.Namespace, corruption_types:list[str], corruption_le
         print('Adaptation analyzing...')
         adpt_f1 = inference(args=args, hubert=adpt_hubert, clsModel=adpt_clsf, data_loader=adpt_loader)
         print(f'{args.dataset} {cmeta.type}-{cmeta.level} non-adapted accuracy: {orig_f1:.4f}, adapted accuracy: {adpt_f1:.4f}')
-        records.loc[len(records)] = [args.dataset, args.arch, param_no, f'{cmeta.type}-{cmeta.level}', orig_f1, adpt_f1]
+        records.loc[len(records)] = [args.dataset, args.arch, param_no, f'{cmeta.type}-{cmeta.level}', orig_f1, adpt_f1, adpt_f1 - orig_f1]
     records.to_csv(os.path.join(args.output_path, args.output_file_name))
 
 if __name__ == '__main__':
