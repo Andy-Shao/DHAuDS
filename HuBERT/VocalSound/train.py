@@ -10,13 +10,13 @@ from torch import nn
 from torch.utils.data import DataLoader
 import torchaudio
 
-from lib.utils import make_unless_exits, print_argparse, ConfigDict, store_model_structure_to_txt
+from lib.utils import make_unless_exits, print_argparse, store_model_structure_to_txt
 from lib import constants
 from lib.spdataset import VocalSound
 from lib.component import Components, AudioPadding, time_shift, ReduceChannel, AudioClip
 from lib.lr_utils import build_optimizer, lr_scheduler
-from AuT.lib.model import FCEClassifier
 from AuT.lib.loss import CrossEntropyLabelSmooth
+from HuBERT.lib.model import HuBClassifier
 
 def inference(args:argparse.Namespace, hubert:nn.Module, clsModel:nn.Module, data_loader:DataLoader):
     hubert.eval(); clsModel.eval()
@@ -25,13 +25,13 @@ def inference(args:argparse.Namespace, hubert:nn.Module, clsModel:nn.Module, dat
         features, labels = features.to(args.device), labels.to(args.device)
 
         with torch.no_grad():
-            outputs = clsModel(hubert(features)[0][:, :2, :])
+            outputs = clsModel(hubert(features)[0])
         ttl_size += labels.shape[0]
         _, preds = torch.max(input=outputs.detach(), dim=1)
         ttl_corr += (preds == labels).sum().cpu().item()
     return ttl_corr / ttl_size
 
-def build_model(args:argparse.Namespace, pre_weight:bool=True) -> tuple[torchaudio.models.Wav2Vec2Model, FCEClassifier]:
+def build_model(args:argparse.Namespace, pre_weight:bool=True) -> tuple[torchaudio.models.Wav2Vec2Model, HuBClassifier]:
     if args.model_level == 'base':
         bundle = torchaudio.pipelines.HUBERT_BASE
     elif args.model_level == 'large':
@@ -42,13 +42,10 @@ def build_model(args:argparse.Namespace, pre_weight:bool=True) -> tuple[torchaud
         hubert = bundle.get_model().to(device=args.device)
     else:
         hubert = torchaudio.models.hubert_base().to(device=args.device)
-    cfg = ConfigDict()
-    cfg.classifier = ConfigDict()
-    cfg.classifier.class_num = args.class_num
-    cfg.classifier['in_embed_num'] = 2
-    cfg.embedding = ConfigDict()
-    cfg.embedding.embed_size = bundle._params['encoder_embed_dim']
-    classifier = FCEClassifier(config=cfg).to(device=args.device)
+    classifier = HuBClassifier(
+        embed_size=bundle._params['encoder_embed_dim'], class_num=args.class_num, 
+        num_layers=[2, 2]
+    ).to(device=args.device)
     return hubert, classifier
 
 if __name__ == '__main__':
@@ -142,7 +139,7 @@ if __name__ == '__main__':
             features, labels = features.to(args.device), labels.to(args.device)
 
             optimizer.zero_grad()
-            outputs = clsModel(hubert(features)[0][:, :2, :])
+            outputs = clsModel(hubert(features)[0])
             loss = loss_fn(outputs, labels)
             loss.backward()
             optimizer.step()
