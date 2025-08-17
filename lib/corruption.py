@@ -343,3 +343,40 @@ class SpeechCommandsV2C(Dataset):
         if self.label_tf is not None:
             label = self.label_tf(label)
         return wavform, label
+
+class VocalSoundC(Dataset):
+    labe_dic_file = 'class_labels_indices_vs.csv'
+    meta_file = os.path.join('datafiles', 'te.json')
+    def __init__(self, root_path:str, corruption_level:str, corruption_type:str, data_tf:nn.Module=None, label_tf:nn.Module=None):
+        super().__init__()
+        self.root_path = root_path
+        self.corruption_level = corruption_level
+        self.corruption_type = corruption_type
+        self.data_tf = data_tf
+        self.label_tf = label_tf
+        self.label_dict = pd.read_csv(os.path.join(root_path, self.labe_dic_file), header=0)
+        self.sample_list = self.__file_list__()
+    
+    def __file_list__(self):
+        import json
+        with open(os.path.join(self.root_path, self.meta_file)) as f:
+            json_str = json.load(f)
+        file_list = pd.json_normalize(json_str['data'])
+        file_list['file_name'] = [str(it).split('/')[-1] for it in file_list['wav']]
+        return file_list
+
+    def __len__(self):
+        return len(self.sample_list)
+
+    def __getitem__(self, index):
+        meta_info = self.sample_list.iloc[index]
+        label = int(pd.Series(self.label_dict[self.label_dict['mid'] == meta_info['labels']]['index']).item())
+        wavform, sample_rate = torchaudio.load(
+            os.path.join(self.root_path, 'audio_16k', self.corruption_type, self.corruption_level, meta_info['file_name']),
+            normalize=True
+        )
+        if self.data_tf is not None:
+            wavform = self.data_tf(wavform)
+        if self.label_tf is not None:
+            label = self.label_tf(label)
+        return wavform, label

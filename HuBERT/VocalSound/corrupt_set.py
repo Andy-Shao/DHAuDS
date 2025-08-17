@@ -12,7 +12,7 @@ import torchaudio
 
 from lib.utils import print_argparse
 from lib.spdataset import VocalSound as VS
-from lib.corruption import corruption_meta, corrupt_data
+from lib.corruption import corruption_meta, corrupt_data, VocalSoundC
 from lib.dataset import MultiTFDataset
 from lib.component import Components, AudioPadding, AudioClip
 
@@ -154,3 +154,9 @@ if __name__ == '__main__':
                     num_workers=args.num_workers
                 ), root_path=ops_path, sample_rate=args.sample_rate
             )
+
+    # Testing...
+    for cmet in corruption_metas:
+        print(f'Test {cmet.type}-{cmet.level}')
+        for feature, label in tqdm(VocalSoundC(root_path=args.output_path, corruption_level=cmet.level, corruption_type=cmet.type)):
+            pass

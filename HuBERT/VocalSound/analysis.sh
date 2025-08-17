@@ -8,8 +8,8 @@ python -m HuBERT.VocalSound.corrupt_set --dataset 'VocalSound' --dataset_root_pa
     --end_path $BASE_PATH'/data/DEMAND_16k' \
     --ensc_path $BASE_PATH'/data'
 
-# ## Analysis
-# python -m HuBERT.ReefSet.analysis --dataset 'ReefSet' --dataset_root_path $BASE_PATH'/data/ReefSet-C' \
-#     --batch_size 33 --output_file_name 'ReefSet_analysis.csv' --use_pre_trained_weigth --model_level 'base' \
-#     --orig_wght_pth './result/ReefSet/HuBERT/train' \
-#     --adpt_wght_path './result/ReefSet/HuBERT/TTDA'
+## Analysis
+python -m HuBERT.VocalSound.analysis --dataset 'VocalSound' --dataset_root_path $BASE_PATH'/data/VocalSound-C' \
+    --batch_size 32 --output_file_name 'VocalSound_analysis.csv' --use_pre_trained_weigth --model_level 'base' \
+    --orig_wght_pth './result/VocalSound/HuBERT/train' \
+    --adpt_wght_path './result/VocalSound/HuBERT/TTDA'

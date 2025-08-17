@@ -6,7 +6,7 @@ import torch
 from torch.utils.data import DataLoader
 
 from lib.utils import make_unless_exits, print_argparse, count_ttl_params
-from lib.corruption import corruption_meta, SpeechCommandsV2C
+from lib.corruption import corruption_meta, VocalSoundC
 from lib.component import ReduceChannel
 from HuBERT.VocalSound.train import inference, build_model
 from HuBERT.ReefSet.analysis import load_weight
@@ -23,7 +23,7 @@ def analyzing(args:argparse.Namespace, corruption_types:list[str], corruption_le
         adpt_hubert, adpt_clsf = build_model(args=args, pre_weight=args.use_pre_trained_weigth)
         load_weight(args=args, hubert=adpt_hubert, clsf=adpt_clsf, mode='adaptation', metaInfo=cmeta)
 
-        adpt_set = SpeechCommandsV2C(
+        adpt_set = VocalSoundC(
             root_path=args.dataset_root_path, corruption_level=cmeta.level, corruption_type=cmeta.type,
             data_tf=ReduceChannel()
         )
