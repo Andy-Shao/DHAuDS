@@ -17,6 +17,7 @@ from lib.component import OneHot2Index, Components, AudioPadding, AudioClip, tim
 from lib.component import FrequenceTokenTransformer
 from lib.lr_utils import build_optimizer, lr_scheduler
 from lib.dataset import MultiTFDataset
+from lib.corruption import end_noises, DynEN
 from AuT.lib.model import FCETransform, AudioClassifier
 from AuT.lib.config import AuT_base
 from AuT.lib.loss import CrossEntropyLabelSmooth
@@ -120,6 +121,22 @@ if __name__ == '__main__':
                 AmplitudeToDB(top_db=80., max_out=2.),
                 FrequenceTokenTransformer()
             ]),
+            Components(transforms=[
+                DynEN(
+                    noise_list=end_noises(
+                        end_path=args.background_path, sample_rate=args.sample_rate, 
+                        noise_modes=['DWASHING']
+                    ), lsnr=50, rsnr=50, step=0
+                ),
+                AudioPadding(max_length=args.audio_length, sample_rate=args.sample_rate, random_shift=True),
+                AudioClip(max_length=args.audio_length, is_random=True),
+                MelSpectrogram(
+                    sample_rate=args.sample_rate, n_fft=n_fft, win_length=win_length, hop_length=hop_length,
+                    mel_scale=mel_scale, n_mels=args.n_mels
+                ), # 80 x 195
+                AmplitudeToDB(top_db=80., max_out=2.),
+                FrequenceTokenTransformer()
+            ]),
         ]
     )
     train_loader = DataLoader(
@@ -131,8 +148,8 @@ if __name__ == '__main__':
         root_path=args.dataset_root_path, mode='test', include_rate=False, label_mode='single',
         label_tf=OneHot2Index(),
         data_tf=Components(transforms=[
-            AudioPadding(max_length=args.audio_length, sample_rate=args.sample_rate, random_shift=True),
-            AudioClip(max_length=args.audio_length, is_random=True),
+            AudioPadding(max_length=args.audio_length, sample_rate=args.sample_rate, random_shift=False),
+            AudioClip(max_length=args.audio_length, is_random=False, mode='head'),
             MelSpectrogram(
                 sample_rate=args.sample_rate, n_fft=n_fft, win_length=win_length, hop_length=hop_length,
                 mel_scale=mel_scale, n_mels=args.n_mels
