@@ -201,3 +201,11 @@ class AudioClip(nn.Module):
                 start = l
             x = x[:, start:start+self.max_length]
         return x
+    
+class OneHot2Index(nn.Module):
+    def __init__(self):
+        super().__init__()
+
+    def forward(self, x:torch.Tensor) -> int:
+        _, pred = torch.max(x, dim=0)
+        return pred

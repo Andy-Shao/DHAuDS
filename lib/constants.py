@@ -13,7 +13,7 @@ dataset_dic = {
 }
 
 architecture_dic = {
-    'AuT': 'AuT',
+    'AMAuT': 'AuT',
     'HuBERT': 'HuB',
     'AST': 'AST'
 }
