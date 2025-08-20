@@ -126,7 +126,7 @@ if __name__ == '__main__':
                     noise_list=end_noises(
                         end_path=args.background_path, sample_rate=args.sample_rate, 
                         noise_modes=['DWASHING']
-                    ), lsnr=50, rsnr=50, step=0
+                    ), lsnr=55, rsnr=55, step=0
                 ),
                 AudioPadding(max_length=args.audio_length, sample_rate=args.sample_rate, random_shift=True),
                 AudioClip(max_length=args.audio_length, is_random=True),
@@ -137,6 +137,22 @@ if __name__ == '__main__':
                 AmplitudeToDB(top_db=80., max_out=2.),
                 FrequenceTokenTransformer()
             ]),
+            # Components(transforms=[
+            #     DynEN(
+            #         noise_list=end_noises(
+            #             end_path=args.background_path, sample_rate=args.sample_rate, 
+            #             noise_modes=['OMEETING']
+            #         ), lsnr=55, rsnr=55, step=0
+            #     ),
+            #     AudioPadding(max_length=args.audio_length, sample_rate=args.sample_rate, random_shift=True),
+            #     AudioClip(max_length=args.audio_length, is_random=True),
+            #     MelSpectrogram(
+            #         sample_rate=args.sample_rate, n_fft=n_fft, win_length=win_length, hop_length=hop_length,
+            #         mel_scale=mel_scale, n_mels=args.n_mels
+            #     ), # 80 x 195
+            #     AmplitudeToDB(top_db=80., max_out=2.),
+            #     FrequenceTokenTransformer()
+            # ]),
         ]
     )
     train_loader = DataLoader(
