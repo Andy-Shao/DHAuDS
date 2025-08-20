@@ -16,6 +16,7 @@ from lib.acousticDataset import ReefSet
 from lib.component import OneHot2Index, Components, AudioPadding, AudioClip, time_shift, AmplitudeToDB
 from lib.component import FrequenceTokenTransformer
 from lib.lr_utils import build_optimizer, lr_scheduler
+from lib.dataset import MultiTFDataset
 from AuT.lib.model import FCETransform, AudioClassifier
 from AuT.lib.config import AuT_base
 from AuT.lib.loss import CrossEntropyLabelSmooth
@@ -103,18 +104,23 @@ if __name__ == '__main__':
     args.target_length=195
     train_set = ReefSet(
         root_path=args.dataset_root_path, mode='train', include_rate=False, label_mode='single', 
-        label_tf=OneHot2Index(), 
-        data_tf=Components(transforms=[
-            AudioPadding(max_length=args.audio_length, sample_rate=args.sample_rate, random_shift=True),
-            AudioClip(max_length=args.audio_length, is_random=True),
-            time_shift(shift_limit=.17, is_random=True, is_bidirection=True),
-            MelSpectrogram(
-                sample_rate=args.sample_rate, n_fft=n_fft, win_length=win_length, hop_length=hop_length,
-                mel_scale=mel_scale, n_mels=args.n_mels
-            ), # 80 x 195
-            AmplitudeToDB(top_db=80., max_out=2.),
-            FrequenceTokenTransformer()
-        ])
+        label_tf=OneHot2Index(),
+    )
+    train_set = MultiTFDataset(
+        dataset=train_set,
+        tfs=[
+            Components(transforms=[
+                AudioPadding(max_length=args.audio_length, sample_rate=args.sample_rate, random_shift=True),
+                AudioClip(max_length=args.audio_length, is_random=True),
+                time_shift(shift_limit=.17, is_random=True, is_bidirection=True),
+                MelSpectrogram(
+                    sample_rate=args.sample_rate, n_fft=n_fft, win_length=win_length, hop_length=hop_length,
+                    mel_scale=mel_scale, n_mels=args.n_mels
+                ), # 80 x 195
+                AmplitudeToDB(top_db=80., max_out=2.),
+                FrequenceTokenTransformer()
+            ]),
+        ]
     )
     train_loader = DataLoader(
         dataset=train_set, batch_size=args.batch_size, shuffle=True, drop_last=False, pin_memory=True,
