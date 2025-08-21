@@ -3,6 +3,7 @@ import os
 import numpy as np
 import random
 import wandb
+from tqdm import tqdm
 
 import torch
 from torch import nn
@@ -15,6 +16,8 @@ from lib.acousticDataset import ReefSet
 from lib.dataset import MultiTFDataset, mlt_load_from, mlt_store_to, batch_store_to
 from lib.component import Components, AudioPadding, AudioClip, time_shift, OneHot2Index
 from lib.component import AmplitudeToDB, FrequenceTokenTransformer, DoNothing
+from lib.lr_utils import build_optimizer, lr_scheduler
+from lib.loss import nucnm, g_entropy, entropy
 from AuT.ReefSet.train import build_model, inference
 
 def load_weigth(args:argparse.Namespace, aut:nn.Module, clsf:nn.Module, mode:str='origin') -> None:
@@ -130,7 +133,7 @@ if __name__ == '__main__':
     ap.add_argument('--lr_gamma', type=int, default=10)
     ap.add_argument('--lr_threshold', type=int, default=1)
     ap.add_argument('--lr_momentum', type=float, default=.9)
-    ap.add_argument('--hub_lr_decay', type=float, default=1.0)
+    ap.add_argument('--aut_lr_decay', type=float, default=1.0)
     ap.add_argument('--clsf_lr_decay', type=float, default=1.0)
     ap.add_argument('--nucnm_rate', type=float, default=1.)
     ap.add_argument('--ent_rate', type=float, default=1.)
@@ -181,6 +184,7 @@ if __name__ == '__main__':
     )
     aut, clsf = build_model(args=args)
     load_weigth(args, aut=aut, clsf=clsf, mode='origin')
+    optimizer = build_optimizer(lr=args.lr, auT=aut, auC=clsf, auT_decay=args.aut_lr_decay, auC_decay=args.clsf_lr_decay)
 
     def inferecing(max_roc_auc:float) -> tuple[float, float]:
         val_roc_auc = inference(args=args, aut=aut, clsf=clsf, data_loader=test_loader)
@@ -203,4 +207,60 @@ if __name__ == '__main__':
             
         print('Inferencing...')
         val_roc_auc, max_roc_auc = inferecing(max_roc_auc)
-        exit()
+        
+        print('Adapting...')
+        aut.train(); clsf.train()
+        ttl_size = 0.; ttl_loss = 0.; ttl_nucnm_loss = 0.
+        ttl_ent_loss = 0.; ttl_gent_loss = 0.
+        for fs1, fs2, _ in tqdm(adapt_loader):
+            fs1, fs2 = fs1.to(args.device), fs2.to(args.device)
+
+            optimizer.zero_grad()
+            os1, _ = clsf(aut(fs1)[0])
+            os2, _ = clsf(aut(fs2)[0])
+
+            nucnm_loss = nucnm(args, os1) + nucnm(args, os2)
+            ent_loss = entropy(args, os1, epsilon=1e-8) + entropy(args, os2, epsilon=1e-8)
+            gent_loss = g_entropy(args, os1, q=args.gent_q) + g_entropy(args, os1, q=args.gent_q)
+
+            loss = nucnm_loss + ent_loss + gent_loss
+            loss.backward()
+            optimizer.step()
+
+            ttl_size += fs1.shape[0]
+            ttl_loss += loss.cpu().item()
+            ttl_nucnm_loss += nucnm_loss.cpu().item()
+            ttl_ent_loss += ent_loss.cpu().item()
+            ttl_gent_loss += gent_loss.cpu().item()
+
+        learning_rate = optimizer.param_groups[0]['lr']
+        if epoch % args.interval == 0:
+            lr_scheduler(
+                optimizer=optimizer, epoch=epoch, lr_cardinality=args.lr_cardinality, gamma=args.lr_gamma, 
+                threshold=args.lr_threshold, momentum=args.lr_momentum
+            )
+
+        wandb_run.log(
+            data={
+                'Loss/ttl_loss': ttl_loss / ttl_size,
+                'Loss/Nuclear-norm loss': ttl_nucnm_loss / ttl_size,
+                'Loss/Entropy loss': ttl_ent_loss / ttl_size,
+                'Loss/G-entropy loss': ttl_gent_loss / ttl_size,
+                'Adaptation/ROC-AUC': val_roc_auc,
+                'Adaptation/LR': learning_rate,
+                'Adaptation/Max_ROC-AUC': max_roc_auc,
+            }, step=epoch, commit=True
+        )
+    print('Finalizing...')
+    val_roc_auc, max_roc_auc = inferecing(max_roc_auc)
+    wandb_run.log(
+        data={
+            'Loss/ttl_loss': ttl_loss / ttl_size,
+            'Loss/Nuclear-norm loss': ttl_nucnm_loss / ttl_size,
+            'Loss/Entropy loss': ttl_ent_loss / ttl_size,
+            'Loss/G-entropy loss': ttl_gent_loss / ttl_size,
+            'Adaptation/ROC-AUC': val_roc_auc,
+            'Adaptation/LR': learning_rate,
+            'Adaptation/Max_ROC-AUC': max_roc_auc,
+        }, step=args.max_epoch, commit=True
+    )
