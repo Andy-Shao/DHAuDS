@@ -100,6 +100,7 @@ class VocalSound(Dataset):
         self.label_tf = label_tf
         self.data_path = os.path.join(root_path, 'data_44k' if version == '44k' else 'audio_16k')
         self.version = version
+        self.mode = mode
         
         self.label_dict = self.__label_dict__()
         self.sample_list = self.__file_list__(mode=mode)
@@ -139,9 +140,14 @@ class VocalSound(Dataset):
         return len(self.sample_list)
     
     def __getitem__(self, index):
+        from torchaudio.transforms import Resample
         audioMeta = self.sample_list[index]
         label = self.label_dict[audioMeta.mid_name].index
-        wavform, sample_rate = torchaudio.load(audioMeta.file_path)
+        wavform, sample_rate = torchaudio.load(audioMeta.file_path, normalize=True)
+        if self.mode == '44k':
+            if sample_rate != 44100:
+                resample = Resample(orig_freq=sample_rate, new_freq=44100)
+                wavform = resample(wavform)
         if self.data_tf is not None:
             wavform = self.data_tf(wavform)
         if self.label_tf is not None:
