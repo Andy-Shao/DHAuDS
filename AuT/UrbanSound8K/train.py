@@ -132,7 +132,6 @@ if __name__ == '__main__':
             #     ),
             #     AudioPadding(max_length=args.audio_length, sample_rate=args.sample_rate, random_shift=True),
             #     AudioClip(max_length=args.audio_length, is_random=True),
-            #     time_shift(shift_limit=.17, is_random=True, is_bidirection=True),
             #     MelSpectrogram(
             #         sample_rate=args.sample_rate, n_fft=n_fft, win_length=win_length, hop_length=hop_length,
             #         n_mels=args.n_mels, mel_scale=mel_scale
