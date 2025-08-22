@@ -16,6 +16,8 @@ from lib.enDataset import UrbanSound8K
 from lib.component import Components, AudioClip, AudioPadding, AmplitudeToDB, FrequenceTokenTransformer
 from lib.component import time_shift, Stereo2Mono
 from lib.lr_utils import build_optimizer, lr_scheduler
+from lib.dataset import MultiTFDataset
+from lib.corruption import DynEN, end_noise_48k
 from AuT.lib.config import AuT_base
 from AuT.lib.model import FCETransform, AudioClassifier
 from AuT.lib.loss import CrossEntropyLabelSmooth
@@ -105,25 +107,47 @@ if __name__ == '__main__':
     args.target_length=277
     train_set = UrbanSound8K(
         root_path=args.dataset_root_path, folds=[1, 2, 3, 4, 5, 6, 7], sample_rate=args.sample_rate,
-        include_rate=False, data_tf=Components(transforms=[
-            Stereo2Mono(),
-            AudioPadding(max_length=args.audio_length, sample_rate=args.sample_rate, random_shift=True),
-            AudioClip(max_length=args.audio_length, is_random=True),
-            time_shift(shift_limit=.17, is_random=True, is_bidirection=True),
-            MelSpectrogram(
-                sample_rate=args.sample_rate, n_fft=n_fft, win_length=win_length, hop_length=hop_length,
-                n_mels=args.n_mels, mel_scale=mel_scale
-            ), # 80 x 277,
-            AmplitudeToDB(top_db=80., max_out=2.),
-            FrequenceTokenTransformer()
-        ])
+        include_rate=False
+    )
+    train_set = MultiTFDataset(
+        dataset=train_set, 
+        tfs=[
+            Components(transforms=[
+                Stereo2Mono(),
+                AudioPadding(max_length=args.audio_length, sample_rate=args.sample_rate, random_shift=True),
+                AudioClip(max_length=args.audio_length, is_random=True),
+                time_shift(shift_limit=.17, is_random=True, is_bidirection=True),
+                MelSpectrogram(
+                    sample_rate=args.sample_rate, n_fft=n_fft, win_length=win_length, hop_length=hop_length,
+                    n_mels=args.n_mels, mel_scale=mel_scale
+                ), # 80 x 277
+                AmplitudeToDB(top_db=80., max_out=2.),
+                FrequenceTokenTransformer()
+            ]), 
+            # Components(transforms=[
+            #     Stereo2Mono(),
+            #     DynEN(
+            #         noise_list=end_noise_48k(end_path=args.background_path, sample_rate=args.sample_rate, noise_modes=['DWASHING']),
+            #         lsnr=55, rsnr=55, step=0
+            #     ),
+            #     AudioPadding(max_length=args.audio_length, sample_rate=args.sample_rate, random_shift=True),
+            #     AudioClip(max_length=args.audio_length, is_random=True),
+            #     time_shift(shift_limit=.17, is_random=True, is_bidirection=True),
+            #     MelSpectrogram(
+            #         sample_rate=args.sample_rate, n_fft=n_fft, win_length=win_length, hop_length=hop_length,
+            #         n_mels=args.n_mels, mel_scale=mel_scale
+            #     ), # 80 x 277
+            #     AmplitudeToDB(top_db=80., max_out=2.),
+            #     FrequenceTokenTransformer()
+            # ])
+        ]
     )
     val_set = UrbanSound8K(
         root_path=args.dataset_root_path, folds=[8, 9, 10], sample_rate=args.sample_rate,
         include_rate=False, data_tf=Components(transforms=[
             Stereo2Mono(),
-            AudioPadding(max_length=args.audio_length, sample_rate=args.sample_rate, random_shift=True),
-            AudioClip(max_length=args.audio_length, is_random=True),
+            AudioPadding(max_length=args.audio_length, sample_rate=args.sample_rate, random_shift=False),
+            AudioClip(max_length=args.audio_length, is_random=False, mode='head'),
             MelSpectrogram(
                 sample_rate=args.sample_rate, n_fft=n_fft, win_length=win_length, hop_length=hop_length,
                 n_mels=args.n_mels, mel_scale=mel_scale
