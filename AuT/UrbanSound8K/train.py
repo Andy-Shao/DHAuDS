@@ -17,16 +17,16 @@ from lib.component import Components, AudioClip, AudioPadding, AmplitudeToDB, Fr
 from lib.component import time_shift, Stereo2Mono
 from lib.lr_utils import build_optimizer, lr_scheduler
 from AuT.lib.config import AuT_base
-from AuT.lib.model import FCETransform, FCEClassifier
+from AuT.lib.model import FCETransform, AudioClassifier
 from AuT.lib.loss import CrossEntropyLabelSmooth
 
-def inference(args:argparse.Namespace, aut:FCETransform, clsf:FCEClassifier, data_loader:DataLoader) -> float:
+def inference(args:argparse.Namespace, aut:FCETransform, clsf:AudioClassifier, data_loader:DataLoader) -> float:
     aut.eval(); clsf.eval()
     for idx, (features, labels) in tqdm(enumerate(data_loader), total=len(data_loader)):
         features, labels = features.to(args.device), labels.to(args.device)
 
         with torch.inference_mode():
-            outputs = clsf(aut(features)[1])
+            outputs, _ = clsf(aut(features)[0])
         _, preds = torch.max(outputs.detach().cpu(), dim=1)
 
         if idx == 0:
@@ -39,15 +39,15 @@ def inference(args:argparse.Namespace, aut:FCETransform, clsf:FCEClassifier, dat
     return val_f1
             
 
-def build_model(args:argparse.Namespace) -> tuple[FCETransform, FCEClassifier]:
+def build_model(args:argparse.Namespace) -> tuple[FCETransform, AudioClassifier]:
     cfg = AuT_base(class_num=args.class_num, n_mels=args.n_mels)
     cfg.embedding.in_shape = [args.n_mels, args.target_length]
     cfg.embedding.width = 128
     cfg.embedding.num_layers = [6, 8]
     cfg.embedding.embed_num = 35
-    cfg.classifier.in_embed_num = 2
+    cfg.classifier.in_embed_num = 37
     aut = FCETransform(config=cfg).to(device=args.device)
-    clsf = FCEClassifier(config=cfg).to(device=args.device)
+    clsf = AudioClassifier(config=cfg).to(device=args.device)
     return aut, clsf
 
 if __name__ == '__main__':
@@ -160,7 +160,7 @@ if __name__ == '__main__':
             optimizer.zero_grad()
             for i in range(len(fs) - 1):
                 features = fs[i].to(args.device)
-                outputs = clsf(aut(features)[1])
+                outputs, _ = clsf(aut(features)[0])
                 if i == 0:
                     loss = loss_fn(outputs, labels)
                 else:
