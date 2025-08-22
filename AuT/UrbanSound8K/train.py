@@ -22,6 +22,15 @@ from AuT.lib.config import AuT_base
 from AuT.lib.model import FCETransform, AudioClassifier
 from AuT.lib.loss import CrossEntropyLabelSmooth
 
+def load_pre_train_weight(args:argparse.Namespace, aut:FCETransform, clsf:AudioClassifier) -> None:
+    aut.load_state_dict(state_dict=torch.load(args.aut_pt_wght_pth, weights_only=True), strict=True)
+    
+    clsf_dict = clsf.state_dict()
+    pre_trained_clsf_dict = torch.load(args.clsf_pt_wght_pth, weights_only=False)
+    required_dict = {k:v for k,v in pre_trained_clsf_dict.items() if k in clsf_dict and v.size() == clsf_dict[k].size()}
+    clsf_dict.update(required_dict)
+    clsf.load_state_dict(clsf_dict)
+
 def inference(args:argparse.Namespace, aut:FCETransform, clsf:AudioClassifier, data_loader:DataLoader) -> float:
     aut.eval(); clsf.eval()
     for idx, (features, labels) in tqdm(enumerate(data_loader), total=len(data_loader)):
@@ -71,6 +80,9 @@ if __name__ == '__main__':
     ap.add_argument('--aut_lr_decay', type=float, default=1.)
     ap.add_argument('--clsf_lr_decay', type=float, default=1.)
     ap.add_argument('--smooth', type=float, default=.1)
+
+    ap.add_argument('--aut_pt_wght_pth', type=str)
+    ap.add_argument('--clsf_pt_wght_pth', type=str)
 
     args = ap.parse_args()
     if args.dataset == 'UrbanSound8K':
@@ -168,6 +180,7 @@ if __name__ == '__main__':
     aut, clsf = build_model(args)
     store_model_structure_to_txt(model=aut, output_path=os.path.join(args.output_path, f'aut-{constants.dataset_dic[args.dataset]}.txt'))
     store_model_structure_to_txt(model=clsf, output_path=os.path.join(args.output_path, f'clsf-{constants.dataset_dic[args.dataset]}.txt'))
+    load_pre_train_weight(args=args, aut=aut, clsf=clsf)
     optimizer = build_optimizer(lr=args.lr, auT=aut, auC=clsf, auT_decay=args.aut_lr_decay, auC_decay=args.clsf_lr_decay)
     loss_fn = CrossEntropyLabelSmooth(num_classes=args.class_num, use_gpu=torch.cuda.is_available(), epsilon=args.smooth)
 

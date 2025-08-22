@@ -50,7 +50,8 @@ if __name__ == '__main__':
     args.device = 'cuda' if torch.cuda.is_available() else 'cpu'
     torch.backends.cudnn.benchmark = True
     args.arch = 'AMAuT'
-    args.output_path = os.path.join(args.output_path, args.dataset, args.arch, 'PreTrain')
+    target_dataset = 'UrbanSound8K'
+    args.output_path = os.path.join(args.output_path, target_dataset, args.arch, 'PreTrain')
 
     torch.manual_seed(args.seed)
     torch.cuda.manual_seed(args.seed)
@@ -63,7 +64,7 @@ if __name__ == '__main__':
 
     wandb_run = wandb.init(
         project=f'{constants.PROJECT_TITLE}-{constants.TRAIN_TAG}', 
-        name=f'Pre-{constants.architecture_dic[args.arch]}-{constants.dataset_dic['UrbanSound8K']}', mode='online' if args.wandb else 'disabled', 
+        name=f'Pre-{constants.architecture_dic[args.arch]}-{constants.dataset_dic[target_dataset]}', mode='online' if args.wandb else 'disabled', 
         config=args, tags=['Audio Classification', 'Test-time Adaptation', args.dataset]
     )
 
