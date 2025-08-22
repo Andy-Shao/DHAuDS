@@ -46,8 +46,8 @@ def build_model(args:argparse.Namespace) -> tuple[FCETransform, AudioClassifier]
     cfg.embedding.in_shape = [args.n_mels, args.target_length]
     cfg.embedding.width = 128
     cfg.embedding.num_layers = [6, 8]
-    cfg.embedding.embed_num = 35
-    cfg.classifier.in_embed_num = 37
+    cfg.embedding.embed_num = 74
+    cfg.classifier.in_embed_num = 76
     aut = FCETransform(config=cfg).to(device=args.device)
     clsf = AudioClassifier(config=cfg).to(device=args.device)
     return aut, clsf
@@ -76,7 +76,7 @@ if __name__ == '__main__':
     if args.dataset == 'UrbanSound8K':
         args.class_num = 10
         args.sample_rate = 44100
-        args.audio_length = int(1.88 * args.sample_rate)
+        args.audio_length = int(4 * args.sample_rate)
     else:
         raise Exception('No support!')
     args.device = 'cuda' if torch.cuda.is_available() else 'cpu'
@@ -124,21 +124,21 @@ if __name__ == '__main__':
                 AmplitudeToDB(top_db=80., max_out=2.),
                 FrequenceTokenTransformer()
             ]), 
-            Components(transforms=[
-                Stereo2Mono(),
-                DynEN(
-                    noise_list=end_noise_48k(end_path=args.background_path, sample_rate=args.sample_rate, noise_modes=['DWASHING']),
-                    lsnr=55, rsnr=55, step=0
-                ),
-                AudioPadding(max_length=args.audio_length, sample_rate=args.sample_rate, random_shift=True),
-                AudioClip(max_length=args.audio_length, is_random=True),
-                MelSpectrogram(
-                    sample_rate=args.sample_rate, n_fft=n_fft, win_length=win_length, hop_length=hop_length,
-                    n_mels=args.n_mels, mel_scale=mel_scale
-                ), # 80 x 277
-                AmplitudeToDB(top_db=80., max_out=2.),
-                FrequenceTokenTransformer()
-            ])
+            # Components(transforms=[
+            #     Stereo2Mono(),
+            #     DynEN(
+            #         noise_list=end_noise_48k(end_path=args.background_path, sample_rate=args.sample_rate, noise_modes=['DWASHING']),
+            #         lsnr=55, rsnr=55, step=0
+            #     ),
+            #     AudioPadding(max_length=args.audio_length, sample_rate=args.sample_rate, random_shift=True),
+            #     AudioClip(max_length=args.audio_length, is_random=True),
+            #     MelSpectrogram(
+            #         sample_rate=args.sample_rate, n_fft=n_fft, win_length=win_length, hop_length=hop_length,
+            #         n_mels=args.n_mels, mel_scale=mel_scale
+            #     ), # 80 x 277
+            #     AmplitudeToDB(top_db=80., max_out=2.),
+            #     FrequenceTokenTransformer()
+            # ])
         ]
     )
     val_set = UrbanSound8K(
