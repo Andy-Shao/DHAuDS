@@ -104,7 +104,7 @@ if __name__ == '__main__':
     win_length=800
     hop_length=300
     mel_scale='slaney'
-    args.target_length=277
+    args.target_length=589
     train_set = UrbanSound8K(
         root_path=args.dataset_root_path, folds=[1, 2, 3, 4, 5, 6, 7], sample_rate=args.sample_rate,
         include_rate=False
@@ -120,7 +120,7 @@ if __name__ == '__main__':
                 MelSpectrogram(
                     sample_rate=args.sample_rate, n_fft=n_fft, win_length=win_length, hop_length=hop_length,
                     n_mels=args.n_mels, mel_scale=mel_scale
-                ), # 80 x 277
+                ), # 80 x 589
                 AmplitudeToDB(top_db=80., max_out=2.),
                 FrequenceTokenTransformer()
             ]), 
@@ -135,7 +135,7 @@ if __name__ == '__main__':
             #     MelSpectrogram(
             #         sample_rate=args.sample_rate, n_fft=n_fft, win_length=win_length, hop_length=hop_length,
             #         n_mels=args.n_mels, mel_scale=mel_scale
-            #     ), # 80 x 277
+            #     ), # 80 x 589
             #     AmplitudeToDB(top_db=80., max_out=2.),
             #     FrequenceTokenTransformer()
             # ])
@@ -150,7 +150,7 @@ if __name__ == '__main__':
             MelSpectrogram(
                 sample_rate=args.sample_rate, n_fft=n_fft, win_length=win_length, hop_length=hop_length,
                 n_mels=args.n_mels, mel_scale=mel_scale
-            ), # 80 x 277
+            ), # 80 x 589
             AmplitudeToDB(top_db=80., max_out=2.),
             FrequenceTokenTransformer()
         ])
