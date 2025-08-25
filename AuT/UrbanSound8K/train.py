@@ -53,7 +53,7 @@ def inference(args:argparse.Namespace, aut:FCETransform, clsf:AudioClassifier, d
 def build_model(args:argparse.Namespace) -> tuple[FCETransform, AudioClassifier]:
     cfg = AuT_base(class_num=args.class_num, n_mels=args.n_mels)
     cfg.embedding.in_shape = [args.n_mels, args.target_length]
-    cfg.embedding.width = 128
+    cfg.embedding.width = 64
     cfg.embedding.num_layers = [6, 8]
     cfg.embedding.embed_num = 74
     cfg.classifier.in_embed_num = 76
@@ -111,7 +111,7 @@ if __name__ == '__main__':
         config=args, tags=['Audio Classification', 'Test-time Adaptation', args.dataset]
     )
 
-    args.n_mels=80
+    args.n_mels=64
     n_fft=2048
     win_length=800
     hop_length=300
@@ -132,7 +132,7 @@ if __name__ == '__main__':
                 MelSpectrogram(
                     sample_rate=args.sample_rate, n_fft=n_fft, win_length=win_length, hop_length=hop_length,
                     n_mels=args.n_mels, mel_scale=mel_scale
-                ), # 80 x 589
+                ), # 64 x 589
                 AmplitudeToDB(top_db=80., max_out=2.),
                 FrequenceTokenTransformer()
             ]), 
@@ -147,7 +147,7 @@ if __name__ == '__main__':
             #     MelSpectrogram(
             #         sample_rate=args.sample_rate, n_fft=n_fft, win_length=win_length, hop_length=hop_length,
             #         n_mels=args.n_mels, mel_scale=mel_scale
-            #     ), # 80 x 589
+            #     ), # 64 x 589
             #     AmplitudeToDB(top_db=80., max_out=2.),
             #     FrequenceTokenTransformer()
             # ])
@@ -162,14 +162,14 @@ if __name__ == '__main__':
             MelSpectrogram(
                 sample_rate=args.sample_rate, n_fft=n_fft, win_length=win_length, hop_length=hop_length,
                 n_mels=args.n_mels, mel_scale=mel_scale
-            ), # 80 x 589
+            ), # 64 x 589
             AmplitudeToDB(top_db=80., max_out=2.),
             FrequenceTokenTransformer()
         ])
     )
 
     train_loader = DataLoader(
-        dataset=train_set, batch_size=args.batch_size, shuffle=True, drop_last=False, pin_memory=True,
+        dataset=train_set, batch_size=args.batch_size, shuffle=True, drop_last=True, pin_memory=True,
         pin_memory_device=args.device, num_workers=args.num_workers
     )
     val_loader = DataLoader(

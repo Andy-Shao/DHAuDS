@@ -68,7 +68,7 @@ if __name__ == '__main__':
         config=args, tags=['Audio Classification', 'Test-time Adaptation', args.dataset]
     )
 
-    args.n_mels=80
+    args.n_mels=64
     n_fft=2048
     win_length=800
     hop_length=300
@@ -84,7 +84,7 @@ if __name__ == '__main__':
                 MelSpectrogram(
                     sample_rate=args.sample_rate, n_fft=n_fft, win_length=win_length, hop_length=hop_length,
                     mel_scale=mel_scale, n_mels=args.n_mels
-                ), # 80 x 589
+                ), # 64 x 589
                 AmplitudeToDB(top_db=80., max_out=2.),
                 FrequenceTokenTransformer()
             ])
@@ -98,7 +98,7 @@ if __name__ == '__main__':
             MelSpectrogram(
                 sample_rate=args.sample_rate, n_fft=n_fft, win_length=win_length, hop_length=hop_length,
                 mel_scale=mel_scale, n_mels=args.n_mels
-            ), # 80 x 589
+            ), # 64 x 589
             AmplitudeToDB(top_db=80., max_out=2.),
             FrequenceTokenTransformer()
         ])
