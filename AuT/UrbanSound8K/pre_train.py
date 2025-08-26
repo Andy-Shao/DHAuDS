@@ -14,7 +14,7 @@ from lib import constants
 from lib.utils import print_argparse, make_unless_exits, store_model_structure_to_txt
 from lib.acousticDataset import CochlScene
 from lib.component import Components, AudioPadding, AudioClip, AmplitudeToDB, FrequenceTokenTransformer
-from lib.component import time_shift
+from lib.component import time_shift, GuassianNoise
 from lib.dataset import MultiTFDataset
 from lib.lr_utils import build_optimizer, lr_scheduler
 from AuT.lib.loss import CrossEntropyLabelSmooth
@@ -85,6 +85,17 @@ if __name__ == '__main__':
                     sample_rate=args.sample_rate, n_fft=n_fft, win_length=win_length, hop_length=hop_length,
                     mel_scale=mel_scale, n_mels=args.n_mels
                 ), # 64 x 589
+                AmplitudeToDB(top_db=80., max_out=2.),
+                FrequenceTokenTransformer()
+            ]),
+            Components(transforms=[
+                GuassianNoise(noise_level=.015),
+                AudioPadding(sample_rate=args.sample_rate, random_shift=True, max_length=args.audio_length),
+                AudioClip(max_length=args.audio_length, is_random=True),
+                MelSpectrogram(
+                    sample_rate=args.sample_rate, n_fft=n_fft, win_length=win_length, hop_length=hop_length,
+                    mel_scale=mel_scale, n_mels=args.n_mels
+                ), # 64 x 589,
                 AmplitudeToDB(top_db=80., max_out=2.),
                 FrequenceTokenTransformer()
             ])
