@@ -54,9 +54,9 @@ def build_model(args:argparse.Namespace) -> tuple[FCETransform, AudioClassifier]
     cfg = AuT_base(class_num=args.class_num, n_mels=args.n_mels)
     cfg.embedding.in_shape = [args.n_mels, args.target_length]
     cfg.embedding.width = 64
-    cfg.embedding.num_layers = [6, 8]
-    cfg.embedding.embed_num = 74
-    cfg.classifier.in_embed_num = 76
+    cfg.embedding.num_layers = [6, 4, 8]
+    cfg.embedding.embed_num = 37
+    cfg.classifier.in_embed_num = 39
     aut = FCETransform(config=cfg).to(device=args.device)
     clsf = AudioClassifier(config=cfg).to(device=args.device)
     return aut, clsf
