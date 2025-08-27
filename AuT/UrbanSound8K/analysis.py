@@ -97,5 +97,4 @@ if __name__ == '__main__':
 
     print_argparse(args)
     ##########################################
-    # analyzing(args=args, corruption_types=['WHN', 'ENSC', 'PSH', 'TST'], corruption_levels=['L1', 'L2']) 
-    analyzing(args=args, corruption_types=['ENSC'], corruption_levels=['L2']) 
+    analyzing(args=args, corruption_types=['WHN', 'ENSC', 'PSH', 'TST'], corruption_levels=['L1', 'L2']) 

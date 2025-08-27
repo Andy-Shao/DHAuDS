@@ -380,25 +380,3 @@ class VocalSoundC(Dataset):
         if self.label_tf is not None:
             label = self.label_tf(label)
         return wavform, label
-    
-def vs_bg_44k(dataset_path:str, sample_size:int, noise_types:list[str], min_length:int, sample_rate:int=44100) -> list[torch.Tensor]:
-    from lib.spdataset import VocalSound
-    label_dic = pd.read_csv(os.path.join(dataset_path, 'class_labels_indices_vs.csv'), header=0)
-    noise_IDs = [int(pd.Series(label_dic[label_dic['display_name']==nt]['index']).item()) for nt in noise_types]
-    vs_set = VocalSound(
-        root_path=dataset_path, mode='test', include_rate=False, version='44k',
-        data_tf=Resample(orig_freq=44100, new_freq=sample_rate) if sample_rate != 44100 else DoNothing()
-    )
-    ret = []
-    print('Loading VocalSound ...')
-    for feature, label in tqdm(vs_set):
-        if label in noise_IDs:
-            if feature.shape[1] < min_length:
-                repeat_num = 2
-                while repeat_num * feature.shape[1] < min_length: repeat_num += 1
-                feature = feature.repeat(1, repeat_num)
-            ret.append(feature)
-            if len(ret) >= sample_size:
-                break
-    print(f'Total {noise_types} noise size is: {len(ret)}')
-    return ret
