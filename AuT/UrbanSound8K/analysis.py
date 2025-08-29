@@ -27,8 +27,8 @@ def analyzing(args:argparse.Namespace, corruption_types:list[str], corruption_le
 
     for idx, cmeta in enumerate(corruption_metas):
         print(f'{idx+1}/{len(corruption_metas)}: {args.dataset} {cmeta.type}-{cmeta.level} analyzing...')
-        # adpt_aut, adpt_clsf = build_model(args=args)
-        # load_weight(args=args, aut=adpt_aut, clsf=adpt_clsf, mode='adaptation', metaInfo=cmeta)
+        adpt_aut, adpt_clsf = build_model(args=args)
+        load_weight(args=args, aut=adpt_aut, clsf=adpt_clsf, mode='adaptation', metaInfo=cmeta)
 
         adpt_set = UrbanSound8KC(
             root_path=args.dataset_root_path, corruption_type=cmeta.type, corruption_level=cmeta.level,
@@ -49,12 +49,11 @@ def analyzing(args:argparse.Namespace, corruption_types:list[str], corruption_le
 
         print('Non-adaptation analyzing...')
         orig_f1 = inference(args=args, aut=aut, clsf=clsf, data_loader=adpt_loader)
-        # print('Adaptation analyzing...')
-        # adpt_f1 = inference(args=args, aut=adpt_aut, clsf=adpt_clsf, data_loader=adpt_loader)
-        # print(f'{args.dataset} {cmeta.type}-{cmeta.level} non-adapted f1: {orig_f1:.4f}, adapted f1: {adpt_f1:.4f}')
-        print(f'{args.dataset} {cmeta.type}-{cmeta.level} non-adapted f1: {orig_f1:.4f}')
-        # records.loc[len(records)] = [args.dataset, args.arch, param_no, f'{cmeta.type}-{cmeta.level}', orig_f1, adpt_f1, adpt_f1 - orig_f1]
-    # records.to_csv(os.path.join(args.output_path, args.output_file_name))
+        print('Adaptation analyzing...')
+        adpt_f1 = inference(args=args, aut=adpt_aut, clsf=adpt_clsf, data_loader=adpt_loader)
+        print(f'{args.dataset} {cmeta.type}-{cmeta.level} non-adapted f1: {orig_f1:.4f}, adapted f1: {adpt_f1:.4f}')
+        records.loc[len(records)] = [args.dataset, args.arch, param_no, f'{cmeta.type}-{cmeta.level}', orig_f1, adpt_f1, adpt_f1 - orig_f1]
+    records.to_csv(os.path.join(args.output_path, args.output_file_name))
 
 if __name__ == '__main__':
     ap = argparse.ArgumentParser()
