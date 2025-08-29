@@ -20,13 +20,9 @@ from lib.lr_utils import build_optimizer, lr_scheduler
 from lib.loss import nucnm, g_entropy, entropy
 from AuT.ReefSet.train import build_model, inference
 
-def load_weight(args:argparse.Namespace, aut:nn.Module, clsf:nn.Module, mode:str='origin') -> None:
-    if mode == 'origin':
-        aut_pth = args.aut_wght_pth
-        clsf_pth = args.clsf_wght_pth
-    elif mode == 'adaption':
-        aut_pth = args.adpt_aut_wght_pth
-        clsf_pth = args.adpt_clsf_wght_pth
+def load_weight(args:argparse.Namespace, aut:nn.Module, clsf:nn.Module) -> None:
+    aut_pth = args.aut_wght_pth
+    clsf_pth = args.clsf_wght_pth
     aut.load_state_dict(state_dict=torch.load(aut_pth, weights_only=True))
     clsf.load_state_dict(state_dict=torch.load(clsf_pth, weights_only=True))
 
@@ -183,7 +179,7 @@ if __name__ == '__main__':
         pin_memory_device=args.device, num_workers=args.num_workers
     )
     aut, clsf = build_model(args=args)
-    load_weight(args, aut=aut, clsf=clsf, mode='origin')
+    load_weight(args, aut=aut, clsf=clsf)
     optimizer = build_optimizer(lr=args.lr, auT=aut, auC=clsf, auT_decay=args.aut_lr_decay, auC_decay=args.clsf_lr_decay)
 
     def inferecing(max_roc_auc:float) -> tuple[float, float]:

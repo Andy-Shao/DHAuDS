@@ -6,25 +6,11 @@ import torch
 from torch.utils.data import DataLoader
 from torchaudio.transforms import MelSpectrogram
 
-from lib import constants
 from lib.utils import count_ttl_params, make_unless_exits, print_argparse
-from lib.corruption import corruption_meta, CorruptionMeta, UrbanSound8KC
+from lib.corruption import corruption_meta, UrbanSound8KC
 from lib.component import Components, AudioClip, FrequenceTokenTransformer, AmplitudeToDB
 from AuT.UrbanSound8K.train import build_model, inference
-from AuT.lib.model import FCEClassifier, AudioClassifier
-
-def load_weight(
-    args:argparse.Namespace, aut:FCEClassifier, clsf:AudioClassifier, mode='origin', metaInfo:CorruptionMeta=None
-) -> None:
-    assert mode in ['origin', 'adaptation'], 'No support'
-    if mode == 'origin':
-        a_p = os.path.join(args.orig_wght_pth, f'aut-{constants.dataset_dic[args.dataset]}.pt')
-        c_p = os.path.join(args.orig_wght_pth, f'clsf-{constants.dataset_dic[args.dataset]}.pt')
-    elif mode == 'adaptation':
-        a_p = os.path.join(args.adpt_wght_path, f'aut-{constants.dataset_dic[args.dataset]}-{metaInfo.type}-{metaInfo.level}.pt')
-        c_p = os.path.join(args.adpt_wght_path, f'clsf-{constants.dataset_dic[args.dataset]}-{metaInfo.type}-{metaInfo.level}.pt')
-    aut.load_state_dict(state_dict=torch.load(a_p, weights_only=True))
-    clsf.load_state_dict(state_dict=torch.load(c_p, weights_only=True))
+from AuT.ReefSet.analysis import load_weight
 
 def analyzing(args:argparse.Namespace, corruption_types:list[str], corruption_levels:list[str]) -> None:
     args.n_mels=64
