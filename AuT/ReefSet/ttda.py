@@ -193,7 +193,7 @@ if __name__ == '__main__':
             )
             torch.save(
                 clsf.state_dict(), 
-                os.path.join(args.output_path, f'clsModel-{constants.dataset_dic[args.dataset]}-{args.corruption_type}-{args.corruption_level}.pt')
+                os.path.join(args.output_path, f'clsf-{constants.dataset_dic[args.dataset]}-{args.corruption_type}-{args.corruption_level}.pt')
             )
         return val_roc_auc, max_roc_auc
     
