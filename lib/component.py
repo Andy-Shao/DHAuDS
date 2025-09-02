@@ -208,4 +208,4 @@ class OneHot2Index(nn.Module):
 
     def forward(self, x:torch.Tensor) -> int:
         _, pred = torch.max(x, dim=0)
-        return pred
+        return pred.item()
