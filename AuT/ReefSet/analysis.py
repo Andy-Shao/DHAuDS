@@ -12,6 +12,7 @@ from lib.corruption import CorruptionMeta, corruption_meta, ReefSetC
 from lib.utils import make_unless_exits, print_argparse, count_ttl_params
 from AuT.ReefSet.train import build_model, inference
 from lib.component import Components, AudioClip, AmplitudeToDB, FrequenceTokenTransformer
+from lib.component import OneHot2Index
 
 def analyzing(args:argparse.Namespace, corruption_types:list[str], corruption_levels:list[str]) -> None:
     args.n_mels=80
@@ -22,14 +23,14 @@ def analyzing(args:argparse.Namespace, corruption_types:list[str], corruption_le
     args.target_length=195
     records = pd.DataFrame(columns=['Dataset',  'Algorithm', 'Param No.', 'Corruption', 'Non-adapted', 'Adapted', 'Improved'])
     corruption_metas = corruption_meta(corruption_types=corruption_types, corruption_levels=corruption_levels)
-    hubert, clsf = build_model(args=args, pre_weight=args.use_pre_trained_weigth)
-    load_weight(args=args, hubert=hubert, clsf=clsf, mode='origin')
-    param_no = count_ttl_params(hubert) + count_ttl_params(clsf)
+    aut, clsf = build_model(args=args)
+    load_weight(args=args, aut=aut, clsf=clsf, mode='origin')
+    param_no = count_ttl_params(aut) + count_ttl_params(clsf)
 
     for idx, cmeta in enumerate(corruption_metas):
         print(f'{idx+1}/{len(corruption_metas)}: {args.dataset} {cmeta.type}-{cmeta.level} analyzing...')
-        adpt_hubert, adpt_clsf = build_model(args=args, pre_weight=args.use_pre_trained_weigth)
-        load_weight(args=args, hubert=adpt_hubert, clsf=adpt_clsf, mode='adaptation', metaInfo=cmeta)
+        adpt_aut, adpt_clsf = build_model(args=args)
+        load_weight(args=args, aut=adpt_aut, clsf=adpt_clsf, mode='adaptation', metaInfo=cmeta)
 
         adpt_set = ReefSetC(
             root_path=args.dataset_root_path, corruption_type=cmeta.type, corruption_level=cmeta.level,
@@ -41,7 +42,7 @@ def analyzing(args:argparse.Namespace, corruption_types:list[str], corruption_le
                 ),
                 AmplitudeToDB(top_db=80., max_out=2.),
                 FrequenceTokenTransformer()
-            ])
+            ]), label_tf=OneHot2Index()
         )
         adpt_loader = DataLoader(
             dataset=adpt_set, batch_size=args.batch_size, shuffle=False, drop_last=False, pin_memory=True,
@@ -49,9 +50,9 @@ def analyzing(args:argparse.Namespace, corruption_types:list[str], corruption_le
         )
 
         print('Non-adaptation analyzing...')
-        orig_roc_auc = inference(args=args, hubert=hubert, clsModel=clsf, data_loader=adpt_loader)
+        orig_roc_auc = inference(args=args, aut=aut, clsf=clsf, data_loader=adpt_loader)
         print('Adaptation analyzing...')
-        adpt_roc_auc = inference(args=args, hubert=adpt_hubert, clsModel=adpt_clsf, data_loader=adpt_loader)
+        adpt_roc_auc = inference(args=args, aut=adpt_aut, clsf=adpt_clsf, data_loader=adpt_loader)
         print(f'{args.dataset} {cmeta.type}-{cmeta.level} non-adapted roc-auc: {orig_roc_auc:.4f}, adapted roc-auc: {adpt_roc_auc:.4f}')
         records.loc[len(records)] = [args.dataset, args.arch, param_no, f'{cmeta.type}-{cmeta.level}', orig_roc_auc, adpt_roc_auc, adpt_roc_auc - orig_roc_auc]
     records.to_csv(os.path.join(args.output_path, args.output_file_name))
@@ -71,7 +72,7 @@ def load_weight(
 
 if __name__ == '__main__':
     ap = argparse.ArgumentParser()
-    ap.add_argument('--dataset', type=str, default='UrbanSound8K', choices=['UrbanSound8K'])
+    ap.add_argument('--dataset', type=str, default='ReefSet', choices=['ReefSet'])
     ap.add_argument('--dataset_root_path', type=str)
     ap.add_argument('--num_workers', type=int, default=16)
     ap.add_argument('--output_path', type=str, default='./result')
@@ -82,10 +83,10 @@ if __name__ == '__main__':
     ap.add_argument('--adpt_wght_path', type=str)
 
     args = ap.parse_args()
-    if args.dataset == 'UrbanSound8K':
-        args.class_num = 10
-        args.sample_rate = 44100
-        args.audio_length = int(4 * args.sample_rate)
+    if args.dataset == 'ReefSet':
+        args.class_num = 37
+        args.sample_rate = 16000
+        args.audio_length = int(1.88 * 16000)
     else:
         raise Exception('No support!')
     args.device = 'cuda' if torch.cuda.is_available() else 'cpu'
