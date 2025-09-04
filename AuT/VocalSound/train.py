@@ -130,6 +130,22 @@ if __name__ == '__main__':
                 AmplitudeToDB(top_db=80., max_out=2.),
                 MelSpectrogramPadding(target_length=args.target_length),
                 FrequenceTokenTransformer()
+            ]),
+            Components(transforms=[
+                DynEN(
+                    noise_list=end_noises(
+                        end_path=args.background_path, sample_rate=args.sample_rate, noise_modes=['PSTATION']
+                    ), lsnr=50, rsnr=50, step=0
+                ),
+                AudioPadding(max_length=args.audio_length, sample_rate=args.sample_rate, random_shift=True),
+                AudioClip(max_length=args.audio_length, is_random=True),
+                MelSpectrogram(
+                    sample_rate=args.sample_rate, n_fft=n_fft, win_length=win_length, hop_length=hop_length,
+                    mel_scale=mel_scale, n_mels=args.n_mels
+                ),
+                AmplitudeToDB(top_db=80., max_out=2.),
+                MelSpectrogramPadding(target_length=args.target_length),
+                FrequenceTokenTransformer()
             ])
         ]
     )
