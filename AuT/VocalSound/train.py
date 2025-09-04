@@ -12,6 +12,7 @@ from torchaudio.transforms import MelSpectrogram
 from lib import constants
 from lib.utils import print_argparse, make_unless_exits, store_model_structure_to_txt
 from lib.spdataset import VocalSound
+from lib.dataset import MultiTFDataset
 from lib.component import Components, AudioPadding, AudioClip, time_shift, AmplitudeToDB
 from lib.component import FrequenceTokenTransformer, MelSpectrogramPadding
 from lib.lr_utils import build_optimizer, lr_scheduler
@@ -98,20 +99,22 @@ if __name__ == '__main__':
     hop_length=154
     mel_scale='slaney'
     args.target_length=1040
-    train_set = VocalSound(
-        root_path=args.dataset_root_path, mode='train', include_rate=False, version='16k',
-        data_tf=Components(transforms=[
-            AudioPadding(max_length=args.audio_length, sample_rate=args.sample_rate, random_shift=True),
-            AudioClip(max_length=args.audio_length, is_random=True),
-            time_shift(shift_limit=.17, is_random=True, is_bidirection=True),
-            MelSpectrogram(
-                sample_rate=args.sample_rate, n_fft=n_fft, win_length=win_length, hop_length=hop_length,
-                mel_scale=mel_scale, n_mels=args.n_mels
-            ), # 64 x 1039
-            AmplitudeToDB(top_db=80., max_out=2.),
-            MelSpectrogramPadding(target_length=args.target_length), 
-            FrequenceTokenTransformer()
-        ])
+    train_set = MultiTFDataset(
+        dataset=VocalSound(root_path=args.dataset_root_path, mode='train', include_rate=False, version='16k'),
+        tfs=[
+            Components(transforms=[
+                AudioPadding(max_length=args.audio_length, sample_rate=args.sample_rate, random_shift=True),
+                AudioClip(max_length=args.audio_length, is_random=True),
+                time_shift(shift_limit=.17, is_random=True, is_bidirection=True),
+                MelSpectrogram(
+                    sample_rate=args.sample_rate, n_fft=n_fft, win_length=win_length, hop_length=hop_length,
+                    mel_scale=mel_scale, n_mels=args.n_mels
+                ), # 64 x 1039
+                AmplitudeToDB(top_db=80., max_out=2.),
+                MelSpectrogramPadding(target_length=args.target_length), 
+                FrequenceTokenTransformer()
+            ])
+        ]
     )
     val_set = VocalSound(
         root_path=args.dataset_root_path, mode='validation', include_rate=False, version='16k',
@@ -149,12 +152,17 @@ if __name__ == '__main__':
         print('Training...')
         aut.train(); clsf.train()
         ttl_corr = 0.; ttl_size = 0.; train_loss = 0.
-        for features, labels in tqdm(train_loader):
-            features, labels = features.to(args.device), labels.to(args.device)
+        for idx, fs in tqdm(enumerate(train_loader), total=len(train_loader)):
+            labels = fs[-1].to(args.device)
 
             optimizer.zero_grad()
-            outputs = clsf(aut(features)[1])
-            loss = loss_fn(outputs, labels)
+            for i in range(len(fs) - 1):
+                features = fs[i].to(args.device)
+                outputs = clsf(aut(features)[1])
+                if i == 0:
+                    loss = loss_fn(outputs, labels)
+                else:
+                    loss += loss_fn(outputs, labels)
             loss.backward()
             optimizer.step()
 
