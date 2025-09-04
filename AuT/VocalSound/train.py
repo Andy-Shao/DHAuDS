@@ -60,6 +60,7 @@ if __name__ == '__main__':
     ap.add_argument('--batch_size', type=int, default=64, help='batch size')
     ap.add_argument('--lr', type=float, default=1e-2, help='learning rate')
     ap.add_argument('--lr_cardinality', type=int, default=40)
+    ap.add_argument('--lr_gamma', default=10, type=int)
     ap.add_argument('--aut_lr_decay', type=float, default=1.)
     ap.add_argument('--clsf_lr_decay', type=float, default=1.)
     ap.add_argument('--smooth', type=float, default=.1)
