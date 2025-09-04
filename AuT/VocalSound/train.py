@@ -106,9 +106,9 @@ if __name__ == '__main__':
             MelSpectrogram(
                 sample_rate=args.sample_rate, n_fft=n_fft, win_length=win_length, hop_length=hop_length,
                 mel_scale=mel_scale, n_mels=args.n_mels
-            ), # 80 x 1039
+            ), # 64 x 1039
             AmplitudeToDB(top_db=80., max_out=2.),
-            MelSpectrogramPadding(target_length=args.audio_length), 
+            MelSpectrogramPadding(target_length=args.target_length), 
             FrequenceTokenTransformer()
         ])
     )
@@ -122,7 +122,7 @@ if __name__ == '__main__':
                 mel_scale=mel_scale, n_mels=args.n_mels
             ),
             AmplitudeToDB(top_db=80., max_out=2.),
-            MelSpectrogramPadding(target_length=args.audio_length),
+            MelSpectrogramPadding(target_length=args.target_length),
             FrequenceTokenTransformer()
         ])
     )
