@@ -128,16 +128,13 @@ if __name__ == '__main__':
     )
     
     train_loader = DataLoader(
-        dataset=train_set, batch_size=args.batch_size, shuffle=True, drop_last=False, pin_memory=True,
-        pin_memory_device=args.device, num_workers=args.num_workers
+        dataset=train_set, batch_size=args.batch_size, shuffle=True, drop_last=False,
+        num_workers=args.num_workers
     )
     val_loader = DataLoader(
-        dataset=val_set, batch_size=args.batch_size, shuffle=False, drop_last=False, pin_memory=True,
-        pin_memory_device=args.device, num_workers=args.num_workers
+        dataset=val_set, batch_size=args.batch_size, shuffle=False, drop_last=False,
+        num_workers=args.num_workers
     )
-
-    for feature, label in tqdm(train_loader):
-        pass
 
     aut, clsf = build_model(args)
     store_model_structure_to_txt(model=aut, output_path=os.path.join(args.output_path, f'aut-{constants.dataset_dic[args.dataset]}.txt'))
