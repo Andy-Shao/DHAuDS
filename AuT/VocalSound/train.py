@@ -16,6 +16,7 @@ from lib.dataset import MultiTFDataset
 from lib.component import Components, AudioPadding, AudioClip, time_shift, AmplitudeToDB
 from lib.component import FrequenceTokenTransformer, MelSpectrogramPadding
 from lib.lr_utils import build_optimizer, lr_scheduler
+from lib.corruption import DynEN, end_noises
 from AuT.lib.model import FCETransform, FCEClassifier
 from AuT.lib.config import AuT_base
 from AuT.lib.loss import CrossEntropyLabelSmooth
@@ -112,6 +113,22 @@ if __name__ == '__main__':
                 ), # 64 x 1039
                 AmplitudeToDB(top_db=80., max_out=2.),
                 MelSpectrogramPadding(target_length=args.target_length), 
+                FrequenceTokenTransformer()
+            ]),
+            Components(transforms=[
+                DynEN(
+                    noise_list=end_noises(
+                        end_path=args.background_path, sample_rate=args.sample_rate, noise_modes=['DWASHING']
+                    ), lsnr=50, rsnr=50, step=0
+                ),
+                AudioPadding(max_length=args.audio_length, sample_rate=args.sample_rate, random_shift=True),
+                AudioClip(max_length=args.audio_length, is_random=True),
+                MelSpectrogram(
+                    sample_rate=args.sample_rate, n_fft=n_fft, win_length=win_length, hop_length=hop_length,
+                    mel_scale=mel_scale, n_mels=args.n_mels
+                ),
+                AmplitudeToDB(top_db=80., max_out=2.),
+                MelSpectrogramPadding(target_length=args.target_length),
                 FrequenceTokenTransformer()
             ])
         ]
