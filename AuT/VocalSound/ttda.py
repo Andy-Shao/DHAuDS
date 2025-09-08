@@ -85,7 +85,7 @@ def vs_corruption_data(args:argparse.Namespace) -> Dataset:
         dataset=mlt_load_from(root_path=dataset_root_path, index_file_name=index_file_name),
         tfs=[
             Components(transforms=[
-                time_shift(shift_limit=.17, is_random=True, is_bidirection=True),
+                time_shift(shift_limit=.17, is_random=True, is_bidirection=False),
                 MelSpectrogram(
                     sample_rate=args.sample_rate, n_fft=n_fft, win_length=win_length, hop_length=hop_length,
                     n_mels=args.n_mels, mel_scale=mel_scale
@@ -95,7 +95,7 @@ def vs_corruption_data(args:argparse.Namespace) -> Dataset:
                 FrequenceTokenTransformer()
             ]),
             Components(transforms=[
-                time_shift(shift_limit=-.17, is_random=True, is_bidirection=True),
+                time_shift(shift_limit=-.17, is_random=True, is_bidirection=False),
                 MelSpectrogram(
                     sample_rate=args.sample_rate, n_fft=n_fft, win_length=win_length, hop_length=hop_length,
                     n_mels=args.n_mels, mel_scale=mel_scale
