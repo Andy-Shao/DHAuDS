@@ -91,7 +91,6 @@ if __name__ == '__main__':
         config=args, tags=['Audio Classification', 'Test-time Adaptation', args.dataset]
     )
 
-    sample_rate=16000
     args.n_mels=80
     n_fft=1024
     win_length=400
@@ -126,12 +125,12 @@ if __name__ == '__main__':
         ])
     )
     train_loader = DataLoader(
-        dataset=train_set, batch_size=args.batch_size, shuffle=True, drop_last=False, pin_memory=True,
-        pin_memory_device=args.device, num_workers=args.num_workers
+        dataset=train_set, batch_size=args.batch_size, shuffle=True, drop_last=False, 
+        num_workers=args.num_workers
     )
     val_loader = DataLoader(
-        dataset=val_set, batch_size=args.batch_size, shuffle=False, drop_last=False, pin_memory=True,
-        pin_memory_device=args.device, num_workers=args.num_workers
+        dataset=val_set, batch_size=args.batch_size, shuffle=False, drop_last=False, 
+        num_workers=args.num_workers
     )
 
     aut, clsf = build_model(args=args)
