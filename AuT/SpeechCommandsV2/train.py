@@ -14,6 +14,7 @@ from lib.utils import print_argparse, make_unless_exits, store_model_structure_t
 from lib.spdataset import SpeechCommandsV2
 from lib.dataset import MultiTFDataset
 from lib.component import Components, AudioPadding, time_shift, AmplitudeToDB, FrequenceTokenTransformer
+from lib.corruption import end_noises, DynEN
 from lib.lr_utils import build_optimizer, lr_scheduler
 from AuT.lib.model import FCETransform, AudioClassifier
 from AuT.lib.config import AuT_base
@@ -107,6 +108,21 @@ if __name__ == '__main__':
                     sample_rate=args.sample_rate, n_fft=n_fft, win_length=win_length, hop_length=hop_length,
                     n_mels=args.n_mels, mel_scale=mel_scale
                 ), # 80 x 104
+                AmplitudeToDB(top_db=80., max_out=2.),
+                FrequenceTokenTransformer()
+            ]),
+            Components(transforms=[
+                DynEN(
+                    noise_list=end_noises(
+                        end_path=args.background_path, sample_rate=args.sample_rate, 
+                        noise_modes=['DWASHING']
+                    ), lsnr=50, rsnr=50, step=0
+                ),
+                AudioPadding(max_length=args.sample_rate, sample_rate=args.sample_rate, random_shift=True),
+                MelSpectrogram(
+                    sample_rate=args.sample_rate, n_fft=n_fft, win_length=win_length, hop_length=hop_length,
+                    n_mels=args.n_mels, mel_scale=mel_scale
+                ),
                 AmplitudeToDB(top_db=80., max_out=2.),
                 FrequenceTokenTransformer()
             ])
