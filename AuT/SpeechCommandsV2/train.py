@@ -115,6 +115,21 @@ if __name__ == '__main__':
                 DynEN(
                     noise_list=end_noises(
                         end_path=args.background_path, sample_rate=args.sample_rate, 
+                        noise_modes=['OMEETING']
+                    ), lsnr=50, rsnr=50, step=0
+                ),
+                AudioPadding(max_length=args.sample_rate, sample_rate=args.sample_rate, random_shift=True),
+                MelSpectrogram(
+                    sample_rate=args.sample_rate, n_fft=n_fft, win_length=win_length, hop_length=hop_length,
+                    n_mels=args.n_mels, mel_scale=mel_scale
+                ),
+                AmplitudeToDB(top_db=80., max_out=2.),
+                FrequenceTokenTransformer()
+            ]),
+            Components(transforms=[
+                DynEN(
+                    noise_list=end_noises(
+                        end_path=args.background_path, sample_rate=args.sample_rate, 
                         noise_modes=['DWASHING']
                     ), lsnr=50, rsnr=50, step=0
                 ),
@@ -125,7 +140,22 @@ if __name__ == '__main__':
                 ),
                 AmplitudeToDB(top_db=80., max_out=2.),
                 FrequenceTokenTransformer()
-            ])
+            ]),
+            Components(transforms=[
+                DynEN(
+                    noise_list=end_noises(
+                        end_path=args.background_path, sample_rate=args.sample_rate, 
+                        noise_modes=['PCAFETER']
+                    ), lsnr=50, rsnr=50, step=0
+                ),
+                AudioPadding(max_length=args.sample_rate, sample_rate=args.sample_rate, random_shift=True),
+                MelSpectrogram(
+                    sample_rate=args.sample_rate, n_fft=n_fft, win_length=win_length, hop_length=hop_length,
+                    n_mels=args.n_mels, mel_scale=mel_scale
+                ),
+                AmplitudeToDB(top_db=80., max_out=2.),
+                FrequenceTokenTransformer()
+            ]),
         ]
     )
     val_set = SpeechCommandsV2(
