@@ -1,0 +1,2 @@
+,Dataset,Algorithm,Param No.,Corruption,Performance
+0,UrbanSound8K,AMAuT + HuBERT,210432670,WHN-L1,0.7307692307692308
