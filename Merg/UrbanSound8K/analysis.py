@@ -76,15 +76,27 @@ if __name__ == '__main__':
     args.aut_rates = {
         'WHN-L1': 0.7231,
         'WHN-L2': 0.7093,
+        'ENSC-L1': 0.7137,
+        'ENSC-L2': 0.7036,
+        'PSH-L1': 0.6392,
+        'PSH-L2': 0.5866,
+        'TST-L1': 0.7078,
+        'TST-L2': 0.7125,
     }
     args.hub_rates = {
         'WHN-L1': 0.6746,
         'WHN-L2': 0.6783,
+        'ENSC-L1': 0.6312,
+        'ENSC-L2': 0.6066,
+        'PSH-L1': 0.6728,
+        'PSH-L2': 0.6518,
+        'TST-L1': 0.6650,
+        'TST-L2': 0.6325,
     }
 
     print_argparse(args)
     ##########################################
-    corruption_types=['WHN'] 
+    corruption_types=['WHN', 'ENSC', 'PSH', 'TST'] 
     corruption_levels=['L1', 'L2']
     records = pd.DataFrame(columns=['Dataset',  'Algorithm', 'Param No.', 'Corruption', 'Performance'])
     cmetas = corruption_meta(corruption_types=corruption_types, corruption_levels=corruption_levels)
