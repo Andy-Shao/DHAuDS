@@ -81,11 +81,11 @@ if __name__ == '__main__':
     config(cfg=args.config, aut_rate=0.5392, hub_rate=0.6728, softmax=True, tag='PSH_L1')
     config(cfg=args.config, aut_rate=0.2866, hub_rate=0.6518, softmax=False, tag='PSH_L2')
     config(cfg=args.config, aut_rate=0.7078, hub_rate=0.6650, softmax=True, tag='TST_L1')
-    config(cfg=args.config, aut_rate=0.7125, hub_rate=0.6325, softmax=True, tag='TST_L2')
+    config(cfg=args.config, aut_rate=0.7125, hub_rate=0.6525, softmax=True, tag='TST_L2')
 
     print_argparse(args)
     ##########################################
-    corruption_types=['PSH'] 
+    corruption_types=['WHN', 'ENSC', 'PSH', 'TST'] 
     corruption_levels=['L1', 'L2']
     records = pd.DataFrame(columns=['Dataset',  'Algorithm', 'Param No.', 'Corruption', 'Performance'])
     cmetas = corruption_meta(corruption_types=corruption_types, corruption_levels=corruption_levels)
