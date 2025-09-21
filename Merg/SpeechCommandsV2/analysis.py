@@ -68,16 +68,16 @@ if __name__ == '__main__':
     torch.backends.cudnn.benchmark = True
 
     args.config = ConfigDict()
-    config(cfg=args.config, aut_rate=0.7761, hub_rate=0.9568, softmax=False, tag='WHN_L1')
-    config(cfg=args.config, aut_rate=0.6572, hub_rate=0.9486, softmax=True, tag='WHN_L2')
-    config(cfg=args.config, aut_rate=0.8694, hub_rate=0.9439, softmax=True, tag='ENQ_L1')
-    config(cfg=args.config, aut_rate=0.8789, hub_rate=0.9495, softmax=True, tag='ENQ_L2')
-    config(cfg=args.config, aut_rate=0.9190, hub_rate=0.9629, softmax=True, tag='END1_L1')
-    config(cfg=args.config, aut_rate=0.9198, hub_rate=0.9650, softmax=True, tag='END1_L2')
-    config(cfg=args.config, aut_rate=0.9235, hub_rate=0.9677, softmax=True, tag='END2_L1')
-    config(cfg=args.config, aut_rate=0.9159, hub_rate=0.9635, softmax=True, tag='END2_L2')
-    config(cfg=args.config, aut_rate=0.8616, hub_rate=0.9383, softmax=True, tag='ENSC_L1')
-    config(cfg=args.config, aut_rate=0.8480, hub_rate=0.9368, softmax=True, tag='ENSC_L2')
+    config(cfg=args.config, aut_rate=0.7761, hub_rate=0.9568, softmax=True, tag='WHN_L1')
+    config(cfg=args.config, aut_rate=0.1, hub_rate=1.0, softmax=True, tag='WHN_L2')
+    config(cfg=args.config, aut_rate=0.5694, hub_rate=0.9439, softmax=True, tag='ENQ_L1')
+    config(cfg=args.config, aut_rate=0.4789, hub_rate=0.9495, softmax=False, tag='ENQ_L2')
+    config(cfg=args.config, aut_rate=0.3, hub_rate=1.0, softmax=True, tag='END1_L1')
+    config(cfg=args.config, aut_rate=0.8198, hub_rate=0.9650, softmax=True, tag='END1_L2')
+    config(cfg=args.config, aut_rate=0.7235, hub_rate=0.9677, softmax=True, tag='END2_L1')
+    config(cfg=args.config, aut_rate=0.6159, hub_rate=0.9635, softmax=True, tag='END2_L2')
+    config(cfg=args.config, aut_rate=0.6616, hub_rate=0.9383, softmax=True, tag='ENSC_L1')
+    config(cfg=args.config, aut_rate=0.7480, hub_rate=0.9368, softmax=True, tag='ENSC_L2')
     config(cfg=args.config, aut_rate=0.8147, hub_rate=0.9291, softmax=True, tag='PSH_L1')
     config(cfg=args.config, aut_rate=0.6993, hub_rate=0.9079, softmax=True, tag='PSH_L2')
     config(cfg=args.config, aut_rate=0.9412, hub_rate=0.9680, softmax=True, tag='TST_L1')
@@ -85,7 +85,7 @@ if __name__ == '__main__':
 
     print_argparse(args)
     ##########################################
-    corruption_types=['WHN', 'ENQ', 'END1', 'END2', 'ENSC', 'PSH', 'TST']
+    corruption_types=['ENSC']
     corruption_levels=['L1', 'L2']
     records = pd.DataFrame(columns=['Dataset',  'Algorithm', 'Param No.', 'Corruption', 'Performance'])
     cmetas = corruption_meta(corruption_types=corruption_types, corruption_levels=corruption_levels)
