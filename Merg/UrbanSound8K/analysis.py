@@ -39,9 +39,9 @@ def inference(
             y_true = labels.detach().cpu()
             y_pred = preds.cpu()
         else:
-            y_true = torch.cat([y_true, labels.detach().cput], dim=0)
+            y_true = torch.cat([y_true, labels.detach().cpu()], dim=0)
             y_pred = torch.cat([y_pred, preds.cpu()], dim=0)
-        return f1_score(y_true=y_true.numpy(), y_pred=y_pred.numpy(), average='macro')
+    return f1_score(y_true=y_true.numpy(), y_pred=y_pred.numpy(), average='macro')
 
 if __name__ == '__main__':
     ap = argparse.ArgumentParser()
@@ -75,15 +75,17 @@ if __name__ == '__main__':
 
     args.aut_rates = {
         'WHN-L1': 0.7231,
+        'WHN-L2': 0.7093,
     }
     args.hub_rates = {
         'WHN-L1': 0.6746,
+        'WHN-L2': 0.6783,
     }
 
     print_argparse(args)
     ##########################################
     corruption_types=['WHN'] 
-    corruption_levels=['L1']
+    corruption_levels=['L1', 'L2']
     records = pd.DataFrame(columns=['Dataset',  'Algorithm', 'Param No.', 'Corruption', 'Performance'])
     cmetas = corruption_meta(corruption_types=corruption_types, corruption_levels=corruption_levels)
 
