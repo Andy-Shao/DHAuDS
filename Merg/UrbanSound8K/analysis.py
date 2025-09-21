@@ -77,7 +77,7 @@ if __name__ == '__main__':
     config(cfg=args.config, aut_rate=0.7231, hub_rate=0.6746, softmax=False, tag='WHN_L1')
     config(cfg=args.config, aut_rate=0.7093, hub_rate=0.6783, softmax=False, tag='WHN_L2')
     config(cfg=args.config, aut_rate=0.7137, hub_rate=0.6312, softmax=False, tag='ENSC_L1')
-    config(cfg=args.config, aut_rate=0.7036, hub_rate=0.6066, softmax=False, tag='ENSC_L2')
+    config(cfg=args.config, aut_rate=0.7036, hub_rate=0.4766, softmax=False, tag='ENSC_L2')
     config(cfg=args.config, aut_rate=0.6392, hub_rate=0.6728, softmax=True, tag='PSH_L1')
     config(cfg=args.config, aut_rate=0.5866, hub_rate=0.6518, softmax=False, tag='PSH_L2')
     config(cfg=args.config, aut_rate=0.7078, hub_rate=0.6650, softmax=True, tag='TST_L1')
@@ -85,7 +85,7 @@ if __name__ == '__main__':
 
     print_argparse(args)
     ##########################################
-    corruption_types=['WHN', 'ENSC', 'PSH', 'TST'] 
+    corruption_types=['ENSC'] 
     corruption_levels=['L1', 'L2']
     records = pd.DataFrame(columns=['Dataset',  'Algorithm', 'Param No.', 'Corruption', 'Performance'])
     cmetas = corruption_meta(corruption_types=corruption_types, corruption_levels=corruption_levels)
