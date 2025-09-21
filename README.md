@@ -1,4 +1,4 @@
-# A Dynamic and Heterogeneous Audio Domain Shift (DHAuDS) for Test-time Adaptation on Audio Classification
+# A Dynamic and Heterogeneous Audio Domain Shift (DHAuDS) Benchmark for Test-time Adaptation on Audio Classification
 
 ## Software Environment
 
