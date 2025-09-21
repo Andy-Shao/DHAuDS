@@ -9,7 +9,7 @@ from torch.utils.data import DataLoader
 from torchaudio.models import Wav2Vec2Model
 from torchaudio.transforms import Resample, MelSpectrogram
 
-from lib.utils import make_unless_exits, print_argparse, count_ttl_params
+from lib.utils import make_unless_exits, print_argparse, count_ttl_params, ConfigDict
 from lib.corruption import corruption_meta, UrbanSound8KC, CorruptionMeta
 from lib.dataset import MultiTFDataset
 from lib.component import Components, ReduceChannel, AudioClip, AmplitudeToDB, FrequenceTokenTransformer
@@ -17,7 +17,7 @@ from AuT.lib.model import FCETransform, AudioClassifier
 from AuT.UrbanSound8K.train import build_model as aut_build_model
 from HuBERT.lib.model import HuBClassifier
 from HuBERT.UrbanSound8K.train import build_model as hub_build_model
-from Merg.lib.utils import load_weight, merg_outs
+from Merg.lib.utils import load_weight, merg_outs, config
 
 def inference(
     args:argparse.Namespace, aut:FCETransform, aut_clsf:AudioClassifier, hub:Wav2Vec2Model, 
@@ -32,7 +32,7 @@ def inference(
         with torch.inference_mode():
             aut_outs, _ = aut_clsf(aut(aut_fs)[0])
             hub_outs = hub_clsf(hub(hub_fs)[0])
-        outs = merg_outs(args=args, aut_os=aut_outs, hub_os=hub_outs, softmax=True, cmeta=cmeta)
+        outs = merg_outs(args=args, aut_os=aut_outs, hub_os=hub_outs, cmeta=cmeta)
         _, preds = torch.max(outs.detach(), dim=1)
 
         if idx == 0:
@@ -73,26 +73,15 @@ if __name__ == '__main__':
     make_unless_exits(args.output_path)
     torch.backends.cudnn.benchmark = True
 
-    args.aut_rates = {
-        'WHN-L1': 0.7231,
-        'WHN-L2': 0.7093,
-        'ENSC-L1': 0.7137,
-        'ENSC-L2': 0.7036,
-        'PSH-L1': 0.6392,
-        'PSH-L2': 0.5866,
-        'TST-L1': 0.7078,
-        'TST-L2': 0.7125,
-    }
-    args.hub_rates = {
-        'WHN-L1': 0.6746,
-        'WHN-L2': 0.6783,
-        'ENSC-L1': 0.6312,
-        'ENSC-L2': 0.6066,
-        'PSH-L1': 0.6728,
-        'PSH-L2': 0.6518,
-        'TST-L1': 0.6650,
-        'TST-L2': 0.6325,
-    }
+    args.config = ConfigDict()
+    config(cfg=args.config, aut_rate=0.7231, hub_rate=0.6746, softmax=False, tag='WHN_L1')
+    config(cfg=args.config, aut_rate=0.7093, hub_rate=0.6783, softmax=False, tag='WHN_L2')
+    config(cfg=args.config, aut_rate=0.7137, hub_rate=0.6312, softmax=False, tag='ENSC_L1')
+    config(cfg=args.config, aut_rate=0.7036, hub_rate=0.6066, softmax=False, tag='ENSC_L2')
+    config(cfg=args.config, aut_rate=0.6392, hub_rate=0.6728, softmax=True, tag='PSH_L1')
+    config(cfg=args.config, aut_rate=0.5866, hub_rate=0.6518, softmax=False, tag='PSH_L2')
+    config(cfg=args.config, aut_rate=0.7078, hub_rate=0.6650, softmax=True, tag='TST_L1')
+    config(cfg=args.config, aut_rate=0.7125, hub_rate=0.6325, softmax=True, tag='TST_L2')
 
     print_argparse(args)
     ##########################################
