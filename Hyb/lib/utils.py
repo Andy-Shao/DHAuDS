@@ -8,16 +8,28 @@ from lib import constants
 from lib.corruption import CorruptionMeta
 from lib.utils import ConfigDict
 
-def load_weight(args:argparse.Namespace, embed:nn.Module, clsf:nn.Module, mode:str, cmeta:CorruptionMeta) -> None:
-    assert mode in ['AMAuT', 'HuBERT']
-    if mode == 'AMAuT':
+def load_weight(
+        args:argparse.Namespace, embed:nn.Module, clsf:nn.Module, mode:str, cmeta:CorruptionMeta, 
+        model:str
+    ) -> None:
+    assert model in ['AMAuT', 'HuBERT']
+    assert mode in ['origin', 'adaptation']
+    if mode == 'adaptation' and model == 'AMAuT':
         base_path = args.aut_wght_pth
         embed_path = os.path.join(base_path, f'aut-{constants.dataset_dic[args.dataset]}-{cmeta.type}-{cmeta.level}.pt')
         clsf_path = os.path.join(base_path, f'clsf-{constants.dataset_dic[args.dataset]}-{cmeta.type}-{cmeta.level}.pt')
-    elif mode == 'HuBERT':
+    elif mode == 'adaptation' and model == 'HuBERT':
         base_path = args.hub_wght_path
         embed_path = os.path.join(base_path, f'hubert-{args.model_level}-{constants.dataset_dic[args.dataset]}-{cmeta.type}-{cmeta.level}.pt')
         clsf_path = os.path.join(base_path, f'clsModel-{args.model_level}-{constants.dataset_dic[args.dataset]}-{cmeta.type}-{cmeta.level}.pt')
+    elif mode == 'origin' and model == 'AMAuT':
+        base_path = args.adpt_aut_wght_pth
+        embed_path = os.path.join(base_path, f'aut-{constants.dataset_dic[args.dataset]}.pt')
+        clsf_path = os.path.join(base_path, f'clsf-{constants.dataset_dic[args.dataset]}.pt')
+    elif mode == 'origin' and model == 'HuBERT':
+        base_path = args.adpt_hub_wght_pth
+        embed_path = os.path.join(base_path, f'hubert-{args.model_level}-{constants.dataset_dic[args.dataset]}.pt')
+        clsf_path = os.path.join(base_path, f'clsModel-{args.model_level}-{constants.dataset_dic[args.dataset]}.pt')
     
     embed.load_state_dict(state_dict=torch.load(embed_path, weights_only=True))
     clsf.load_state_dict(state_dict=torch.load(clsf_path, weights_only=True))

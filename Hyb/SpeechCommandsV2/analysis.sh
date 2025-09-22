@@ -5,4 +5,6 @@ python -m Hyb.SpeechCommandsV2.analysis --dataset SpeechCommandsV2 --dataset_roo
     --output_file_name 'SC2_analysis.csv' --use_pre_trained_weigth --model_level 'base' \
     --batch_size 32 \
     --aut_wght_pth './result/SpeechCommandsV2/AMAuT/TTDA' \
-    --hub_wght_path './result/SpeechCommandsV2/HuBERT/TTDA'
+    --hub_wght_path './result/SpeechCommandsV2/HuBERT/TTDA' \
+    --adpt_aut_wght_pth './result/SpeechCommandsV2/AMAuT/train' \
+    --adpt_hub_wght_pth './result/SpeechCommandsV2/HuBERT/train'
