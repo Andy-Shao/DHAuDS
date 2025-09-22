@@ -2,20 +2,22 @@ import argparse
 import os
 import pandas as pd
 from tqdm import tqdm
+from sklearn.metrics import roc_auc_score
 
-import torch 
+import torch
 from torch.utils.data import DataLoader
-from torchaudio.transforms import MelSpectrogram
 from torchaudio.models import Wav2Vec2Model
+from torchaudio.transforms import MelSpectrogram
 
-from lib.utils import make_unless_exits, print_argparse, count_ttl_params, ConfigDict
-from lib.corruption import corruption_meta, SpeechCommandsV2C, CorruptionMeta
+from lib.utils import make_unless_exits, print_argparse, ConfigDict, count_ttl_params
+from lib.corruption import corruption_meta, ReefSetC, CorruptionMeta
 from lib.dataset import MultiTFDataset
-from lib.component import Components, AmplitudeToDB, FrequenceTokenTransformer, ReduceChannel
-from AuT.SpeechCommandsV2.train import build_model as aut_build_model
+from lib.component import Components, AudioPadding, AudioClip, AmplitudeToDB, FrequenceTokenTransformer
+from lib.component import ReduceChannel
+from Hyb.lib.utils import config, load_weight, merg_outs
+from AuT.ReefSet.train import build_model as aut_build_model
 from AuT.lib.model import FCETransform, AudioClassifier
-from HuBERT.SpeechCommandsV2.train import build_model as hub_build_model
-from Hyb.lib.utils import load_weight, merg_outs, config
+from HuBERT.ReefSet.train import build_model as hub_build_model
 
 def inference(
     args:argparse.Namespace, aut:FCETransform, aut_clsf:AudioClassifier,
@@ -32,24 +34,24 @@ def inference(
             aut_outs, _ = aut_clsf(aut(aut_fs)[0])
             hub_outs, _ = hub_clsf(hub(hub_fs)[0])
         outs = merg_outs(args=args, aut_os=aut_outs, hub_os=hub_outs, cmeta=cmeta)
-        _, preds = torch.max(outs.detach(), dim=1)
 
         if idx == 0:
-            ttl_corr = (preds == labels).sum().cpu().item()
-            ttl_size = labels.shape[0]
+            y_true = labels.detach().cpu()
+            y_score = outs.detach().cpu()
         else:
-            ttl_corr += (preds == labels).sum().cpu().item()
-            ttl_size += labels.shape[0]
-    return ttl_corr / ttl_size
+            y_true = torch.concat([y_true, labels.detach().cpu()], dim=0)
+            y_score = torch.concat([y_score, outs.detach().cpu()], dim=0)
+    return roc_auc_score(y_true=y_true.numpy(), y_score=y_score.numpy(), average='macro')
 
 if __name__ == '__main__':
     ap = argparse.ArgumentParser()
-    ap.add_argument('--dataset', type=str, default='SpeechCommandsV2', choices=['SpeechCommandsV2'])
+    ap.add_argument('--dataset', type=str, default='ReefSet', choices=['ReefSet'])
     ap.add_argument('--dataset_root_path', type=str)
     ap.add_argument('--num_workers', type=int, default=16)
     ap.add_argument('--output_path', type=str, default='./result')
     ap.add_argument('--output_file_name', type=str, default='analysis.csv')
     ap.add_argument('--batch_size', type=int, default=64)
+    ap.add_argument('--wandb', action='store_true')
     ap.add_argument('--aut_wght_pth', type=str)
     ap.add_argument('--hub_wght_path', type=str)
     ap.add_argument('--orig_aut_wght_pth', type=str)
@@ -58,9 +60,10 @@ if __name__ == '__main__':
     ap.add_argument('--model_level', type=str, default='base', choices=['base', 'large', 'x-large'])
 
     args = ap.parse_args()
-    if args.dataset == 'SpeechCommandsV2':
-        args.class_num = 35
+    if args.dataset == 'ReefSet':
+        args.class_num = 37
         args.sample_rate = 16000
+        args.audio_length = int(1.88 * 16000)
     else:
         raise Exception('No support!')
     args.device = 'cuda' if torch.cuda.is_available() else 'cpu'
@@ -70,20 +73,20 @@ if __name__ == '__main__':
     torch.backends.cudnn.benchmark = True
 
     args.config = ConfigDict()
-    config(cfg=args.config, aut_rate=0.7761, hub_rate=0.9568, softmax=True, tag='WHN_L1')
-    config(cfg=args.config, aut_rate=0.1, hub_rate=1.0, softmax=True, tag='WHN_L2')
-    config(cfg=args.config, aut_rate=0.5694, hub_rate=0.9439, softmax=True, tag='ENQ_L1')
-    config(cfg=args.config, aut_rate=0.4789, hub_rate=0.9495, softmax=False, tag='ENQ_L2')
-    config(cfg=args.config, aut_rate=0.3, hub_rate=1.0, softmax=True, tag='END1_L1')
-    config(cfg=args.config, aut_rate=0.8198, hub_rate=0.9650, softmax=True, tag='END1_L2')
-    config(cfg=args.config, aut_rate=0.7235, hub_rate=0.9677, softmax=True, tag='END2_L1')
-    config(cfg=args.config, aut_rate=0.6159, hub_rate=0.9635, softmax=True, tag='END2_L2')
-    config(cfg=args.config, aut_rate=0.6616, hub_rate=0.9383, softmax=True, tag='ENSC_L1')
-    config(cfg=args.config, aut_rate=0.7880, hub_rate=0.9368, softmax=True, tag='ENSC_L2')
-    config(cfg=args.config, aut_rate=0.5147, hub_rate=0.9291, softmax=True, tag='PSH_L1')
-    config(cfg=args.config, aut_rate=0.4593, hub_rate=0.9079, softmax=True, tag='PSH_L2')
-    config(cfg=args.config, aut_rate=0.8412, hub_rate=0.9680, softmax=True, tag='TST_L1')
-    config(cfg=args.config, aut_rate=0.7408, hub_rate=0.9679 , softmax=True, tag='TST_L2')
+    config(cfg=args.config, aut_rate=0.8779, hub_rate=0.7716, softmax=True, tag='WHN_L1')
+    config(cfg=args.config, aut_rate=0.8683, hub_rate=0.7746, softmax=True, tag='WHN_L2')
+    config(cfg=args.config, aut_rate=0.7922, hub_rate=0.6870, softmax=True, tag='ENQ_L1')
+    config(cfg=args.config, aut_rate=0.7951, hub_rate=0.7215, softmax=True, tag='ENQ_L2')
+    config(cfg=args.config, aut_rate=0.9064, hub_rate=0.8134, softmax=True, tag='END1_L1')
+    config(cfg=args.config, aut_rate=0.9008, hub_rate=0.8156, softmax=True, tag='END1_L2')
+    config(cfg=args.config, aut_rate=0.8721, hub_rate=0.7874, softmax=True, tag='END2_L1')
+    config(cfg=args.config, aut_rate=0.8620, hub_rate=0.7703, softmax=True, tag='END2_L2')
+    config(cfg=args.config, aut_rate=0.8355, hub_rate=0.7180, softmax=True, tag='ENSC_L1')
+    config(cfg=args.config, aut_rate=0.8077, hub_rate=0.7192, softmax=True, tag='ENSC_L2')
+    config(cfg=args.config, aut_rate=0.8623, hub_rate=0.9033, softmax=True, tag='PSH_L1')
+    config(cfg=args.config, aut_rate=0.8316, hub_rate=0.8779, softmax=True, tag='PSH_L2')
+    config(cfg=args.config, aut_rate=0.9871, hub_rate=0.8853, softmax=True, tag='TST_L1')
+    config(cfg=args.config, aut_rate=0.9835, hub_rate=0.8653 , softmax=True, tag='TST_L2')
 
     print_argparse(args)
     ##########################################
@@ -97,23 +100,29 @@ if __name__ == '__main__':
     win_length=400
     hop_length=155
     mel_scale='slaney'
-    args.target_length=104
+    args.target_length=195
     for idx, cmeta in enumerate(cmetas):
         print(f'{idx+1}/{len(cmetas)}: {args.dataset} {cmeta.type}-{cmeta.level} analyzing ...')
         adpt_set = MultiTFDataset(
-            dataset=SpeechCommandsV2C(
+            dataset=ReefSetC(
                 root_path=args.dataset_root_path, corruption_level=cmeta.level, corruption_type=cmeta.type
             ),
             tfs=[
                 Components(transforms=[
+                    AudioPadding(max_length=args.audio_length, sample_rate=args.sample_rate, random_shift=False),
+                    AudioClip(max_length=args.audio_length, mode='head', is_random=False),
                     MelSpectrogram(
-                        sample_rate=args.sample_rate, n_fft=n_fft, win_length=win_length,
-                        hop_length=hop_length, mel_scale=mel_scale, n_mels=args.n_mels
+                        sample_rate=args.sample_rate, n_fft=n_fft, win_length=win_length, hop_length=hop_length,
+                        mel_scale=mel_scale, n_mels=args.n_mels
                     ),
                     AmplitudeToDB(top_db=80., max_out=2.),
                     FrequenceTokenTransformer()
                 ]),
-                ReduceChannel()
+                Components(transforms=[
+                    AudioPadding(max_length=args.audio_length, sample_rate=args.sample_rate, random_shift=False),
+                    AudioClip(max_length=args.audio_length, mode='head', is_random=False),
+                    ReduceChannel()
+                ])
             ]
         )
         adpt_loader = DataLoader(
@@ -127,7 +136,7 @@ if __name__ == '__main__':
         print('Non-adaptation analysis ...')
         load_weight(args=args, embed=aut, clsf=aut_clsf, model='AMAuT', cmeta=cmeta, mode='origin')
         load_weight(args=args, embed=hub, clsf=hub_clsf, model='HuBERT', cmeta=cmeta, mode='origin')
-        test_accu = inference(
+        test_roc_auc = inference(
             args=args, aut=aut, aut_clsf=aut_clsf, hub=hub, hub_clsf=hub_clsf, 
             data_loader=adpt_loader, cmeta=cmeta
         )
@@ -135,10 +144,10 @@ if __name__ == '__main__':
         print('Adaptation analysis ...')
         load_weight(args=args, embed=aut, clsf=aut_clsf, model='AMAuT', cmeta=cmeta, mode='adaptation')
         load_weight(args=args, embed=hub, clsf=hub_clsf, model='HuBERT', cmeta=cmeta, mode='adaptation')
-        adpt_accu = inference(
+        adpt_roc_auc = inference(
             args=args, aut=aut, aut_clsf=aut_clsf, hub=hub, hub_clsf=hub_clsf,
             data_loader=adpt_loader, cmeta=cmeta
         )
-        print(f'{args.dataset} {cmeta.type}-{cmeta.level} non-adapted accuracy is: {test_accu:.4f}, adapted accuracy is : {adpt_accu:.4f}, sample size is: {len(adpt_set)}')
-        records.loc[len(records)] = [args.dataset, 'Hybrid', param_no, f'{cmeta.type}-{cmeta.level}', test_accu, adpt_accu]
+        print(f'{args.dataset} {cmeta.type}-{cmeta.level} non-adapted accuracy is: {test_roc_auc:.4f}, adapted accuracy is : {adpt_roc_auc:.4f}, sample size is: {len(adpt_set)}')
+        records.loc[len(records)] = [args.dataset, 'Hybrid', param_no, f'{cmeta.type}-{cmeta.level}', test_roc_auc, adpt_roc_auc]
     records.to_csv(os.path.join(args.output_path, args.output_file_name))

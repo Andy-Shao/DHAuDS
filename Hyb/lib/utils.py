@@ -23,11 +23,11 @@ def load_weight(
         embed_path = os.path.join(base_path, f'hubert-{args.model_level}-{constants.dataset_dic[args.dataset]}-{cmeta.type}-{cmeta.level}.pt')
         clsf_path = os.path.join(base_path, f'clsModel-{args.model_level}-{constants.dataset_dic[args.dataset]}-{cmeta.type}-{cmeta.level}.pt')
     elif mode == 'origin' and model == 'AMAuT':
-        base_path = args.adpt_aut_wght_pth
+        base_path = args.orig_aut_wght_pth
         embed_path = os.path.join(base_path, f'aut-{constants.dataset_dic[args.dataset]}.pt')
         clsf_path = os.path.join(base_path, f'clsf-{constants.dataset_dic[args.dataset]}.pt')
     elif mode == 'origin' and model == 'HuBERT':
-        base_path = args.adpt_hub_wght_pth
+        base_path = args.orig_hub_wght_pth
         embed_path = os.path.join(base_path, f'hubert-{args.model_level}-{constants.dataset_dic[args.dataset]}.pt')
         clsf_path = os.path.join(base_path, f'clsModel-{args.model_level}-{constants.dataset_dic[args.dataset]}.pt')
     

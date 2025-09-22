@@ -54,8 +54,8 @@ if __name__ == '__main__':
     ap.add_argument('--wandb', action='store_true')
     ap.add_argument('--aut_wght_pth', type=str)
     ap.add_argument('--hub_wght_path', type=str)
-    ap.add_argument('--adpt_aut_wght_pth', type=str)
-    ap.add_argument('--adpt_hub_wght_pth', type=str)
+    ap.add_argument('--orig_aut_wght_pth', type=str)
+    ap.add_argument('--orig_hub_wght_pth', type=str)
     ap.add_argument('--use_pre_trained_weigth', action='store_true')
     ap.add_argument('--model_level', type=str, default='base', choices=['base', 'large', 'x-large'])
 

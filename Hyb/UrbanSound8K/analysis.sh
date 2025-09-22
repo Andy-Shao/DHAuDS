@@ -6,5 +6,5 @@ python -m Hyb.UrbanSound8K.analysis --dataset 'UrbanSound8K' --dataset_root_path
     --model_level 'base' \
     --aut_wght_pth './result/UrbanSound8K/AMAuT/TTDA' \
     --hub_wght_path './result/UrbanSound8K/HuBERT/TTDA' \
-    --adpt_aut_wght_pth './result/UrbanSound8K/AMAuT/train' \
-    --adpt_hub_wght_pth './result/UrbanSound8K/HuBERT/train'
+    --orig_aut_wght_pth './result/UrbanSound8K/AMAuT/train' \
+    --orig_hub_wght_pth './result/UrbanSound8K/HuBERT/train'

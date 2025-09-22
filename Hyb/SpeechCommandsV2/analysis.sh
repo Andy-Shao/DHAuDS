@@ -6,5 +6,5 @@ python -m Hyb.SpeechCommandsV2.analysis --dataset SpeechCommandsV2 --dataset_roo
     --batch_size 32 \
     --aut_wght_pth './result/SpeechCommandsV2/AMAuT/TTDA' \
     --hub_wght_path './result/SpeechCommandsV2/HuBERT/TTDA' \
-    --adpt_aut_wght_pth './result/SpeechCommandsV2/AMAuT/train' \
-    --adpt_hub_wght_pth './result/SpeechCommandsV2/HuBERT/train'
+    --orig_aut_wght_pth './result/SpeechCommandsV2/AMAuT/train' \
+    --orig_hub_wght_pth './result/SpeechCommandsV2/HuBERT/train'
