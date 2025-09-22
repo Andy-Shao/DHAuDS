@@ -54,6 +54,8 @@ if __name__ == '__main__':
     ap.add_argument('--wandb', action='store_true')
     ap.add_argument('--aut_wght_pth', type=str)
     ap.add_argument('--hub_wght_path', type=str)
+    ap.add_argument('--adpt_aut_wght_pth', type=str)
+    ap.add_argument('--adpt_hub_wght_pth', type=str)
     ap.add_argument('--use_pre_trained_weigth', action='store_true')
     ap.add_argument('--model_level', type=str, default='base', choices=['base', 'large', 'x-large'])
 
@@ -87,7 +89,7 @@ if __name__ == '__main__':
     ##########################################
     corruption_types=['WHN', 'ENSC', 'PSH', 'TST'] 
     corruption_levels=['L1', 'L2']
-    records = pd.DataFrame(columns=['Dataset',  'Algorithm', 'Param No.', 'Corruption', 'Performance'])
+    records = pd.DataFrame(columns=['Dataset',  'Algorithm', 'Param No.', 'Corruption', 'Non-adapted', 'Adapted'])
     cmetas = corruption_meta(corruption_types=corruption_types, corruption_levels=corruption_levels)
 
     args.n_mels=64
@@ -126,13 +128,22 @@ if __name__ == '__main__':
         aut, aut_clsf = aut_build_model(args=args)
         hub, hub_clsf = hub_build_model(args=args)
         param_no = count_ttl_params(aut) + count_ttl_params(aut_clsf) + count_ttl_params(hub) + count_ttl_params(hub_clsf)
-        load_weight(args=args, embed=aut, clsf=aut_clsf, mode='AMAuT', cmeta=cmeta)
-        load_weight(args=args, embed=hub, clsf=hub_clsf, mode='HuBERT', cmeta=cmeta)
-
-        test_f1 = inference(
+        
+        print('Non-adaptation analysis ...')
+        load_weight(args=args, embed=aut, clsf=aut_clsf, model='AMAuT', cmeta=cmeta, mode='origin')
+        load_weight(args=args, embed=hub, clsf=hub_clsf, model='HuBERT', cmeta=cmeta, mode='origin')
+        test_accu = inference(
             args=args, aut=aut, aut_clsf=aut_clsf, hub=hub, hub_clsf=hub_clsf, 
             data_loader=adpt_loader, cmeta=cmeta
         )
-        print(f'{args.dataset} {cmeta.type}-{cmeta.level} f1 score is: {test_f1:.4f}, sample size is: {len(adpt_set)}')
-        records.loc[len(records)] = [args.dataset, 'AMAuT + HuBERT', param_no, f'{cmeta.type}-{cmeta.level}', test_f1]
+
+        print('Adaptation analysis ...')
+        load_weight(args=args, embed=aut, clsf=aut_clsf, model='AMAuT', cmeta=cmeta, mode='adaptation')
+        load_weight(args=args, embed=hub, clsf=hub_clsf, model='HuBERT', cmeta=cmeta, mode='adaptation')
+        adpt_accu = inference(
+            args=args, aut=aut, aut_clsf=aut_clsf, hub=hub, hub_clsf=hub_clsf,
+            data_loader=adpt_loader, cmeta=cmeta
+        )
+        print(f'{args.dataset} {cmeta.type}-{cmeta.level} non-adapted accuracy is: {test_accu:.4f}, adapted accuracy is : {adpt_accu:.4f}, sample size is: {len(adpt_set)}')
+        records.loc[len(records)] = [args.dataset, param_no, 'Hybrid', f'{cmeta.type}-{cmeta.level}', test_accu, adpt_accu]
     records.to_csv(os.path.join(args.output_path, args.output_file_name))
