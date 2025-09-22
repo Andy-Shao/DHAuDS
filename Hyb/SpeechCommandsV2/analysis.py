@@ -79,7 +79,7 @@ if __name__ == '__main__':
     config(cfg=args.config, aut_rate=0.6616, hub_rate=0.9383, softmax=True, tag='ENSC_L1')
     config(cfg=args.config, aut_rate=0.7880, hub_rate=0.9368, softmax=True, tag='ENSC_L2')
     config(cfg=args.config, aut_rate=0.5147, hub_rate=0.9291, softmax=True, tag='PSH_L1')
-    config(cfg=args.config, aut_rate=0.6993, hub_rate=0.9079, softmax=True, tag='PSH_L2')
+    config(cfg=args.config, aut_rate=0.4593, hub_rate=0.9079, softmax=True, tag='PSH_L2')
     config(cfg=args.config, aut_rate=0.9412, hub_rate=0.9680, softmax=True, tag='TST_L1')
     config(cfg=args.config, aut_rate=0.9408, hub_rate=0.9679 , softmax=True, tag='TST_L2')
 
