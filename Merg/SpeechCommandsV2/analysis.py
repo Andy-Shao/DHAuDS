@@ -77,15 +77,15 @@ if __name__ == '__main__':
     config(cfg=args.config, aut_rate=0.7235, hub_rate=0.9677, softmax=True, tag='END2_L1')
     config(cfg=args.config, aut_rate=0.6159, hub_rate=0.9635, softmax=True, tag='END2_L2')
     config(cfg=args.config, aut_rate=0.6616, hub_rate=0.9383, softmax=True, tag='ENSC_L1')
-    config(cfg=args.config, aut_rate=0.7480, hub_rate=0.9368, softmax=True, tag='ENSC_L2')
-    config(cfg=args.config, aut_rate=0.8147, hub_rate=0.9291, softmax=True, tag='PSH_L1')
+    config(cfg=args.config, aut_rate=0.7880, hub_rate=0.9368, softmax=True, tag='ENSC_L2')
+    config(cfg=args.config, aut_rate=0.5147, hub_rate=0.9291, softmax=True, tag='PSH_L1')
     config(cfg=args.config, aut_rate=0.6993, hub_rate=0.9079, softmax=True, tag='PSH_L2')
     config(cfg=args.config, aut_rate=0.9412, hub_rate=0.9680, softmax=True, tag='TST_L1')
     config(cfg=args.config, aut_rate=0.9408, hub_rate=0.9679 , softmax=True, tag='TST_L2')
 
     print_argparse(args)
     ##########################################
-    corruption_types=['ENSC']
+    corruption_types=['PSH']
     corruption_levels=['L1', 'L2']
     records = pd.DataFrame(columns=['Dataset',  'Algorithm', 'Param No.', 'Corruption', 'Performance'])
     cmetas = corruption_meta(corruption_types=corruption_types, corruption_levels=corruption_levels)
