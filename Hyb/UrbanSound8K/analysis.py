@@ -145,5 +145,5 @@ if __name__ == '__main__':
             data_loader=adpt_loader, cmeta=cmeta
         )
         print(f'{args.dataset} {cmeta.type}-{cmeta.level} non-adapted accuracy is: {test_accu:.4f}, adapted accuracy is : {adpt_accu:.4f}, sample size is: {len(adpt_set)}')
-        records.loc[len(records)] = [args.dataset, param_no, 'Hybrid', f'{cmeta.type}-{cmeta.level}', test_accu, adpt_accu]
+        records.loc[len(records)] = [args.dataset, 'Hybrid', param_no, f'{cmeta.type}-{cmeta.level}', test_accu, adpt_accu]
     records.to_csv(os.path.join(args.output_path, args.output_file_name))
