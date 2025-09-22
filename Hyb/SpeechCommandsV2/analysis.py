@@ -15,7 +15,7 @@ from lib.component import Components, AmplitudeToDB, FrequenceTokenTransformer, 
 from AuT.SpeechCommandsV2.train import build_model as aut_build_model
 from AuT.lib.model import FCEClassifier, AudioClassifier
 from HuBERT.SpeechCommandsV2.train import build_model as hub_build_model
-from Merg.lib.utils import load_weight, merg_outs, config
+from Hyb.lib.utils import load_weight, merg_outs, config
 
 def inference(
     args:argparse.Namespace, aut:FCEClassifier, aut_clsf:AudioClassifier,
@@ -62,7 +62,7 @@ if __name__ == '__main__':
     else:
         raise Exception('No support!')
     args.device = 'cuda' if torch.cuda.is_available() else 'cpu'
-    args.arch = 'Merg'
+    args.arch = 'Hyb'
     args.output_path = os.path.join(args.output_path, args.dataset, args.arch, 'Analysis')
     make_unless_exits(args.output_path)
     torch.backends.cudnn.benchmark = True

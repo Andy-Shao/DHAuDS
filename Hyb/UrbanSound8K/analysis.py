@@ -17,7 +17,7 @@ from AuT.lib.model import FCETransform, AudioClassifier
 from AuT.UrbanSound8K.train import build_model as aut_build_model
 from HuBERT.lib.model import HuBClassifier
 from HuBERT.UrbanSound8K.train import build_model as hub_build_model
-from Merg.lib.utils import load_weight, merg_outs, config
+from Hyb.lib.utils import load_weight, merg_outs, config
 
 def inference(
     args:argparse.Namespace, aut:FCETransform, aut_clsf:AudioClassifier, hub:Wav2Vec2Model, 
