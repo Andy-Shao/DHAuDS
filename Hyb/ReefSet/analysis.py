@@ -73,8 +73,8 @@ if __name__ == '__main__':
     torch.backends.cudnn.benchmark = True
 
     args.config = ConfigDict()
-    config(cfg=args.config, aut_rate=0.8779, hub_rate=0.7716, softmax=True, tag='WHN_L1')
-    config(cfg=args.config, aut_rate=0.8683, hub_rate=0.7746, softmax=True, tag='WHN_L2')
+    config(cfg=args.config, aut_rate=0.9779, hub_rate=0.0716, softmax=True, tag='WHN_L1')
+    config(cfg=args.config, aut_rate=1.2, hub_rate=0.1, softmax=True, tag='WHN_L2')
     config(cfg=args.config, aut_rate=0.7922, hub_rate=0.6870, softmax=True, tag='ENQ_L1')
     config(cfg=args.config, aut_rate=0.7951, hub_rate=0.7215, softmax=True, tag='ENQ_L2')
     config(cfg=args.config, aut_rate=0.9064, hub_rate=0.8134, softmax=True, tag='END1_L1')
@@ -90,7 +90,7 @@ if __name__ == '__main__':
 
     print_argparse(args)
     ##########################################
-    corruption_types=['WHN', 'ENQ', 'END1', 'END2', 'ENSC', 'PSH', 'TST']
+    corruption_types=['WHN']
     corruption_levels=['L1', 'L2']
     records = pd.DataFrame(columns=['Dataset',  'Algorithm', 'Param No.', 'Corruption', 'Non-adapted', 'Adapted'])
     cmetas = corruption_meta(corruption_types=corruption_types, corruption_levels=corruption_levels)
