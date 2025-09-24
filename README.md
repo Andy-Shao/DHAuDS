@@ -19,6 +19,26 @@ pip install soundfile==0.13.1
 pip install wandb==0.21.0
 ```
 
+## Processing
+```shell
+export BASE_PATH=${the parent directory of the project}
+git clone https://github.com/Andy-Shao/DHAuDS.git
+conda activate DHAuDS
+cd DHAuDS
+```
+### Training
+```shell
+sh HuBERT/SpeechCommandsV2/train.sh
+```
+### Adaptation
+```shell
+sh HuBERT/SpeechCommandsV2/tta.sh
+```
+### Analysis
+```shell
+sh HuBERT/SpeechCommandsV2/analysis.sh
+```
+
 ## Datasets
 ### SpeechCommands V2
 The SpeechCommands V2 (2.26GB) is a speech audio set that includes 35 English words. 
