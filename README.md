@@ -91,7 +91,7 @@ y, sr = example_clip.audio
 
 ### UrbanSound8K-C
 The corruption version of test set of UrbanSound8K.
-+ Sample size: 
++ Sample size: 2459
 + Sample rate: 44.1 kHz
 + One sample length: 4s
 + Class Number: 10
@@ -110,7 +110,7 @@ ReefSet is a multi-labeled and imbalanced dataset. ReefSet compiled a diverse me
 
 ### ReefSet-C
 The corruption version of test set of ReefSet
-+ Sample size: 
++ Sample size: 17137
 + Sample rate: 16 kHz
 + One sample length: 1.88s
 
