@@ -25,16 +25,25 @@ The SpeechCommands V2 (2.26GB) is a speech audio set that includes 35 English wo
 + Sample size: 105829 (train: 84843, test: 11005, validation: 9981)
 + Sampling rate: 16 kHz
 + Class Number: 35
-+ One sample length: 1 second
++ One sample length: 1s
   
 [Speech Commands Dataset Link](https://research.google/blog/launching-the-speech-commands-dataset/)<br/>
 [Pytorch Document](https://pytorch.org/audio/main/generated/torchaudio.datasets.SPEECHCOMMANDS.html)
+
+### SpeechCommands V2-C
+The corruption version of test set on Speech Commands V2.
++ Sample size: 11005
++ Sample rate: 16 kHz
++ Class number: 35
++ One sample length: 1s
+
+[SC2-C Dataset Link](https://drive.google.com/drive/folders/1wBCadjjcA-n7fCAvf82uYBR6q5z_uXRm)
 
 ### VocalSound
 VocalSound is a free dataset consisting of 21,024 crowdsourced recordings of laughter, sighs, coughs, throat clearing, sneezes, and sniffs from 3,365 unique subjects. The VocalSound dataset also contains meta-information such as speaker age, gender, native language, country, and health condition.
 + Sample size: 20977 (Train: 15531, validation: 1855, test: 3591)
 + Sample rate: 16 kHz
-+ One sample length: less than 12 seconds
++ One sample length: less than 12s
 + Class number: 6
 
 [VocalSound Dataset Link](https://sls.csail.mit.edu/downloads/vocalsound/)<br/>
@@ -43,12 +52,21 @@ Download command:
 wget -O vocalsound_16k.zip https://www.dropbox.com/s/c5ace70qh1vbyzb/vs_release_16k.zip?dl=1
 ```
 
+### VocalSound-C
+The corruption version of test set on VocalSound
++ Sample size: 3591
++ Sample rate: 16 kHz
++ One sample length: 10s
++ Class number: 6
+
+[VS-C Dataset Link](https://drive.google.com/drive/folders/1QysFmdmFUQgQ0BlADU4eJ_xuHUxziSJX)
+
 ### UrbanSound8K
 This dataset contains 8732 labeled sound excerpts (<=4s) of urban sounds from 10 classes: air_conditioner, car_horn, children_playing, dog_bark, drilling, enginge_idling, gun_shot, jackhammer, siren, and street_music. The classes are drawn from the urban sound taxonomy.
 
 + Sample size: 8732
 + Sample rate: less than 192000 (different audio different sample rate)
-+ One sample length: less than 4 seconds
++ One sample length: less than 4s
 + Class number: 10
 
 Dataset download:
@@ -71,6 +89,15 @@ tags = example_clip.tags
 y, sr = example_clip.audio
 ```
 
+### UrbanSound8K-C
+The corruption version of test set of UrbanSound8K.
++ Sample size: 
++ Sample rate: 44.1 kHz
++ One sample length: 4s
++ Class Number: 10
+
+[US8K-C Dataset Link](https://drive.google.com/drive/folders/1kUzBwwrRO5sIq8GUhGf8FP4HbCnb7KTh)
+
 ### ReefSet
 ReefSet is a multi-labeled and imbalanced dataset. ReefSet compiled a diverse meta-dataset of 57084 labelled coral reef bioacoustic recordings across 37 classes and from 16 individual datasets over 12 countries. During the annotation of each dataset, longer recording periods were segmented into samples of shorter windows (1.88 s) to fit within the two window lengths of the industry-standard networks. The final meta-dataset of 57074 labelled samples, split across the four primary labels: biophony (79.20%), anthrophony (10.39%), geophony (0.09%), and ambient (10.32%), with 33 secondary labels.
 
@@ -80,6 +107,14 @@ ReefSet is a multi-labeled and imbalanced dataset. ReefSet compiled a diverse me
 + Class Number: 37 (4 primary labels and 33 secondary labels)
 
 [Official Link](https://zenodo.org/records/11071202)
+
+### ReefSet-C
+The corruption version of test set of ReefSet
++ Sample size: 
++ Sample rate: 16 kHz
++ One sample length: 1.88s
+
+[RS-C Dataset Link](https://drive.google.com/drive/folders/1W9GGOZTq3XSSsOlpJOQueDksHkCn3Fj4)
 
 ### QUT-NOISE
 QUT-NOISE is an environmental acoustic dataset for environmental background noise. QUT-NOISE comprises five distinct types of background noise: CAFE, CAR, HOME, REVERB, and STREET. Each type of noise includes five noise files.
