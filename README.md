@@ -40,7 +40,7 @@ sh HuBERT/SpeechCommandsV2/analysis.sh
 ```
 
 ## Corruption Example
-You can see more details from [corruption_example.ipynb](https://github.com/Andy-Shao/DHAuDS/blob/main/corruption_example.ipynb)
+This chapter presents an example of corrupting SpeechCommandsV2. You can see more details from [corruption_example.ipynb](https://github.com/Andy-Shao/DHAuDS/blob/main/corruption_example.ipynb)
 ### WHN
 ```python
 from lib.corruption import WHN
