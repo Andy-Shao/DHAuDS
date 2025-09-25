@@ -45,7 +45,6 @@ This chapter presents an example of corrupting SpeechCommandsV2. You can see mor
 ```python
 from lib.corruption import WHN
 from lib.spdataset import SpeechCommandsV2
-from tqdm import tqdm
 
 sc2_set = SpeechCommandsV2(
     root_path='/root/data/', mode='testing', download=True,
@@ -103,10 +102,13 @@ sc2_loader = DataLoader(
 ```python
 from lib.corruption import DynEN, ensc_noises
 
+# Read ENSC noises
 noise_list = ensc_noises(
     ensc_path='/root/data', noise_modes=['exercise_bike', 'running_tap', 'white_noise', 'pink_noise'], 
     sample_rate=16000
 )
+
+# Corrupting
 sc2_set = SpeechCommandsV2(
     root_path='/root/data', mode='testing', download=True,
     data_tf=DynEN(noise_list=noise_list, lsnr=5, rsnr=6, step=.5)
@@ -117,9 +119,12 @@ sc2_set = SpeechCommandsV2(
 from lib.corruption import enq_noises
 
 # You need download QUT-NOISE dataset by yourself
+# Read QUT-NOISE noises
 noise_list = enq_noises(
     enq_path='/root/data/QUT-NOISE', noise_modes=['HOME', 'REVERB', 'STREET'], sample_rate=16000
 )
+
+# Corrupting
 sc2_set = SpeechCommandsV2(
     root_path='/root/data', mode='testing', download=True,
     data_tf=DynEN(noise_list=noise_list, lsnr=5, rsnr=6, step=.5)
@@ -129,11 +134,15 @@ sc2_set = SpeechCommandsV2(
 ```python
 from lib.corruption import end_noises
 
-# You need download DEMAND dataset by yourself
+# You need download DEMAND dataset (16 kHz version) by yourself
+# Read DEMAND noises
 noise_list = end_noises(
     end_path='/root/data/DEMAND_16k', noise_modes=['NFIELD', 'PRESTO', 'TCAR', 'OOFFICE'],
     sample_rate=16000
 )
+# Note: DEMAND 48 kHz version can be use the end_noises_48k(..) function instead of end_noses(..)
+
+# Corrupting
 sc2_set = SpeechCommandsV2(
     root_path='/root/data', mode='testing', download=True,
     data_tf=DynEN(noise_list=noise_list, lsnr=5, rsnr=6, step=.5)
