@@ -141,7 +141,7 @@ noise_list = end_noises(
     end_path='/root/data/DEMAND_16k', noise_modes=['NFIELD', 'PRESTO', 'TCAR', 'OOFFICE'],
     sample_rate=16000
 )
-# Note: DEMAND 48 kHz version can be use the end_noises_48k(..) function instead of end_noses(..)
+# Note: For DEMAND 48 kHz version, use the end_noises_48k(..) function instead of end_noses(..)
 
 # Corrupting
 sc2_set = SpeechCommandsV2(
