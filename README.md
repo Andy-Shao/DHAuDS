@@ -39,6 +39,119 @@ sh HuBERT/SpeechCommandsV2/tta.sh
 sh HuBERT/SpeechCommandsV2/analysis.sh
 ```
 
+## Corruption Example
+You can see more details from corruption_example.ipynb
+### WHN
+```python
+from lib.corruption import WHN
+from lib.spdataset import SpeechCommandsV2
+from tqdm import tqdm
+
+sc2_set = SpeechCommandsV2(
+    root_path='/root/data/', mode='testing', download=True,
+    data_tf=WHN(lsnr=6, rsnr=7, step=.5)
+)
+```
+### PSH
+```python
+from lib.corruption import DynPSH
+from lib.dataset import GpuMultiTFDataset
+
+# Without the GPU version:
+# sc2_set = SpeechCommandsV2(
+#     root_path='/root/data', mode='testing', download=True,
+#     data_tf=DynPSH(sample_rate=16000, min_steps=4, max_steps=5, is_bidirection=True)
+# )
+
+# Using GPU to speed up the PSH proessing:
+sc2_set = GpuMultiTFDataset(
+    dataset=SpeechCommandsV2(
+        root_path='/root/data', mode='testing', download=True
+    ), device='cuda', maintain_cpu=True,
+    tfs=[
+        DynPSH(sample_rate=16000, min_steps=4, max_steps=5, is_bidirection=True)
+    ]
+)
+```
+### TST
+```python
+from lib.corruption import DynTST
+from torch.utils.data import DataLoader
+from lib.component import Components, AudioPadding
+
+# One thread version:
+# sc2_set = SpeechCommandsV2(
+#     root_path='/root/data', mode='testing', download=True,
+#     data_tf=DynTST(min_rate=.04, max_rate=.06, step=.01)
+# )
+
+# Using multiple CPU cores to speed up
+## Note: batch process needs sample audio length, so we padding samples
+sc2_set = SpeechCommandsV2(
+    root_path='/root/data', mode='testing', download=True,
+    data_tf=Components(transforms=[
+        DynTST(min_rate=.04, max_rate=.06, step=.01),
+        AudioPadding(max_length=16000, sample_rate=16000, random_shift=False)
+    ])
+)
+sc2_loader = DataLoader(
+    dataset=sc2_set, batch_size=32, shuffle=False, drop_last=False,
+    num_workers=16
+)
+```
+### ENSC
+```python
+from lib.corruption import DynEN, ensc_noises
+
+noise_list = ensc_noises(
+    ensc_path='/root/data', noise_modes=['exercise_bike', 'running_tap', 'white_noise', 'pink_noise'], 
+    sample_rate=16000
+)
+sc2_set = SpeechCommandsV2(
+    root_path='/root/data', mode='testing', download=True,
+    data_tf=DynEN(noise_list=noise_list, lsnr=5, rsnr=6, step=.5)
+)
+```
+### ENQ
+```python
+from lib.corruption import enq_noises
+
+# You need download QUT-NOISE dataset by yourself
+noise_list = enq_noises(
+    enq_path='/root/data/QUT-NOISE', noise_modes=['HOME', 'REVERB', 'STREET'], sample_rate=16000
+)
+sc2_set = SpeechCommandsV2(
+    root_path='/root/data', mode='testing', download=True,
+    data_tf=DynEN(noise_list=noise_list, lsnr=5, rsnr=6, step=.5)
+)
+```
+### END1
+```python
+from lib.corruption import end_noises
+
+# You need download DEMAND dataset by yourself
+noise_list = end_noises(
+    end_path='/root/data/DEMAND_16k', noise_modes=['NFIELD', 'PRESTO', 'TCAR', 'OOFFICE'],
+    sample_rate=16000
+)
+sc2_set = SpeechCommandsV2(
+    root_path='/root/data', mode='testing', download=True,
+    data_tf=DynEN(noise_list=noise_list, lsnr=5, rsnr=6, step=.5)
+)
+```
+### END2
+```python
+# You need download DEMAND dataset by yourself
+noise_list = end_noises(
+    end_path='/root/data/DEMAND_16k', noise_modes=['DLIVING', 'OHALLWAY', 'SPSQUARE', 'TMETRO'],
+    sample_rate=16000
+)
+sc2_set = SpeechCommandsV2(
+    root_path='/root/data', mode='testing', download=True,
+    data_tf=DynEN(noise_list=noise_list, lsnr=5, rsnr=6, step=.5)
+)
+```
+
 ## Datasets
 ### SpeechCommands V2
 The SpeechCommands V2 (2.26GB) is a speech audio set that includes 35 English words. 
