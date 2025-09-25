@@ -35,6 +35,7 @@ sh HuBERT/SpeechCommandsV2/train.sh
 sh HuBERT/SpeechCommandsV2/tta.sh
 ```
 ### Analysis
+[Pretraining weight](https://drive.google.com/file/d/1I_K3MJulTDMsYBd6UF6eOH6mFteoygGL/view?usp=drive_link) (tar.gz file)
 ```shell
 sh HuBERT/SpeechCommandsV2/analysis.sh
 ```
