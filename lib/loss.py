@@ -2,6 +2,39 @@ import argparse
 
 import torch
 
+def js_entropy(args:argparse.Namespace, out1:torch.Tensor, out2:torch.Tensor, epsilon:float=1e-8) -> torch.Tensor:
+    """
+    " Jensen-Shannon entropy
+    """
+    def kl(left:torch.Tensor, right:torch.Tensor) -> torch.Tensor:
+        return - left * torch.log(left/(right + epsilon))
+
+    if args.js_rate > 0:
+        from torch.nn import functional as F
+        sft_out1 = F.softmax(out1, dim=1)
+        sft_out2 = F.softmax(out2, dim=1)
+        js_loss = 0.5 * (kl(left=sft_out1, right=sft_out2) + kl(left=sft_out2, right=sft_out1))
+        js_loss = torch.mean(torch.sum(js_loss, dim=1), dim=0)
+        js_loss = args.js_rate * js_loss
+    else:
+        js_loss = torch.tensor(0.).to(args.device)
+    return js_loss
+
+def mse(args:argparse.Namespace, out1:torch.Tensor, out2:torch.Tensor) -> torch.Tensor:
+    """
+    " Mean Squared Error
+    """
+    if args.mse_rate > 0:
+        from torch.nn import functional as F
+        sft_out1 = F.softmax(out1, dim=1)
+        sft_out2 = F.softmax(out2, dim=1)
+        l2_norm = torch.sqrt(torch.sum(torch.pow(sft_out1 - sft_out2), dim=1))
+        mse_rate = torch.mean(l2_norm, dim=0)
+        mse_rate = args.mse_rate * mse_rate
+    else:
+        mse_loss = torch.tensor(0.).to(args.device)
+    return mse_loss
+
 def g_entropy(args:argparse.Namespace, outputs:torch.Tensor, q:float=.9) -> torch.Tensor:
     """
     " Generalized Entropy loss

@@ -12,7 +12,7 @@ from torchaudio.transforms import MelSpectrogram
 from lib import constants
 from lib.utils import make_unless_exits, print_argparse
 from lib.lr_utils import build_optimizer, lr_scheduler
-from lib.loss import nucnm, entropy, g_entropy
+from lib.loss import nucnm, entropy, g_entropy, js_entropy
 from lib.enDataset import UrbanSound8K
 from lib.component import Stereo2Mono, Components, AudioPadding, AudioClip, AmplitudeToDB, DoNothing
 from lib.component import FrequenceTokenTransformer, time_shift
@@ -131,6 +131,7 @@ if __name__ == '__main__':
     ap.add_argument('--ent_rate', type=float, default=1.)
     ap.add_argument('--gent_rate', type=float, default=1.)
     ap.add_argument('--gent_q', type=float, default=.9)
+    ap.add_argument('--js_rate', type=float, default=0.0)
     ap.add_argument('--interval', type=int, default=1, help='interval number')
     ap.add_argument('--wandb', action='store_true')
     ap.add_argument('--seed', type=int, default=2025, help='random seed')
@@ -212,8 +213,9 @@ if __name__ == '__main__':
             nucnm_loss = nucnm(args, os1) + nucnm(args, os2)
             ent_loss = entropy(args, os1, epsilon=1e-8) + entropy(args, os2, epsilon=1e-8)
             gent_loss = g_entropy(args, os1, q=args.gent_q) + g_entropy(args, os1, q=args.gent_q)
+            const_loss = js_entropy(args=args, out1=os1, out2=os2, epsilon=1e-8)
 
-            loss = nucnm_loss + ent_loss + gent_loss
+            loss = nucnm_loss + ent_loss + gent_loss + const_loss
             loss.backward()
             optimizer.step()
 
