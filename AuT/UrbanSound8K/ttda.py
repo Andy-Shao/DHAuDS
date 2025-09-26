@@ -202,7 +202,7 @@ if __name__ == '__main__':
         print('Adapting...')
         aut.train(); clsf.train()
         ttl_size = 0.; ttl_loss = 0.; ttl_nucnm_loss = 0.
-        ttl_ent_loss = 0.; ttl_gent_loss = 0.
+        ttl_ent_loss = 0.; ttl_gent_loss = 0.; ttl_const_loss = 0.
         for fs1, fs2, _ in tqdm(adapt_loader):
             fs1, fs2 = fs1.to(args.device), fs2.to(args.device)
 
@@ -224,6 +224,7 @@ if __name__ == '__main__':
             ttl_nucnm_loss += nucnm_loss.cpu().item()
             ttl_ent_loss += ent_loss.cpu().item()
             ttl_gent_loss += gent_loss.cpu().item()
+            ttl_const_loss += const_loss.cpu().item()
 
         learning_rate = optimizer.param_groups[0]['lr']
         if epoch % args.interval == 0:
@@ -238,6 +239,7 @@ if __name__ == '__main__':
                 'Loss/Nuclear-norm loss': ttl_nucnm_loss / ttl_size,
                 'Loss/Entropy loss': ttl_ent_loss / ttl_size,
                 'Loss/G-entropy loss': ttl_gent_loss / ttl_size,
+                'Loss/Consistency loss': ttl_const_loss / ttl_size,
                 'Adaptation/F1 score': val_f1,
                 'Adaptation/LR': learning_rate,
                 'Adaptation/Max F1 score': max_f1,
@@ -251,6 +253,7 @@ if __name__ == '__main__':
             'Loss/Nuclear-norm loss': ttl_nucnm_loss / ttl_size,
             'Loss/Entropy loss': ttl_ent_loss / ttl_size,
             'Loss/G-entropy loss': ttl_gent_loss / ttl_size,
+            'Loss/Consistency loss': ttl_const_loss / ttl_size,
             'Adaptation/F1 score': val_f1,
             'Adaptation/LR': learning_rate,
             'Adaptation/Max F1 score': max_f1,
