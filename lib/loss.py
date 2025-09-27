@@ -28,9 +28,9 @@ def mse(args:argparse.Namespace, out1:torch.Tensor, out2:torch.Tensor) -> torch.
         from torch.nn import functional as F
         sft_out1 = F.softmax(out1, dim=1)
         sft_out2 = F.softmax(out2, dim=1)
-        l2_norm = torch.sqrt(torch.sum(torch.pow(sft_out1 - sft_out2), dim=1))
-        mse_rate = torch.mean(l2_norm, dim=0)
-        mse_rate = args.mse_rate * mse_rate
+        l2_norm = torch.sqrt(torch.sum(torch.pow(sft_out1 - sft_out2, 2.0), dim=1))
+        mse_loss = torch.mean(l2_norm, dim=0)
+        mse_loss = args.mse_rate * mse_loss
     else:
         mse_loss = torch.tensor(0.).to(args.device)
     return mse_loss
