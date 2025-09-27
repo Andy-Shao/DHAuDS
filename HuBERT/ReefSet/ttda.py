@@ -14,7 +14,7 @@ from lib.acousticDataset import ReefSet
 from lib.dataset import MultiTFDataset, batch_store_to, mlt_load_from, mlt_store_to
 from lib.component import AudioPadding, ReduceChannel, Components, AudioClip, DoNothing, time_shift
 from lib.lr_utils import build_optimizer, lr_scheduler
-from lib.loss import nucnm, g_entropy, entropy, js_entropy, mse
+from lib.loss import nucnm, g_entropy, entropy, mse
 from HuBERT.VocalSound.ttda import load_weigth
 from HuBERT.ReefSet.train import build_model, inference
 
@@ -104,7 +104,6 @@ if __name__ == '__main__':
     ap.add_argument('--gent_rate', type=float, default=1.)
     ap.add_argument('--gent_q', type=float, default=.9)
     ap.add_argument('--mse_rate', type=float, default=0.0)
-    ap.add_argument('--js_rate', type=float, default=0.0)
     ap.add_argument('--interval', type=int, default=1, help='interval number')
     ap.add_argument('--wandb', action='store_true')
     ap.add_argument('--seed', type=int, default=2025, help='random seed')
@@ -189,7 +188,7 @@ if __name__ == '__main__':
             nucnm_loss = nucnm(args, os1) + nucnm(args, os2)
             ent_loss = entropy(args, os1, epsilon=1e-8) + entropy(args, os2, epsilon=1e-8)
             gent_loss = g_entropy(args, os1, q=args.gent_q) + g_entropy(args, os1, q=args.gent_q)
-            const_loss = mse(args=args, out1=os1, out2=os2) + js_entropy(args=args, out1=os1, out2=os2, epsilon=1e-8)
+            const_loss = mse(args=args, out1=os1, out2=os2)
 
             loss = nucnm_loss + ent_loss + gent_loss + const_loss
             loss.backward()
