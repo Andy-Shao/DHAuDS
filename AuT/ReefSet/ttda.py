@@ -17,7 +17,7 @@ from lib.dataset import MultiTFDataset, mlt_load_from, mlt_store_to, batch_store
 from lib.component import Components, AudioPadding, AudioClip, time_shift, OneHot2Index
 from lib.component import AmplitudeToDB, FrequenceTokenTransformer, DoNothing
 from lib.lr_utils import build_optimizer, lr_scheduler
-from lib.loss import nucnm, g_entropy, entropy
+from lib.loss import nucnm, g_entropy, entropy, mse
 from AuT.ReefSet.train import build_model, inference
 
 def load_weight(args:argparse.Namespace, aut:nn.Module, clsf:nn.Module) -> None:
@@ -135,6 +135,7 @@ if __name__ == '__main__':
     ap.add_argument('--ent_rate', type=float, default=1.)
     ap.add_argument('--gent_rate', type=float, default=1.)
     ap.add_argument('--gent_q', type=float, default=.9)
+    ap.add_argument('--mse_rate', type=float, default=0.0)
     ap.add_argument('--interval', type=int, default=1, help='interval number')
     ap.add_argument('--wandb', action='store_true')
     ap.add_argument('--seed', type=int, default=2025, help='random seed')
@@ -207,7 +208,7 @@ if __name__ == '__main__':
         print('Adapting...')
         aut.train(); clsf.train()
         ttl_size = 0.; ttl_loss = 0.; ttl_nucnm_loss = 0.
-        ttl_ent_loss = 0.; ttl_gent_loss = 0.
+        ttl_ent_loss = 0.; ttl_gent_loss = 0.; ttl_const_loss = 0.
         for fs1, fs2, _ in tqdm(adapt_loader):
             fs1, fs2 = fs1.to(args.device), fs2.to(args.device)
 
@@ -218,8 +219,9 @@ if __name__ == '__main__':
             nucnm_loss = nucnm(args, os1) + nucnm(args, os2)
             ent_loss = entropy(args, os1, epsilon=1e-8) + entropy(args, os2, epsilon=1e-8)
             gent_loss = g_entropy(args, os1, q=args.gent_q) + g_entropy(args, os1, q=args.gent_q)
+            const_loss = mse(args=args, out1=os1, out2=os2)
 
-            loss = nucnm_loss + ent_loss + gent_loss
+            loss = nucnm_loss + ent_loss + gent_loss + const_loss
             loss.backward()
             optimizer.step()
 
@@ -228,6 +230,7 @@ if __name__ == '__main__':
             ttl_nucnm_loss += nucnm_loss.cpu().item()
             ttl_ent_loss += ent_loss.cpu().item()
             ttl_gent_loss += gent_loss.cpu().item()
+            ttl_const_loss += const_loss
 
         learning_rate = optimizer.param_groups[0]['lr']
         if epoch % args.interval == 0:
@@ -242,6 +245,7 @@ if __name__ == '__main__':
                 'Loss/Nuclear-norm loss': ttl_nucnm_loss / ttl_size,
                 'Loss/Entropy loss': ttl_ent_loss / ttl_size,
                 'Loss/G-entropy loss': ttl_gent_loss / ttl_size,
+                'Loss/Consistency loss': ttl_const_loss / ttl_size,
                 'Adaptation/ROC-AUC': val_roc_auc,
                 'Adaptation/LR': learning_rate,
                 'Adaptation/Max_ROC-AUC': max_roc_auc,
@@ -255,6 +259,7 @@ if __name__ == '__main__':
             'Loss/Nuclear-norm loss': ttl_nucnm_loss / ttl_size,
             'Loss/Entropy loss': ttl_ent_loss / ttl_size,
             'Loss/G-entropy loss': ttl_gent_loss / ttl_size,
+            'Loss/Consistency loss': ttl_const_loss / ttl_size,
             'Adaptation/ROC-AUC': val_roc_auc,
             'Adaptation/LR': learning_rate,
             'Adaptation/Max_ROC-AUC': max_roc_auc,
