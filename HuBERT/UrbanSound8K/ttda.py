@@ -200,6 +200,7 @@ if __name__ == '__main__':
             ttl_nucnm_loss += nucnm_loss.cpu().item()
             ttl_ent_loss += ent_loss.cpu().item()
             ttl_gent_loss += gent_loss.cpu().item()
+            ttl_const_loss += const_loss.cpu().item()
 
         learning_rate = optimizer.param_groups[0]['lr']
         if epoch % args.interval == 0:
