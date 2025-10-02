@@ -35,7 +35,7 @@ sh HuBERT/SpeechCommandsV2/train.sh
 sh HuBERT/SpeechCommandsV2/tta.sh
 ```
 ### Analysis
-[Trained weight](https://drive.google.com/file/d/1MlPAJlsFBCLL6-Z0XZBP3iw52l-t6Yhh/view) (tar.gz file)
+[Trained weight (tar.gz file)](https://drive.google.com/file/d/1MlPAJlsFBCLL6-Z0XZBP3iw52l-t6Yhh/view)
 ```shell
 sh HuBERT/SpeechCommandsV2/analysis.sh
 ```
@@ -63,7 +63,7 @@ from lib.dataset import GpuMultiTFDataset
 #     data_tf=DynPSH(sample_rate=16000, min_steps=4, max_steps=5, is_bidirection=True)
 # )
 
-# Using GPU to speed up the PSH proessing:
+# Using GPU to speed up the PSH processing:
 sc2_set = GpuMultiTFDataset(
     dataset=SpeechCommandsV2(
         root_path='/root/data', mode='testing', download=True
@@ -86,7 +86,7 @@ from lib.component import Components, AudioPadding
 # )
 
 # Using multiple CPU cores to speed up
-## Note: batch process needs sample audio length, so we padding samples
+## Note: batch process needs sample audio length, so we pad samples
 sc2_set = SpeechCommandsV2(
     root_path='/root/data', mode='testing', download=True,
     data_tf=Components(transforms=[
@@ -119,7 +119,7 @@ sc2_set = SpeechCommandsV2(
 ```python
 from lib.corruption import enq_noises
 
-# You need download QUT-NOISE dataset by yourself
+# You need to download the QUT-NOISE dataset by yourself
 # Read QUT-NOISE noises
 noise_list = enq_noises(
     enq_path='/root/data/QUT-NOISE', noise_modes=['HOME', 'REVERB', 'STREET'], sample_rate=16000
@@ -135,7 +135,7 @@ sc2_set = SpeechCommandsV2(
 ```python
 from lib.corruption import end_noises
 
-# You need download DEMAND dataset (16 kHz version) by yourself
+# You need to download the DEMAND dataset (16 kHz version) by yourself
 # Read DEMAND noises
 noise_list = end_noises(
     end_path='/root/data/DEMAND_16k', noise_modes=['NFIELD', 'PRESTO', 'TCAR', 'OOFFICE'],
@@ -151,7 +151,7 @@ sc2_set = SpeechCommandsV2(
 ```
 ### END2
 ```python
-# You need download DEMAND dataset by yourself
+# You need to download the DEMAND dataset by yourself
 noise_list = end_noises(
     end_path='/root/data/DEMAND_16k', noise_modes=['DLIVING', 'OHALLWAY', 'SPSQUARE', 'TMETRO'],
     sample_rate=16000
@@ -174,7 +174,7 @@ The SpeechCommands V2 (2.26GB) is a speech audio set that includes 35 English wo
 [Pytorch Document](https://pytorch.org/audio/main/generated/torchaudio.datasets.SPEECHCOMMANDS.html)
 
 ### SpeechCommands V2-C
-The corruption version of test set on Speech Commands V2.
+The corrupted version of the test set on Speech Commands V2.
 + Sample size: 11005
 + Sample rate: 16 kHz
 + Class number: 35
@@ -196,7 +196,7 @@ wget -O vocalsound_16k.zip https://www.dropbox.com/s/c5ace70qh1vbyzb/vs_release_
 ```
 
 ### VocalSound-C
-The corruption version of test set on VocalSound
+The corrupted version of the test set on VocalSound
 + Sample size: 3591
 + Sample rate: 16 kHz
 + One sample length: 10s
@@ -208,7 +208,7 @@ The corruption version of test set on VocalSound
 This dataset contains 8732 labeled sound excerpts (<=4s) of urban sounds from 10 classes: air_conditioner, car_horn, children_playing, dog_bark, drilling, enginge_idling, gun_shot, jackhammer, siren, and street_music. The classes are drawn from the urban sound taxonomy.
 
 + Sample size: 8732
-+ Sample rate: less than 192000 (different audio different sample rate)
++ Sample rate: less than 192000 (different audio, different sample rate)
 + One sample length: less than 4s
 + Class number: 10
 
@@ -233,7 +233,7 @@ y, sr = example_clip.audio
 ```
 
 ### UrbanSound8K-C
-The corruption version of test set of UrbanSound8K.
+The corrupted version of the test set of UrbanSound8K.
 + Sample size: 2459
 + Sample rate: 44.1 kHz
 + One sample length: 4s
@@ -252,7 +252,7 @@ ReefSet is a multi-labeled and imbalanced dataset. ReefSet compiled a diverse me
 [Official Link](https://zenodo.org/records/11071202)
 
 ### ReefSet-C
-The corruption version of test set of ReefSet
+The corrupted version of the test set of ReefSet
 + Sample size: 17137
 + Sample rate: 16 kHz
 + One sample length: 1.88s
