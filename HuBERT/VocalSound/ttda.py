@@ -74,11 +74,15 @@ def vs_corruption_data(args:argparse.Namespace) -> Dataset:
         root_path=dataset_root_path, index_file_name=index_file_name, 
         data_tfs=[ ReduceChannel() ]
     )
-    adapt_set = mlt_load_from(
-        root_path=dataset_root_path, index_file_name=index_file_name, 
-        data_tfs=[
+    adapt_set = MultiTFDataset(
+        dataset=mlt_load_from(root_path=dataset_root_path, index_file_name=index_file_name),
+        tfs=[
             Components(transforms=[
-                time_shift(shift_limit=.17, is_random=True, is_bidirection=True),
+                time_shift(shift_limit=.17, is_random=True, is_bidirection=False),
+                ReduceChannel()
+            ]),
+            Components(transforms=[
+                time_shift(shift_limit=-.17, is_random=True, is_bidirection=False),
                 ReduceChannel()
             ])
         ]
@@ -181,15 +185,16 @@ if __name__ == '__main__':
         hubert.train(); clsf.train()
         ttl_size = 0.; ttl_loss = 0.; ttl_nucnm_loss = 0.
         ttl_ent_loss = 0.; ttl_gent_loss = 0.
-        for fs1, _ in tqdm(adapt_loader):
-            fs1 = fs1.to(args.device)
+        for fs1, fs2, _ in tqdm(adapt_loader):
+            fs1, fs2 = fs1.to(args.device), fs2.to(args.device)
 
             optimizer.zero_grad()
             os1 = clsf(hubert(fs1)[0])
+            os2 = clsf(hubert(fs2)[0])
 
-            nucnm_loss = nucnm(args, os1)
-            ent_loss = entropy(args, os1)
-            gent_loss = g_entropy(args, os1, q=args.gent_q)
+            nucnm_loss = nucnm(args, os1) + nucnm(args, os2)
+            ent_loss = entropy(args, os1, epsilon=1e-8) + entropy(args, os2, epsilon=1e-8)
+            gent_loss = g_entropy(args, os1, q=args.gent_q) + g_entropy(args, os2, q=args.gent_q)
 
             loss = nucnm_loss + ent_loss + gent_loss
             loss.backward()
