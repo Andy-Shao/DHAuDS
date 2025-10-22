@@ -39,6 +39,17 @@ sh HuBERT/SpeechCommandsV2/tta.sh
 ```shell
 sh HuBERT/SpeechCommandsV2/analysis.sh
 ```
+### CoNMix
+#### Additional Installment
+```shell
+pip install ml-collections==1.1.0
+```
+#### Pre-trained weight
+```shell
+wget https://storage.googleapis.com/vit_models/imagenet21k/R50+ViT-B_16.npz
+mkdir -p model/vit_checkpoint/imagenet21k
+mv R50+ViT-B_16.npz model/vit_checkpoint/imagenet21k/R50+ViT-B_16.npz
+```
 
 ## Corruption Example
 This chapter presents an example of corrupting SpeechCommandsV2. You can see more details from [corruption_example.ipynb](https://github.com/Andy-Shao/DHAuDS/blob/main/corruption_example.ipynb)

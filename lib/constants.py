@@ -15,7 +15,8 @@ dataset_dic = {
 architecture_dic = {
     'AMAuT': 'AuT',
     'HuBERT': 'HuB',
-    'AST': 'AST'
+    'AST': 'AST',
+    'CoNMix': 'CoN'
 }
 
 hubert_level_dic = {
