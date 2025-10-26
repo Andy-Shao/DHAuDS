@@ -214,6 +214,8 @@ class DynPSH(nn.Module):
         self.sample_rate = sample_rate
 
     def forward(self, wavform:torch.Tensor) -> torch.Tensor:
+        if self.min_steps == self.max_steps:
+            return pitch_shift(waveform=wavform, sample_rate=self.sample_rate, n_steps=self.min_steps)
         step = random.randint(self.min_steps, self.max_steps)
         if self.is_bidirection and random.randint(0, 1) == 1:
             step = - step
