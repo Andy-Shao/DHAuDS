@@ -1,7 +1,10 @@
 import random
+from tqdm import tqdm
+import numpy as np
 
-from torch import nn
 import torch
+from torch import nn
+from torch.utils.data import DataLoader
 
 class pad_trunc(nn.Module):
     """
@@ -70,3 +73,17 @@ class ExpandChannel(nn.Module):
 
     def forward(self, x: torch.Tensor) -> torch.Tensor:
         return x.repeat((self.out_channel, 1, 1))
+
+def cal_norm(loader: DataLoader) -> tuple[np.ndarray, np.ndarray]:
+    for idx, (features, _) in tqdm(enumerate(loader), total=len(loader)):
+        channel_size = features.shape[1]
+        if idx == 0:
+            mean = torch.zeros((channel_size), dtype=torch.float32)
+            std = torch.zeros((channel_size), dtype=torch.float32)
+        features = torch.transpose(features, 1, 0)
+        features = features.reshape(channel_size, -1)
+        mean += features.mean(1)
+        std += features.std(1)
+    mean /= len(loader)
+    std /= len(loader)
+    return mean.detach().numpy(), std.detach().numpy()
