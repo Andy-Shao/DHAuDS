@@ -13,12 +13,13 @@ from lib import constants
 from lib.utils import print_argparse, make_unless_exits
 from lib.spdataset import SpeechCommandsV2
 from lib.dataset import batch_store_to, mlt_load_from, mlt_store_to, GpuMultiTFDataset
-from CoNMix.lib.utils import time_shift, pad_trunc, Components, ExpandChannel, cal_norm
+from lib.component import AudioPadding
+from CoNMix.lib.utils import time_shift, Components, ExpandChannel, cal_norm
 
 def sc_corruption_set(args:argparse.Namespace) -> tuple[Dataset, Dataset]:
     from lib.corruption import corrupt_data as corrupt_data_tmp, DynTST, DynPSH
 
-    max_ms = 1000
+    # max_ms = 1000
     n_mels=81
     hop_length=200
     if args.corruption_type == 'TST':
@@ -30,8 +31,8 @@ def sc_corruption_set(args:argparse.Namespace) -> tuple[Dataset, Dataset]:
             root_path=args.dataset_root_path, mode='testing', download=True,
             data_tf=Components(transforms=[
                 DynTST(min_rate=rates[0], step=rates[1], max_rate=rates[2], is_bidirection=False),
-                # AudioPadding(max_length=args.sample_rate, sample_rate=args.sample_rate, random_shift=False)
-                pad_trunc(max_ms=max_ms, sample_rate=args.sample_rate)
+                AudioPadding(max_length=args.sample_rate, sample_rate=args.sample_rate, random_shift=False)
+                # pad_trunc(max_ms=max_ms, sample_rate=args.sample_rate)
             ])
         )
     else:
@@ -39,8 +40,8 @@ def sc_corruption_set(args:argparse.Namespace) -> tuple[Dataset, Dataset]:
             orgin_set=SpeechCommandsV2(
                 root_path=args.dataset_root_path, mode='testing', download=True,
                 data_tf=Components(transforms=[
-                    # AudioPadding(max_length=args.sample_rate, sample_rate=args.sample_rate, random_shift=False)
-                    pad_trunc(max_ms=max_ms, sample_rate=args.sample_rate)
+                    AudioPadding(max_length=args.sample_rate, sample_rate=args.sample_rate, random_shift=False)
+                    # pad_trunc(max_ms=max_ms, sample_rate=args.sample_rate)
                 ])
             ), corruption_level=args.corruption_level, corruption_type=args.corruption_type, enq_path=args.noise_path,
             sample_rate=args.sample_rate, end_path=args.noise_path, ensc_path=args.noise_path
@@ -128,9 +129,6 @@ if __name__ == '__main__':
     ap.add_argument('--modelF_weight_path', type=str)
     ap.add_argument('--modelB_weight_path', type=str)
     ap.add_argument('--modelC_weight_path', type=str)
-    ap.add_argument('--STDA_modelF_weight_file_name', type=str)
-    ap.add_argument('--STDA_modelB_weight_file_name', type=str)
-    ap.add_argument('--STDA_modelC_weight_file_name', type=str)
     ap.add_argument('--max_epoch', type=int, default=100, help="max iterations")
     ap.add_argument('--interval', type=int, default=100)
     ap.add_argument('--test_batch_size', type=int, default=128, help="batch_size")
