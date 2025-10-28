@@ -5,7 +5,7 @@
 + Docker image: nvidia/cuda:12.8.0-cudnn-runtime-ubuntu22.04
 + GPU: RTX 5090 / A100 SXM4 80GB
 ```shell
-conda create --name DHAuDS python=3.13 -y
+conda create --name DHAuDS python==3.13.9 -y
 conda activate DHAuDS
 # CUDA 12.8
 pip install torch==2.7.0 torchvision==0.22.0 torchaudio==2.7.0 --index-url https://download.pytorch.org/whl/cu128
