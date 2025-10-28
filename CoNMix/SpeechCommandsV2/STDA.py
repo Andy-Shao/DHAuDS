@@ -328,7 +328,11 @@ if __name__ == '__main__':
     interval_iter = max_iter // args.interval
     iter = 0
 
-    print('STDA Training Started')
+    print('Beforing Adaptation')
+    accuracy = inference(modelF=modelF, modelB=modelB, modelC=modelC, data_loader=test_loader, device=args.device)
+    print(f'Original test accuracy is: {accuracy:.4f}')
+
+    print('STDA Starting')
     max_accu = 0.
     for epoch in range(args.max_epoch):
         if args.early_stop > 0 and epoch-1 == args.early_stop:
@@ -339,7 +343,7 @@ if __name__ == '__main__':
         ttl_num = 0
         epoch_flag = True
 
-        print('Training...')
+        print('Adapting...')
         modelF.train(); modelB.train(); modelC.train()
         for weak_features, _, idxes in tqdm(weak_loader):
             batch_size = weak_features.shape[0]
@@ -450,7 +454,7 @@ if __name__ == '__main__':
                 torch.save(modelB.state_dict(), os.path.join(args.output_path, f'{constants.architecture_dic[args.arch]}-{constants.dataset_dic[args.dataset]}-{args.corruption_type}-{args.corruption_level}-modelB.pt'))
                 torch.save(modelC.state_dict(), os.path.join(args.output_path, f'{constants.architecture_dic[args.arch]}-{constants.dataset_dic[args.dataset]}-{args.corruption_type}-{args.corruption_level}-modelC.pt'))
         wandb.log({'Adaptation/accuracy': accuracy, 'Adaptation/max_accu': max_accu}, step=epoch)
-        print(f'Adaptation/accuracy: {accuracy:.4f}%, Adaptation/max_accu: {max_accu:.4f}%, Sample size: {len(org_set)}')
+        print(f'Adaptation/accuracy: {accuracy:.4f}, Adaptation/max_accu: {max_accu:.4f}, Sample size: {len(org_set)}')
         wandb.log({
             "Loss/ttl_loss":ttl_loss / ttl_num, 
             "Loss/PL loss":ttl_cls_loss / ttl_num, 
