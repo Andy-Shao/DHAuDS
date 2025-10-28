@@ -33,12 +33,12 @@ def inference(modelF: nn.Module, modelB: nn.Module, modelC: nn.Module, data_load
         ttl_size += labels.shape[0]
     return ttl_corr / ttl_size
 
-def lr_scheduler(optimizer: torch.optim.Optimizer, iter_num: int, max_iter: int, step:int, gamma=10, power=0.75) -> optim.Optimizer:
+def lr_scheduler(optimizer: torch.optim.Optimizer, iter_num: int, max_iter: int, step:int, gamma=10, power=0.75, momentum=.9) -> optim.Optimizer:
     decay = (1 + gamma * iter_num / max_iter) ** (-power)
     for param_group in optimizer.param_groups:
         param_group['lr'] = param_group['lr0'] * decay
         param_group['weight_decay'] = 1e-3
-        param_group['momentum'] = .9
+        param_group['momentum'] = momentum
         param_group['nestenv'] = True
     wandb.log({'Adaptation/LR': param_group['lr']}, step=step)
     return optimizer
@@ -269,6 +269,7 @@ if __name__ == '__main__':
     ap.add_argument('--lr_decay1', type=float, default=0.1)
     ap.add_argument('--lr_decay2', type=float, default=1.0)
     ap.add_argument('--lr_gamma', type=int, default=30)
+    ap.add_argument('--lr_momentum', type=float, default=.9)
 
     ap.add_argument('--bottleneck', type=int, default=256)
     ap.add_argument('--epsilon', type=float, default=1e-5)
@@ -443,7 +444,7 @@ if __name__ == '__main__':
 
             if iter % interval_iter == 0:
                 if args.sdlr:
-                    lr_scheduler(optimizer, iter_num=iter, max_iter=max_iter, gamma=args.lr_gamma, step=epoch)
+                    lr_scheduler(optimizer, iter_num=iter, max_iter=max_iter, gamma=args.lr_gamma, step=epoch, momentum=args.lr_momentum)
 
         print('Inferecing...')
         accuracy = inference(modelF=modelF, modelB=modelB, modelC=modelC, data_loader=test_loader, device=args.device)
