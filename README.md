@@ -50,6 +50,18 @@ wget https://storage.googleapis.com/vit_models/imagenet21k/R50+ViT-B_16.npz
 mkdir -p model/vit_checkpoint/imagenet21k
 mv R50+ViT-B_16.npz model/vit_checkpoint/imagenet21k/R50+ViT-B_16.npz
 ```
+#### Training
+```shell
+sh CoNMix/SpeechCommandsV2/train.sh
+```
+#### STDA
+```shell
+sh CoNMix/SpeechCommandsV2/STDA.sh
+```
+#### Analysis
+```shell
+sh CoNMix/SpeechCommandsV2/analysis.sh
+```
 
 ## Corruption Example
 This chapter presents an example of corrupting SpeechCommandsV2. You can see more details from [corruption_example.ipynb](https://github.com/Andy-Shao/DHAuDS/blob/main/corruption_example.ipynb)
