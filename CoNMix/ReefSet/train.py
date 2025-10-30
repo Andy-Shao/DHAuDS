@@ -21,7 +21,7 @@ from CoNMix.lib.utils import time_shift, ExpandChannel, cal_norm
 from CoNMix.SpeechCommandsV2.train import load_models, build_optimizer, lr_scheduler
 from AuT.lib.loss import CrossEntropyLabelSmooth
 
-def inference(modelF: nn.Module, modelB: nn.Module, modelC: nn.Module, data_loader: DataLoader, device='cpu') -> float:
+def inference(modelF: nn.Module, modelB: nn.Module, modelC: nn.Module, data_loader: DataLoader, class_num:int, device='cpu') -> float:
     modelF.eval(); modelB.eval(); modelC.eval()
     for idx, (features, labels) in tqdm(enumerate(data_loader), total=len(data_loader)):
         features, labels = features.to(device), labels.to(device)
@@ -29,10 +29,10 @@ def inference(modelF: nn.Module, modelB: nn.Module, modelC: nn.Module, data_load
             outputs = modelC(modelB(modelF(features)))
 
         if idx == 0:
-            y_true = indexes2oneHot(labels=labels, class_num=args.class_num)
+            y_true = indexes2oneHot(labels=labels, class_num=class_num)
             y_score = outputs.detach().cpu()
         else:
-            y_true = torch.cat([y_true, indexes2oneHot(labels=labels, class_num=args.class_num)], dim=0)
+            y_true = torch.cat([y_true, indexes2oneHot(labels=labels, class_num=class_num)], dim=0)
             y_score = torch.cat([y_score, outputs.detach().cpu()], dim=0)
     return roc_auc_score(y_true=y_true.numpy(), y_score=y_score.numpy(), average='macro')
         
@@ -187,7 +187,7 @@ if __name__ == '__main__':
         iter += 1
 
         print('Validating...')
-        val_roc_auc = inference(modelF=modelF, modelB=modelB, modelC=modelC, data_loader=val_loader, device=args.device)
+        val_roc_auc = inference(modelF=modelF, modelB=modelB, modelC=modelC, data_loader=val_loader, device=args.device, class_num=args.class_num)
         print(f'Validation Mean ROC-AUC is: {val_roc_auc:.4f}, sample size is: {len(val_dataset)}')
 
         wandb.log(data={
