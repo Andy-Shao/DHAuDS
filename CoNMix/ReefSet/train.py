@@ -1,61 +1,45 @@
 import argparse
-import numpy as np
-import random
 import os
 import wandb
+import numpy as np
+import random
 from tqdm import tqdm
+from sklearn.metrics import roc_auc_score
 
 import torch
-from torch import optim, nn
+from torch import nn
 from torch.utils.data import DataLoader
 from torchaudio.transforms import MelSpectrogram, AmplitudeToDB
 from torchvision.transforms import Resize, RandomCrop, RandomHorizontalFlip, Normalize
 
 from lib import constants
 from lib.utils import print_argparse, make_unless_exits, store_model_structure_to_txt
-from lib.spdataset import SpeechCommandsV2
-import CoNMix.lib.models as models
-from CoNMix.lib.utils import time_shift, pad_trunc, Components, ExpandChannel, cal_norm
+from lib.utils import indexes2oneHot
+from lib.component import Components, AudioPadding, OneHot2Index
+from lib.acousticDataset import ReefSet
+from CoNMix.lib.utils import time_shift, ExpandChannel, cal_norm
+from CoNMix.SpeechCommandsV2.train import load_models, build_optimizer, lr_scheduler
 from AuT.lib.loss import CrossEntropyLabelSmooth
 
-def lr_scheduler(optimizer: torch.optim.Optimizer, iter_num: int, max_iter: int, step:int, gamma=10, power=0.75) -> optim.Optimizer:
-    decay = (1 + gamma * iter_num / max_iter) ** (-power)
-    for param_group in optimizer.param_groups:
-        param_group['lr'] = param_group['lr0'] * decay
-        param_group['weight_decay'] = 1e-3
-        param_group['momentum'] = .9
-        param_group['nestenv'] = True
-    wandb.log({'Train/learning_rate': param_group['lr']}, step=step)
-    return optimizer
+def inference(modelF: nn.Module, modelB: nn.Module, modelC: nn.Module, data_loader: DataLoader, device='cpu') -> float:
+    modelF.eval(); modelB.eval(); modelC.eval()
+    for idx, (features, labels) in tqdm(enumerate(data_loader), total=len(data_loader)):
+        features, labels = features.to(device), labels.to(device)
+        with torch.no_grad():
+            outputs = modelC(modelB(modelF(features)))
 
-def build_optimizer(args: argparse.Namespace, modelF: nn.Module, modelB: nn.Module, modelC: nn.Module) -> optim.Optimizer:
-    param_group = []
-    learning_rate = args.lr
-    for k, v in modelF.named_parameters():
-        param_group += [{'params':v, 'lr':learning_rate * .1}]
-    for k, v in modelB.named_parameters():
-        param_group += [{'params':v, 'lr':learning_rate}]
-    for k, v in modelC.named_parameters():
-        param_group += [{'params':v, 'lr':learning_rate}]
-    optimizer = optim.SGD(param_group)
-    optimizer = op_copy(optimizer)
-    return optimizer
-
-def op_copy(optimizer: optim.Optimizer) -> optim.Optimizer:
-    for param_group in optimizer.param_groups:
-        param_group['lr0'] = param_group['lr']
-    return optimizer
-
-def load_models(args: argparse.Namespace) -> tuple[nn.Module, nn.Module, nn.Module]:
-    modelF = models.ViT().to(device=args.device)
-    modelB = models.feat_bootleneck(type=args.classifier, feature_dim=modelF.in_features, bottleneck_dim=args.bottleneck).to(device=args.device)
-    modelC = models.feat_classifier(type=args.layer, class_num=args.class_num, bottleneck_dim=args.bottleneck).to(device=args.device)
-
-    return modelF, modelB, modelC
+        if idx == 0:
+            y_true = indexes2oneHot(labels=labels, class_num=args.class_num)
+            y_score = outputs.detach().cpu()
+        else:
+            y_true = torch.cat([y_true, indexes2oneHot(labels=labels, class_num=args.class_num)], dim=0)
+            y_score = torch.cat([y_score, outputs.detach().cpu()], dim=0)
+    return roc_auc_score(y_true=y_true.numpy(), y_score=y_score.numpy(), average='macro')
+        
 
 if __name__ == '__main__':
     ap = argparse.ArgumentParser()
-    ap.add_argument('--dataset', type=str, default='SpeechCommandsV2', choices=['SpeechCommandsV2'])
+    ap.add_argument('--dataset', type=str, default='ReefSet', choices=['ReefSet'])
     ap.add_argument('--dataset_root_path', type=str)
     ap.add_argument('--num_workers', type=int, default=16)
     ap.add_argument('--output_path', type=str, default='./result')
@@ -69,7 +53,6 @@ if __name__ == '__main__':
     ap.add_argument('--batch_size', type=int, default=64, help='batch size')
     ap.add_argument('--lr', type=float, default=1e-2, help='learning rate')
     ap.add_argument('--lr_cardinality', type=int, default=40)
-    ap.add_argument('--lr_gamma', default=10, type=int)
     ap.add_argument('--aut_lr_decay', type=float, default=1.)
     ap.add_argument('--clsf_lr_decay', type=float, default=1.)
     ap.add_argument('--smooth', type=float, default=.1)
@@ -82,9 +65,10 @@ if __name__ == '__main__':
     ap.add_argument('--trte', type=str, default='val', choices=['full', 'val'])
 
     args = ap.parse_args()
-    if args.dataset == 'SpeechCommandsV2':
-        args.class_num = 35
+    if args.dataset == 'ReefSet':
+        args.class_num = 37
         args.sample_rate = 16000
+        args.audio_length = int(1.88 * 16000)
     else:
         raise Exception('No support!')
     args.device = 'cuda' if torch.cuda.is_available() else 'cpu'
@@ -101,20 +85,19 @@ if __name__ == '__main__':
     ##########################################
     make_unless_exits(args.output_path)
 
-    wandb_run = wandb.init(
+    wandb.init(
         project=f'{constants.PROJECT_TITLE}-{constants.TRAIN_TAG}', 
         name=f'{constants.architecture_dic[args.arch]}-{constants.dataset_dic[args.dataset]}', mode='online' if args.wandb else 'disabled', 
         config=args, tags=['Audio Classification', 'Test-time Adaptation', args.dataset]
     )
 
-    max_ms=1000
-    n_mels=81
-    hop_length=200
+    n_mels=123
+    hop_length=250
     tf_array = [
-        pad_trunc(max_ms=max_ms, sample_rate=args.sample_rate),
+        AudioPadding(max_length=args.audio_length, sample_rate=args.sample_rate, random_shift=False),
         time_shift(shift_limit=.25, is_random=True, is_bidirection=True),
         MelSpectrogram(sample_rate=args.sample_rate, n_fft=1024, n_mels=n_mels, hop_length=hop_length),
-        AmplitudeToDB(top_db=80),
+        AmplitudeToDB(top_db=80.),
         ExpandChannel(out_channel=3),
         Resize(size=(256, 256), antialias=False),
         RandomCrop(224),
@@ -122,42 +105,38 @@ if __name__ == '__main__':
     ]
     if args.normalized:
         print('calculate the train dataset mean and standard deviation')
-        train_tf = Components(transforms=tf_array)
-        train_dataset = SpeechCommandsV2(
-            root_path=args.dataset_root_path, mode='training', download=True, 
-            data_tf=train_tf
+        train_dataset = ReefSet(
+            root_path=args.dataset_root_path, mode='train', include_rate=False, 
+            data_tf=Components(transforms=tf_array), label_tf=OneHot2Index()
         )
         train_loader = DataLoader(dataset=train_dataset, batch_size=256, shuffle=False, drop_last=False, num_workers=args.num_workers)
         train_mean, train_std = cal_norm(loader=train_loader)
         tf_array.append(Normalize(mean=train_mean, std=train_std))
-    train_tf = Components(transforms=tf_array)
-    train_dataset = SpeechCommandsV2(
-        root_path=args.dataset_root_path, mode='training', download=True, 
-        data_tf=train_tf
+    train_dataset = ReefSet(
+        root_path=args.dataset_root_path, mode='train', include_rate=False, 
+        data_tf=Components(transforms=tf_array), label_tf=OneHot2Index()
     )
     train_loader = DataLoader(dataset=train_dataset, batch_size=args.batch_size, shuffle=True, drop_last=False, num_workers=args.num_workers)
 
     tf_array = [
-        pad_trunc(max_ms=max_ms, sample_rate=args.sample_rate),
+        AudioPadding(max_length=args.audio_length, sample_rate=args.sample_rate, random_shift=False),
         MelSpectrogram(sample_rate=args.sample_rate, n_fft=1024, n_mels=n_mels, hop_length=hop_length),
-        AmplitudeToDB(top_db=80),
+        AmplitudeToDB(top_db=80.),
         ExpandChannel(out_channel=3),
         Resize((224, 224), antialias=False),
     ]
     if args.normalized:
         print('calculate the validation dataset mean and standard deviation')
-        val_tf = Components(transforms=tf_array)
-        val_dataset = SpeechCommandsV2(
-            root_path=args.dataset_root_path, mode='validation', download=True,
-            data_tf=val_tf
+        val_dataset = ReefSet(
+            root_path=args.dataset_root_path, mode='test', include_rate=False,
+            data_tf=Components(transforms=tf_array), label_tf=OneHot2Index()
         )
         val_loader = DataLoader(dataset=val_dataset, batch_size=256, shuffle=False, drop_last=False, num_workers=args.num_workers)
         val_mean, val_std = cal_norm(loader=val_loader)
         tf_array.append(Normalize(mean=val_mean, std=val_std))
-    val_tf = Components(transforms=tf_array)
-    val_dataset = SpeechCommandsV2(
-        root_path=args.dataset_root_path, mode='validation', download=True,
-        data_tf=val_tf
+    val_dataset = ReefSet(
+        root_path=args.dataset_root_path, mode='test', include_rate=False,
+        data_tf=Components(transforms=tf_array), label_tf=OneHot2Index()
     )
     val_loader = DataLoader(dataset=val_dataset, batch_size=args.batch_size, shuffle=False, drop_last=False, num_workers=args.num_workers)
 
@@ -171,60 +150,51 @@ if __name__ == '__main__':
     optimizer = build_optimizer(args, modelF=modelF, modelB=modelB, modelC=modelC)
     classifier_loss = CrossEntropyLabelSmooth(num_classes=args.class_num, epsilon=args.smooth, use_gpu=True).to(device=args.device)
 
-    best_accuracy = 0.
+    max_roc_auc = 0.
     max_iter = args.max_epoch * len(train_loader)
     iter = 0
     interval = max_iter // args.interval
     for epoch in range(1, args.max_epoch+1):
         print(f'Epoch [{epoch}/{args.max_epoch}]')
         modelF.train(); modelB.train(); modelC.train()
-        ttl_train_loss = 0.
-        ttl_train_num = 0
-        ttl_train_corr = 0
         print('Training....')
-        for features, labels in tqdm(train_loader):
+        train_loss = 0.
+        for idx, (features, labels) in tqdm(enumerate(train_loader), total=len(train_loader)):
             features, labels = features.to(args.device), labels.to(args.device)
+
             outputs = modelC(modelB(modelF(features)))
             loss = classifier_loss(outputs, labels)
             optimizer.zero_grad()
             loss.backward()
             optimizer.step()
-            _, preds = torch.max(outputs.detach(), dim=1)
-            ttl_train_corr += (preds == labels).sum().cpu().item()
-            ttl_train_loss += loss.cpu().item()
-            ttl_train_num += labels.shape[0]
-            features = None
-            labels = None
-            loss = None
-            outputs = None
+
+            if idx == 0:
+                y_true = indexes2oneHot(labels=labels, class_num=args.class_num)
+                y_score = outputs.detach().cpu()
+            else:
+                y_true = torch.cat([y_true, indexes2oneHot(labels=labels, class_num=args.class_num)], dim=0)
+                y_score = torch.cat([y_score, outputs.detach().cpu()], dim=0)
+            train_loss += loss.cpu().item()
+        train_roc_auc = roc_auc_score(y_true=y_true.numpy(), y_score=y_score.numpy(), average='macro')
+        print(f'Training Mean ROC-AUC is: {train_roc_auc:.4f}, sample size is: {len(train_dataset)}')
+        y_true = None; y_score = None
 
         learning_rate = optimizer.param_groups[0]['lr']
         if iter % interval == 0 or iter == max_iter-1:
             lr_scheduler(optimizer=optimizer, iter_num=iter, max_iter=max_iter, step=epoch)
         iter += 1
 
-        modelF.eval()
-        modelB.eval()
-        modelC.eval()
-        ttl_corr = 0
-        ttl_size = 0
         print('Validating...')
-        for features, labels in tqdm(val_loader):
-            features, labels = features.to(args.device), labels.to(args.device)
-            with torch.no_grad():
-                outputs = modelC(modelB(modelF(features)))
-                _, preds = torch.max(outputs, dim=1)
-            ttl_corr += (preds == labels).sum().cpu().item()
-            ttl_size += labels.shape[0]
-        curr_accu = ttl_corr / ttl_size
-        wandb_run.log(data={
-            'Train/Loss': ttl_train_loss / ttl_train_num,
-            'Train/Accu': ttl_train_corr/ttl_train_num,
-            'Train/LR': learning_rate,
-            'Val/Accu': curr_accu
+        val_roc_auc = inference(modelF=modelF, modelB=modelB, modelC=modelC, data_loader=val_loader, device=args.device)
+        print(f'Validation Mean ROC-AUC is: {val_roc_auc:.4f}, sample size is: {len(val_dataset)}')
+
+        wandb.log(data={
+            'Train/Loss': train_loss / len(train_loader),
+            'Train/ROC-AUC': train_roc_auc,
+            'Val/ROC-AUC': val_roc_auc
         }, step=epoch, commit=True)
-        if curr_accu > best_accuracy:
-            best_accuracy = curr_accu
+        if max_roc_auc <= val_roc_auc:
+            max_roc_auc == val_roc_auc
             best_modelF = modelF.state_dict()
             best_modelB = modelB.state_dict()
             best_modelC = modelC.state_dict()
