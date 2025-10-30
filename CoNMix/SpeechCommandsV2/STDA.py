@@ -189,7 +189,7 @@ def sc_corruption_set(args:argparse.Namespace) -> tuple[Dataset, Dataset]:
         org_set = mlt_load_from(
             root_path=org_ds_path, index_file_name=index_file_name, data_tfs=[Components(transforms=org_tf)]
         )
-        org_mean, org_std = cal_norm(loader=DataLoader(dataset=org_set, batch_size=256, shuffle=False, drop_last=False))
+        org_mean, org_std = cal_norm(loader=DataLoader(dataset=org_set, batch_size=256, shuffle=False, drop_last=False, num_workers=args.num_workers))
         org_tf.append(Normalize(mean=org_mean, std=org_std))
     org_set = mlt_load_from(
         root_path=org_ds_path, index_file_name=index_file_name, data_tfs=[Components(transforms=org_tf)]
@@ -225,7 +225,7 @@ def sc_corruption_set(args:argparse.Namespace) -> tuple[Dataset, Dataset]:
             root_path=str_ds_path, index_file_name=index_file_name, 
             data_tfs=[Components(transforms=str_tf)]
         )
-        str_mean, str_std = cal_norm(loader=DataLoader(dataset=str_set, batch_size=256, shuffle=False, drop_last=False))
+        str_mean, str_std = cal_norm(loader=DataLoader(dataset=str_set, batch_size=256, shuffle=False, drop_last=False, num_workers=args.num_workers))
         str_tf.append(Normalize(mean=str_mean, std=str_std))
     str_set = mlt_load_from(
         root_path=str_ds_path, index_file_name=index_file_name, 
