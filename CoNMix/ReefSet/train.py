@@ -15,7 +15,7 @@ from torchvision.transforms import Resize, RandomCrop, RandomHorizontalFlip, Nor
 from lib import constants
 from lib.utils import print_argparse, make_unless_exits, store_model_structure_to_txt
 from lib.utils import indexes2oneHot
-from lib.component import Components, AudioPadding, OneHot2Index
+from lib.component import Components, AudioPadding, OneHot2Index, AudioClip
 from lib.acousticDataset import ReefSet
 from CoNMix.lib.utils import time_shift, ExpandChannel, cal_norm
 from CoNMix.SpeechCommandsV2.train import load_models, build_optimizer, lr_scheduler
@@ -95,6 +95,7 @@ if __name__ == '__main__':
     hop_length=250
     tf_array = [
         AudioPadding(max_length=args.audio_length, sample_rate=args.sample_rate, random_shift=False),
+        AudioClip(max_length=args.audio_length, is_random=True),
         time_shift(shift_limit=.25, is_random=True, is_bidirection=True),
         MelSpectrogram(sample_rate=args.sample_rate, n_fft=1024, n_mels=n_mels, hop_length=hop_length),
         AmplitudeToDB(top_db=80.),
@@ -120,6 +121,7 @@ if __name__ == '__main__':
 
     tf_array = [
         AudioPadding(max_length=args.audio_length, sample_rate=args.sample_rate, random_shift=False),
+        AudioClip(max_length=args.audio_length, is_random=False, mode='head'),
         MelSpectrogram(sample_rate=args.sample_rate, n_fft=1024, n_mels=n_mels, hop_length=hop_length),
         AmplitudeToDB(top_db=80.),
         ExpandChannel(out_channel=3),
