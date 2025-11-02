@@ -6,14 +6,14 @@ import torch
 from torch import nn
 from torch.utils.data import DataLoader
 from torchaudio.transforms import MelSpectrogram, AmplitudeToDB
-from torchvision.transforms import Resize
+from torchvision.transforms import Resize, Normalize
 
 from lib import constants
 from lib.utils import make_unless_exits, print_argparse, count_ttl_params
 from lib.corruption import corruption_meta, CorruptionMeta, SpeechCommandsV2C
 from CoNMix.SpeechCommandsV2.train import load_models
 from CoNMix.SpeechCommandsV2.STDA import inference
-from CoNMix.lib.utils import Components, ExpandChannel
+from CoNMix.lib.utils import Components, ExpandChannel, cal_norm
 
 def load_weight(
     args:argparse.Namespace, mF:nn.Module, mB:nn.Module, mC:nn.Module, mode='origin', metaInfo:CorruptionMeta=None
@@ -42,14 +42,23 @@ def analyzing(args:argparse.Namespace, corruption_types:list[str], corruption_le
     for idx, cmeta in enumerate(corruption_metas):
         print(f'{idx+1}/{len(corruption_metas)}: {args.dataset} {cmeta.type}-{cmeta.level} analyzing...')
 
+        tf_array = [
+            MelSpectrogram(sample_rate=args.sample_rate, n_fft=1024, hop_length=hop_length, n_mels=n_mels),
+            AmplitudeToDB(top_db=80.),
+            ExpandChannel(out_channel=3),
+            Resize((224, 224), antialias=False)
+        ]
+        if args.normalized:
+            print('calculating adapted mean and standard deviation')
+            adpt_set = SpeechCommandsV2C(
+                root_path=args.dataset_root_path, corruption_type=cmeta.type, corruption_level=cmeta.level,
+                data_tf=Components(transforms=tf_array)
+            )
+            adpt_mean, adpt_std = cal_norm(loader=DataLoader(dataset=adpt_set, batch_size=256, shuffle=False, drop_last=False, num_workers=args.num_workers))
+            tf_array.append(Normalize(mean=adpt_mean, std=adpt_std))
         adpt_set = SpeechCommandsV2C(
             root_path=args.dataset_root_path, corruption_type=cmeta.type, corruption_level=cmeta.level,
-            data_tf=Components(transforms=[
-                MelSpectrogram(sample_rate=args.sample_rate, n_fft=1024, hop_length=hop_length, n_mels=n_mels),
-                AmplitudeToDB(top_db=80.),
-                ExpandChannel(out_channel=3),
-                Resize((224, 224), antialias=False)
-            ])
+            data_tf=Components(transforms=tf_array)
         )
         adpt_loader = DataLoader(
             dataset=adpt_set, batch_size=args.batch_size, shuffle=False, drop_last=False, pin_memory=True,
@@ -58,12 +67,12 @@ def analyzing(args:argparse.Namespace, corruption_types:list[str], corruption_le
 
         print('Non-adaptation analyzing...')
         load_weight(args=args, mF=modelF, mB=modelB, mC=modelC, mode='origin')
-        orig_roc_auc = inference(modelF=modelF, modelB=modelB, modelC=modelC, data_loader=adpt_loader, device=args.device)
+        orig_auc = inference(modelF=modelF, modelB=modelB, modelC=modelC, data_loader=adpt_loader, device=args.device)
         print('Adaptation analyzing...')
         load_weight(args=args, mF=modelF, mB=modelB, mC=modelC, mode='adaptation', metaInfo=cmeta)
-        adpt_roc_auc = inference(modelF=modelF, modelB=modelB, modelC=modelC, data_loader=adpt_loader, device=args.device)
-        print(f'{args.dataset} {cmeta.type}-{cmeta.level} non-adapted roc-auc: {orig_roc_auc:.4f}, adapted roc-auc: {adpt_roc_auc:.4f}')
-        records.loc[len(records)] = [args.dataset, args.arch, param_no, f'{cmeta.type}-{cmeta.level}', orig_roc_auc, adpt_roc_auc, adpt_roc_auc - orig_roc_auc]
+        adpt_auc = inference(modelF=modelF, modelB=modelB, modelC=modelC, data_loader=adpt_loader, device=args.device)
+        print(f'{args.dataset} {cmeta.type}-{cmeta.level} non-adapted accuracy: {orig_auc:.4f}, adapted accuray: {adpt_auc:.4f}')
+        records.loc[len(records)] = [args.dataset, args.arch, param_no, f'{cmeta.type}-{cmeta.level}', orig_auc, adpt_auc, adpt_auc - orig_auc]
     records.to_csv(os.path.join(args.output_path, args.output_file_name))
 
 if __name__ == '__main__':
