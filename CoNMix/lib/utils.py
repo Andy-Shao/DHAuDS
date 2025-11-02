@@ -99,3 +99,17 @@ class Dataset_Idx(Dataset):
     def __getitem__(self, index) -> tuple[torch.Tensor, int, int]:
         feature, label = self.dataset[index]
         return feature, label, index
+
+class BiSet_Idx(Dataset):
+    def __init__(self, set1:Dataset, set2:Dataset):
+        super().__init__()
+        self.set1 = set1
+        self.set2 = set2
+    
+    def __len__(self):
+        return len(self.set1)
+    
+    def __getitem__(self, index):
+        f1, label = self.set1[index]
+        f2, _ = self.set2[index]
+        return f1, f2, label, index

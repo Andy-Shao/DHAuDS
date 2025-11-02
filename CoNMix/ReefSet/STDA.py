@@ -18,7 +18,7 @@ from lib.dataset import MultiTFDataset, batch_store_to, mlt_load_from, GpuMultiT
 from lib.dataset import mlt_store_to
 from lib.component import AudioClip, AudioPadding, OneHot2Index, time_shift
 from lib.corruption import DynPSH
-from CoNMix.lib.utils import Components, ExpandChannel, cal_norm, Dataset_Idx
+from CoNMix.lib.utils import Components, ExpandChannel, cal_norm, BiSet_Idx
 from CoNMix.lib.plr import plr
 from CoNMix.lib.loss import soft_CE, SoftCrossEntropyLoss, Entropy
 from CoNMix.SpeechCommandsV2.train import load_models
@@ -118,7 +118,7 @@ def rs_corrupt_data(args:argparse.Namespace) -> tuple[Dataset, Dataset]:
         data_tfs=[Components(transforms=str_tf)]
     )
 
-    return org_set, str_set
+    return org_set, BiSet_Idx(set1=org_set, set2=str_set)
 
 if __name__ == '__main__':
     ap = argparse.ArgumentParser()
@@ -196,14 +196,13 @@ if __name__ == '__main__':
         name=f'{constants.architecture_dic[args.arch]}-{constants.dataset_dic[args.dataset]}-{args.corruption_type}-{args.corruption_level}', 
         mode='online' if args.wandb else 'disabled', config=args, tags=['Audio Classification', args.dataset, 'Test-time Adaptation'])
     
-    org_set, str_set = rs_corrupt_data(args=args)
+    org_set, adpt_set = rs_corrupt_data(args=args)
     test_loader = DataLoader(
         dataset=org_set, batch_size=args.batch_size, shuffle=False, drop_last=False, 
         num_workers=args.num_workers
     )
-    weak_set = Dataset_Idx(org_set)
-    weak_loader = DataLoader(
-        dataset=weak_set, batch_size=args.batch_size, shuffle=True, drop_last=False, 
+    adpt_loader = DataLoader(
+        dataset=adpt_set, batch_size=args.batch_size, shuffle=True, drop_last=False, 
         num_workers=args.num_workers
     )
 
@@ -212,7 +211,7 @@ if __name__ == '__main__':
     load_origin_stat(args, modelF=modelF, modelB=modelB, modelC=modelC)
 
     optimizer = build_optim(args, modelF=modelF, modelB=modelB, modelC=modelC)
-    max_iter = args.max_epoch * len(weak_loader)
+    max_iter = args.max_epoch * len(adpt_loader)
     interval_iter = max_iter // args.interval
     iter = 0
 
@@ -233,7 +232,7 @@ if __name__ == '__main__':
 
         print('Adapting...')
         modelF.train(); modelB.train(); modelC.train()
-        for weak_features, _, idxes in tqdm(weak_loader):
+        for weak_features, strong_features, _, idxes in tqdm(adpt_loader):
             batch_size = weak_features.shape[0]
             if epoch_flag and args.cls_par >= 0:
                 epoch_flag = False
@@ -259,7 +258,6 @@ if __name__ == '__main__':
                 modelF.train(); modelB.train(); modelC.train()
             iter += 1
 
-            strong_features = torch.cat([torch.unsqueeze(str_set[int(idx.item())][0], dim=0) for idx in idxes], dim=0)
             features = torch.cat([weak_features, strong_features], dim=0).to(args.device)
 
             outputs_B = modelB(modelF(features))
