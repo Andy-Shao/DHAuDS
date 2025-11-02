@@ -18,7 +18,7 @@ pip install jupyter==1.1.1
 pip install soundfile==0.13.1
 pip install wandb==0.21.0
 ```
-### For CoNMix
+### For CoNMix++
 #### Additional Installment
 ```shell
 pip install ml-collections==1.1.0
