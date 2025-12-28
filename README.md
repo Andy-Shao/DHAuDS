@@ -292,3 +292,13 @@ A database of 16-channel environmental noise recordings.
 + [AMAuT](https://github.com/Andy-Shao/AMAuT)
 + [HuBERT](https://github.com/facebookresearch/fairseq/tree/main/examples/hubert)
 + [TTA in Audio Classification](https://github.com/Andy-Shao/TTA-in-AC.git)
+
+## Citation
+```text
+@article{shao2025dhauds,
+  title={DHAuDS: A Dynamic and Heterogeneous Audio Benchmark for Test-Time Adaptation},
+  author={Shao, Weichuang and Liao, Iman Yi and Maul, Tomas Henrique Bode and Chandesa, Tissa},
+  journal={arXiv preprint arXiv:2511.18421},
+  year={2025}
+}
+```
