@@ -186,7 +186,7 @@ The SpeechCommands V2 (2.26GB) is a speech audio set that includes 35 English wo
 
 ### SpeechCommands V2-C
 The corrupted version of the test set on Speech Commands V2.
-+ Sample size: 154,070 (11,005 per corruption level)
++ Sample size: 308,140 (11,005 per corruption level)
 + Sample rate: 16 kHz
 + Class number: 35
 + One sample length: 1s
@@ -208,7 +208,7 @@ wget -O vocalsound_16k.zip https://www.dropbox.com/s/c5ace70qh1vbyzb/vs_release_
 
 ### VocalSound-C
 The corrupted version of the test set on VocalSound
-+ Sample size: 50,274 (3,591 per corruption level)
++ Sample size: 100,548 (3,591 per corruption level)
 + Sample rate: 16 kHz
 + One sample length: 10s
 + Class number: 6
@@ -244,8 +244,8 @@ y, sr = example_clip.audio
 ```
 
 ### UrbanSound8K-C
-The corrupted version of the test set of UrbanSound8K.
-+ Sample size: 34,426 (2,459 per corruption level)
+The corrupted version of the test set of UrbanSound8K. Note: UrbanSound8K-C excludes ENQ, END1, and END2.
++ Sample size: 39,344 (2,459 per corruption level)
 + Sample rate: 44.1 kHz
 + One sample length: 4s
 + Class Number: 10
@@ -264,7 +264,7 @@ ReefSet is a multi-labeled and imbalanced dataset. ReefSet compiled a diverse me
 
 ### ReefSet-C
 The corrupted version of the test set of ReefSet
-+ Sample size: 239,918 (17,137 per corruption level)
++ Sample size: 479,836 (17,137 per corruption level)
 + Sample rate: 16 kHz
 + One sample length: 1.88s
 
