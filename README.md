@@ -191,7 +191,7 @@ The corrupted version of the test set on Speech Commands V2.
 + Class number: 35
 + One sample length: 1s
 
-[SC2-C Dataset Link](https://drive.google.com/drive/folders/1wBCadjjcA-n7fCAvf82uYBR6q5z_uXRm)
+[SC2-C Dataset Link](https://drive.google.com/drive/folders/1wBCadjjcA-n7fCAvf82uYBR6q5z_uXRm)<br/>
 [Hugging Face Backup](https://huggingface.co/datasets/AndyShao90/SpeechCommandsV2-C)
 
 ### VocalSound
@@ -269,7 +269,7 @@ The corrupted version of the test set of ReefSet
 + Sample rate: 16 kHz
 + One sample length: 1.88s
 
-[RS-C Dataset Link](https://drive.google.com/drive/folders/1W9GGOZTq3XSSsOlpJOQueDksHkCn3Fj4)
+[RS-C Dataset Link](https://drive.google.com/drive/folders/1W9GGOZTq3XSSsOlpJOQueDksHkCn3Fj4)<br/>
 [Hugging Face Backup](https://huggingface.co/datasets/AndyShao90/ReefSet-C)
 
 ### QUT-NOISE
