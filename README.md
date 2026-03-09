@@ -192,6 +192,7 @@ The corrupted version of the test set on Speech Commands V2.
 + One sample length: 1s
 
 [SC2-C Dataset Link](https://drive.google.com/drive/folders/1wBCadjjcA-n7fCAvf82uYBR6q5z_uXRm)
+[Hugging Face Backup](https://huggingface.co/datasets/AndyShao90/SpeechCommandsV2-C)
 
 ### VocalSound
 VocalSound is a free dataset consisting of 21,024 crowdsourced recordings of laughter, sighs, coughs, throat clearing, sneezes, and sniffs from 3,365 unique subjects. The VocalSound dataset also contains meta-information such as speaker age, gender, native language, country, and health condition.
@@ -269,6 +270,7 @@ The corrupted version of the test set of ReefSet
 + One sample length: 1.88s
 
 [RS-C Dataset Link](https://drive.google.com/drive/folders/1W9GGOZTq3XSSsOlpJOQueDksHkCn3Fj4)
+[Hugging Face Backup](https://huggingface.co/datasets/AndyShao90/ReefSet-C)
 
 ### QUT-NOISE
 QUT-NOISE is an environmental acoustic dataset for environmental background noise. QUT-NOISE comprises five distinct types of background noise: CAFE, CAR, HOME, REVERB, and STREET. Each type of noise includes five noise files.
