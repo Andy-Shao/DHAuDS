@@ -246,7 +246,8 @@ y, sr = example_clip.audio
 ```
 
 ### UrbanSound8K-C
-The corrupted version of the test set of UrbanSound8K. Note: UrbanSound8K-C excludes ENQ, END1, and END2.
+The corrupted version of the test set of UrbanSound8K. Note: UrbanSound8K-C excludes ENQ, END1, 
+and END2 since the class type overlaps the noise type in QUT-NOISE and DEMAND, such as street, car, traffic, and station noise.
 + Sample size: 39,344 (2,459 per corruption level)
 + Sample rate: 44.1 kHz
 + One sample length: 4s
