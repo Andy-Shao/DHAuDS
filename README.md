@@ -176,7 +176,7 @@ sc2_set = SpeechCommandsV2(
 ## Datasets
 ### SpeechCommands V2
 The SpeechCommands V2 (2.26GB) is a speech audio set that includes 35 English words. 
-+ Sample size: 105829 (train: 84843, test: 11005, validation: 9981)
++ Sample size: 105,829 (train: 84,843, test: 11,005, validation: 9,981)
 + Sampling rate: 16 kHz
 + Class Number: 35
 + One sample length: 1s
@@ -186,7 +186,7 @@ The SpeechCommands V2 (2.26GB) is a speech audio set that includes 35 English wo
 
 ### SpeechCommands V2-C
 The corrupted version of the test set on Speech Commands V2.
-+ Sample size: 11005
++ Sample size: 154,070 (11,005 per corruption level)
 + Sample rate: 16 kHz
 + Class number: 35
 + One sample length: 1s
@@ -195,7 +195,7 @@ The corrupted version of the test set on Speech Commands V2.
 
 ### VocalSound
 VocalSound is a free dataset consisting of 21,024 crowdsourced recordings of laughter, sighs, coughs, throat clearing, sneezes, and sniffs from 3,365 unique subjects. The VocalSound dataset also contains meta-information such as speaker age, gender, native language, country, and health condition.
-+ Sample size: 20977 (Train: 15531, validation: 1855, test: 3591)
++ Sample size: 20,977 (Train: 15,531, validation: 1,855, test: 3,591)
 + Sample rate: 16 kHz
 + One sample length: less than 12s
 + Class number: 6
@@ -208,7 +208,7 @@ wget -O vocalsound_16k.zip https://www.dropbox.com/s/c5ace70qh1vbyzb/vs_release_
 
 ### VocalSound-C
 The corrupted version of the test set on VocalSound
-+ Sample size: 3591
++ Sample size: 50,274 (3,591 per corruption level)
 + Sample rate: 16 kHz
 + One sample length: 10s
 + Class number: 6
@@ -218,7 +218,7 @@ The corrupted version of the test set on VocalSound
 ### UrbanSound8K
 This dataset contains 8732 labeled sound excerpts (<=4s) of urban sounds from 10 classes: air_conditioner, car_horn, children_playing, dog_bark, drilling, enginge_idling, gun_shot, jackhammer, siren, and street_music. The classes are drawn from the urban sound taxonomy.
 
-+ Sample size: 8732
++ Sample size: 8,732
 + Sample rate: less than 192000 (different audio, different sample rate)
 + One sample length: less than 4s
 + Class number: 10
@@ -245,7 +245,7 @@ y, sr = example_clip.audio
 
 ### UrbanSound8K-C
 The corrupted version of the test set of UrbanSound8K.
-+ Sample size: 2459
++ Sample size: 34,426 (2,459 per corruption level)
 + Sample rate: 44.1 kHz
 + One sample length: 4s
 + Class Number: 10
@@ -256,7 +256,7 @@ The corrupted version of the test set of UrbanSound8K.
 ReefSet is a multi-labeled and imbalanced dataset. ReefSet compiled a diverse meta-dataset of 57084 labelled coral reef bioacoustic recordings across 37 classes and from 16 individual datasets over 12 countries. During the annotation of each dataset, longer recording periods were segmented into samples of shorter windows (1.88 s) to fit within the two window lengths of the industry-standard networks. The final meta-dataset of 57074 labelled samples, split across the four primary labels: biophony (79.20%), anthrophony (10.39%), geophony (0.09%), and ambient (10.32%), with 33 secondary labels.
 
 + Sample rate: 16 kHz
-+ Sample size: 57074
++ Sample size: 57,074
 + One sample length: 1.88s
 + Class Number: 37 (4 primary labels and 33 secondary labels)
 
@@ -264,7 +264,7 @@ ReefSet is a multi-labeled and imbalanced dataset. ReefSet compiled a diverse me
 
 ### ReefSet-C
 The corrupted version of the test set of ReefSet
-+ Sample size: 17137
++ Sample size: 239,918 (17,137 per corruption level)
 + Sample rate: 16 kHz
 + One sample length: 1.88s
 
