@@ -15,62 +15,62 @@ from lib.spdataset import SpeechCommandsV2
 from lib.component import Components, AudioPadding, ReduceChannel, time_shift, DoNothing
 from lib.lr_utils import build_optimizer, lr_scheduler
 from lib.loss import nucnm, g_entropy, entropy, mse
-from lib.corruption import DynTST
+from lib.corruption import DynTST, SpeechCommandsV2C
 from HuBERT.VocalSound.ttda import load_weigth
 from HuBERT.SpeechCommandsV2.train import build_model, inference
 
-def sc_corruption_set(args:argparse.Namespace) -> tuple[Dataset, Dataset]:
-    from lib.corruption import corrupt_data as corrupt_data_tmp
-    if args.corruption_type == 'TST':
-        if args.corruption_level == 'L1':
-            rates = constants.DYN_TST_L1
-        elif args.corruption_level == 'L2':
-            rates = constants.DYN_TST_L2
-        test_set = SpeechCommandsV2(
-            root_path=args.dataset_root_path, mode='testing', download=True,
-            data_tf=Components(transforms=[
-                DynTST(min_rate=rates[0], step=rates[1], max_rate=rates[2], is_bidirection=False),
-                AudioPadding(max_length=args.sample_rate, sample_rate=args.sample_rate, random_shift=False)
-            ])
-        )
-    else:
-        test_set = corrupt_data_tmp(
-            orgin_set=SpeechCommandsV2(
-                root_path=args.dataset_root_path, mode='testing', download=True,
-                data_tf=Components(transforms=[
-                    AudioPadding(max_length=args.sample_rate, sample_rate=args.sample_rate, random_shift=False)
-                ])
-            ), corruption_level=args.corruption_level, corruption_type=args.corruption_type, enq_path=args.noise_path,
-            sample_rate=args.sample_rate, end_path=args.noise_path, ensc_path=args.noise_path
-        )
+# def sc_corruption_set(args:argparse.Namespace) -> tuple[Dataset, Dataset]:
+#     from lib.corruption import corrupt_data as corrupt_data_tmp
+#     if args.corruption_type == 'TST':
+#         if args.corruption_level == 'L1':
+#             rates = constants.DYN_TST_L1
+#         elif args.corruption_level == 'L2':
+#             rates = constants.DYN_TST_L2
+#         test_set = SpeechCommandsV2(
+#             root_path=args.dataset_root_path, mode='testing', download=True,
+#             data_tf=Components(transforms=[
+#                 DynTST(min_rate=rates[0], step=rates[1], max_rate=rates[2], is_bidirection=False),
+#                 AudioPadding(max_length=args.sample_rate, sample_rate=args.sample_rate, random_shift=False)
+#             ])
+#         )
+#     else:
+#         test_set = corrupt_data_tmp(
+#             orgin_set=SpeechCommandsV2(
+#                 root_path=args.dataset_root_path, mode='testing', download=True,
+#                 data_tf=Components(transforms=[
+#                     AudioPadding(max_length=args.sample_rate, sample_rate=args.sample_rate, random_shift=False)
+#                 ])
+#             ), corruption_level=args.corruption_level, corruption_type=args.corruption_type, enq_path=args.noise_path,
+#             sample_rate=args.sample_rate, end_path=args.noise_path, ensc_path=args.noise_path
+#         )
 
-    dataset_root_path = os.path.join(args.cache_path, args.dataset)
-    index_file_name = 'metaInfo.csv'
-    if args.corruption_type == 'PSH':
-        mlt_store_to(dataset=test_set, root_path=dataset_root_path, index_file_name=index_file_name, data_tfs=[DoNothing()])
-    else:
-        batch_store_to(
-            data_loader=DataLoader(dataset=test_set, batch_size=32, shuffle=False, drop_last=False, num_workers=8),
-            root_path=dataset_root_path, index_file_name=index_file_name
-        )
-    test_set = mlt_load_from(
-        root_path=dataset_root_path, index_file_name=index_file_name, 
-        data_tfs=[ReduceChannel()]
-    )
-    adpt_set = MultiTFDataset(
-        dataset=mlt_load_from(root_path=dataset_root_path, index_file_name=index_file_name),
-        tfs=[
-            Components(transforms=[
-                time_shift(shift_limit=.17, is_random=True, is_bidirection=False),
-                ReduceChannel()
-            ]),
-            Components(transforms=[
-                time_shift(shift_limit=-.17, is_random=True, is_bidirection=False),
-                ReduceChannel()
-            ])
-        ]
-    )
-    return test_set, adpt_set
+#     dataset_root_path = os.path.join(args.cache_path, args.dataset)
+#     index_file_name = 'metaInfo.csv'
+#     if args.corruption_type == 'PSH':
+#         mlt_store_to(dataset=test_set, root_path=dataset_root_path, index_file_name=index_file_name, data_tfs=[DoNothing()])
+#     else:
+#         batch_store_to(
+#             data_loader=DataLoader(dataset=test_set, batch_size=32, shuffle=False, drop_last=False, num_workers=8),
+#             root_path=dataset_root_path, index_file_name=index_file_name
+#         )
+#     test_set = mlt_load_from(
+#         root_path=dataset_root_path, index_file_name=index_file_name, 
+#         data_tfs=[ReduceChannel()]
+#     )
+#     adpt_set = MultiTFDataset(
+#         dataset=mlt_load_from(root_path=dataset_root_path, index_file_name=index_file_name),
+#         tfs=[
+#             Components(transforms=[
+#                 time_shift(shift_limit=.17, is_random=True, is_bidirection=False),
+#                 ReduceChannel()
+#             ]),
+#             Components(transforms=[
+#                 time_shift(shift_limit=-.17, is_random=True, is_bidirection=False),
+#                 ReduceChannel()
+#             ])
+#         ]
+#     )
+#     return test_set, adpt_set
 
 if __name__ == '__main__':
     ap = argparse.ArgumentParser()
@@ -130,7 +130,25 @@ if __name__ == '__main__':
         name=f'{constants.architecture_dic[args.arch]}-{constants.hubert_level_dic[args.model_level]}-{constants.dataset_dic[args.dataset]}-{args.corruption_type}-{args.corruption_level}', 
         mode='online' if args.wandb else 'disabled', config=args, tags=['Audio Classification', args.dataset, 'Test-time Adaptation'])
     
-    test_set, adapt_set = sc_corruption_set(args)
+    test_set = SpeechCommandsV2C(
+        root_path=args.dataset_root_path, corruption_level=args.corruption_level, corruption_type=args.corruption_type,
+        data_tf=ReduceChannel()
+    )
+    adapt_set = MultiTFDataset(
+        dataset=SpeechCommandsV2C(
+            root_path=args.dataset_root_path, corruption_level=args.corruption_level, corruption_type=args.corruption_type
+        ),
+        tfs=[
+            Components(transforms=[
+                time_shift(shift_limit=.17, is_random=True, is_bidirection=False),
+                ReduceChannel()
+            ]),
+            Components(transforms=[
+                time_shift(shift_limit=-.17, is_random=True, is_bidirection=False),
+                ReduceChannel()
+            ])
+        ]
+    )
     test_loader = DataLoader(
         dataset=test_set, batch_size=args.batch_size, shuffle=False, drop_last=False, num_workers=args.num_workers,
         pin_memory=True
