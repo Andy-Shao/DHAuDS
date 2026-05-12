@@ -17,87 +17,88 @@ from lib.spdataset import SpeechCommandsV2
 from lib.component import Components, AudioPadding, time_shift, AmplitudeToDB, FrequenceTokenTransformer
 from lib.component import DoNothing
 from lib.dataset import mlt_load_from, mlt_store_to, batch_store_to, MultiTFDataset
+from lib.corruption import SpeechCommandsV2C
 from AuT.ReefSet.ttda import load_weight
 from AuT.SpeechCommandsV2.train import build_model, inference
 
-def sc_corruption_set(args:argparse.Namespace) -> tuple[Dataset, Dataset]:
-    from lib.corruption import corrupt_data as corrupt_data_tmp, DynTST
+# def sc_corruption_set(args:argparse.Namespace) -> tuple[Dataset, Dataset]:
+#     from lib.corruption import corrupt_data as corrupt_data_tmp, DynTST
 
-    args.n_mels=80
-    n_fft=1024
-    win_length=400
-    hop_length=155
-    mel_scale='slaney'
-    args.target_length=104
-    if args.corruption_type == 'TST':
-        if args.corruption_level == 'L1':
-            rates = constants.DYN_TST_L1
-        elif args.corruption_level == 'L2':
-            rates = constants.DYN_TST_L2
-        test_set = SpeechCommandsV2(
-            root_path=args.dataset_root_path, mode='testing', download=True,
-            data_tf=Components(transforms=[
-                DynTST(min_rate=rates[0], step=rates[1], max_rate=rates[2], is_bidirection=False),
-                AudioPadding(max_length=args.sample_rate, sample_rate=args.sample_rate, random_shift=False)
-            ])
-        )
-    else:
-        test_set = corrupt_data_tmp(
-            orgin_set=SpeechCommandsV2(
-                root_path=args.dataset_root_path, mode='testing', download=True,
-                data_tf=Components(transforms=[
-                    AudioPadding(max_length=args.sample_rate, sample_rate=args.sample_rate, random_shift=False)
-                ])
-            ), corruption_level=args.corruption_level, corruption_type=args.corruption_type, enq_path=args.noise_path,
-            sample_rate=args.sample_rate, end_path=args.noise_path, ensc_path=args.noise_path
-        )
+#     args.n_mels=80
+#     n_fft=1024
+#     win_length=400
+#     hop_length=155
+#     mel_scale='slaney'
+#     args.target_length=104
+#     if args.corruption_type == 'TST':
+#         if args.corruption_level == 'L1':
+#             rates = constants.DYN_TST_L1
+#         elif args.corruption_level == 'L2':
+#             rates = constants.DYN_TST_L2
+#         test_set = SpeechCommandsV2(
+#             root_path=args.dataset_root_path, mode='testing', download=True,
+#             data_tf=Components(transforms=[
+#                 DynTST(min_rate=rates[0], step=rates[1], max_rate=rates[2], is_bidirection=False),
+#                 AudioPadding(max_length=args.sample_rate, sample_rate=args.sample_rate, random_shift=False)
+#             ])
+#         )
+#     else:
+#         test_set = corrupt_data_tmp(
+#             orgin_set=SpeechCommandsV2(
+#                 root_path=args.dataset_root_path, mode='testing', download=True,
+#                 data_tf=Components(transforms=[
+#                     AudioPadding(max_length=args.sample_rate, sample_rate=args.sample_rate, random_shift=False)
+#                 ])
+#             ), corruption_level=args.corruption_level, corruption_type=args.corruption_type, enq_path=args.noise_path,
+#             sample_rate=args.sample_rate, end_path=args.noise_path, ensc_path=args.noise_path
+#         )
 
-    dataset_root_path = os.path.join(args.cache_path, args.dataset)
-    index_file_name = 'metaInfo.csv'
-    if args.corruption_type == 'PSH':
-        mlt_store_to(dataset=test_set, root_path=dataset_root_path, index_file_name=index_file_name, data_tfs=[DoNothing()])
-    else:
-        batch_store_to(
-            data_loader=DataLoader(dataset=test_set, batch_size=32, shuffle=False, drop_last=False, num_workers=8),
-            root_path=dataset_root_path, index_file_name=index_file_name
-        )
-    test_set = mlt_load_from(
-        root_path=dataset_root_path, index_file_name=index_file_name, 
-        data_tfs=[
-            Components(transforms=[
-                MelSpectrogram(
-                    sample_rate=args.sample_rate, n_fft=n_fft, win_length=win_length, hop_length=hop_length,
-                    mel_scale=mel_scale, n_mels=args.n_mels
-                ),
-                AmplitudeToDB(top_db=80., max_out=2.),
-                FrequenceTokenTransformer()
-            ])
-        ]
-    )
-    adpt_set = MultiTFDataset(
-        dataset=mlt_load_from(root_path=dataset_root_path, index_file_name=index_file_name),
-        tfs=[
-            Components(transforms=[
-                time_shift(shift_limit=.17, is_random=True, is_bidirection=False),
-                MelSpectrogram(
-                    sample_rate=args.sample_rate, n_fft=n_fft, win_length=win_length, hop_length=hop_length,
-                    n_mels=args.n_mels, mel_scale=mel_scale
-                ),
-                AmplitudeToDB(top_db=80., max_out=2.),
-                FrequenceTokenTransformer()
-            ]),
-            Components(transforms=[
-                time_shift(shift_limit=-.17, is_random=True, is_bidirection=False),
-                MelSpectrogram(
-                    sample_rate=args.sample_rate, n_fft=n_fft, win_length=win_length, hop_length=hop_length,
-                    n_mels=args.n_mels, mel_scale=mel_scale
-                ),
-                AmplitudeToDB(top_db=80., max_out=2.),
-                FrequenceTokenTransformer()
-            ])
-        ]
-    )
-    return test_set, adpt_set
+#     dataset_root_path = os.path.join(args.cache_path, args.dataset)
+#     index_file_name = 'metaInfo.csv'
+#     if args.corruption_type == 'PSH':
+#         mlt_store_to(dataset=test_set, root_path=dataset_root_path, index_file_name=index_file_name, data_tfs=[DoNothing()])
+#     else:
+#         batch_store_to(
+#             data_loader=DataLoader(dataset=test_set, batch_size=32, shuffle=False, drop_last=False, num_workers=8),
+#             root_path=dataset_root_path, index_file_name=index_file_name
+#         )
+#     test_set = mlt_load_from(
+#         root_path=dataset_root_path, index_file_name=index_file_name, 
+#         data_tfs=[
+#             Components(transforms=[
+#                 MelSpectrogram(
+#                     sample_rate=args.sample_rate, n_fft=n_fft, win_length=win_length, hop_length=hop_length,
+#                     mel_scale=mel_scale, n_mels=args.n_mels
+#                 ),
+#                 AmplitudeToDB(top_db=80., max_out=2.),
+#                 FrequenceTokenTransformer()
+#             ])
+#         ]
+#     )
+#     adpt_set = MultiTFDataset(
+#         dataset=mlt_load_from(root_path=dataset_root_path, index_file_name=index_file_name),
+#         tfs=[
+#             Components(transforms=[
+#                 time_shift(shift_limit=.17, is_random=True, is_bidirection=False),
+#                 MelSpectrogram(
+#                     sample_rate=args.sample_rate, n_fft=n_fft, win_length=win_length, hop_length=hop_length,
+#                     n_mels=args.n_mels, mel_scale=mel_scale
+#                 ),
+#                 AmplitudeToDB(top_db=80., max_out=2.),
+#                 FrequenceTokenTransformer()
+#             ]),
+#             Components(transforms=[
+#                 time_shift(shift_limit=-.17, is_random=True, is_bidirection=False),
+#                 MelSpectrogram(
+#                     sample_rate=args.sample_rate, n_fft=n_fft, win_length=win_length, hop_length=hop_length,
+#                     n_mels=args.n_mels, mel_scale=mel_scale
+#                 ),
+#                 AmplitudeToDB(top_db=80., max_out=2.),
+#                 FrequenceTokenTransformer()
+#             ])
+#         ]
+#     )
+#     return test_set, adpt_set
 
 if __name__ == '__main__':
     ap = argparse.ArgumentParser()
@@ -154,7 +155,49 @@ if __name__ == '__main__':
         name=f'{constants.architecture_dic[args.arch]}-{constants.dataset_dic[args.dataset]}-{args.corruption_type}-{args.corruption_level}', 
         mode='online' if args.wandb else 'disabled', config=args, tags=['Audio Classification', args.dataset, 'Test-time Adaptation'])
 
-    test_set, adapt_set = sc_corruption_set(args)
+    args.n_mels=80
+    n_fft=1024
+    win_length=400
+    hop_length=155
+    mel_scale='slaney'
+    args.target_length=104
+    test_set = SpeechCommandsV2C(
+        root_path=args.dataset_root_path, corruption_level=args.corruption_level, corruption_type=args.corruption_type,
+        data_tf=Components(transforms=[
+            MelSpectrogram(
+                sample_rate=args.sample_rate, n_fft=n_fft, win_length=win_length, hop_length=hop_length,
+                n_mels=args.n_mels, mel_scale=mel_scale 
+            ),
+            AmplitudeToDB(top_db=80., max_out=2.),
+            FrequenceTokenTransformer()
+        ])
+    )
+    adapt_set = MultiTFDataset(
+        dataset=SpeechCommandsV2C(
+            root_path=args.dataset_root_path, corruption_level=args.corruption_level, 
+            corruption_type=args.corruption_type,
+        ),
+        tfs=[
+            Components(transforms=[
+                time_shift(shift_limit=.17, is_random=True, is_bidirection=False),
+                MelSpectrogram(
+                    sample_rate=args.sample_rate, n_fft=n_fft, win_length=win_length, hop_length=hop_length,
+                    n_mels=args.n_mels, mel_scale=mel_scale
+                ),
+                AmplitudeToDB(top_db=80., max_out=2.),
+                FrequenceTokenTransformer()
+            ]),
+            Components(transforms=[
+                time_shift(shift_limit=-.17, is_random=True, is_bidirection=False),
+                MelSpectrogram(
+                    sample_rate=args.sample_rate, n_fft=n_fft, win_length=win_length, hop_length=hop_length,
+                    n_mels=args.n_mels, mel_scale=mel_scale
+                ),
+                AmplitudeToDB(top_db=80., max_out=2.),
+                FrequenceTokenTransformer()
+            ])
+        ]
+    )
     test_loader = DataLoader(
         dataset=test_set, batch_size=args.batch_size, shuffle=False, drop_last=False, pin_memory=True,
         num_workers=args.num_workers
