@@ -7,6 +7,7 @@ from tqdm import tqdm
 
 import torch
 from torch.utils.data import Dataset, DataLoader
+from torchaudio.transforms import Resample
 
 from lib import constants
 from lib.utils import print_argparse, make_unless_exits
@@ -15,70 +16,71 @@ from lib.dataset import MultiTFDataset, mlt_load_from, mlt_store_to, batch_store
 from lib.component import Components, AudioPadding, AudioClip, Stereo2Mono, time_shift, ReduceChannel, DoNothing
 from lib.lr_utils import build_optimizer, lr_scheduler
 from lib.loss import nucnm, g_entropy, entropy, mse
+from lib.corruption import UrbanSound8KC
 from HuBERT.UrbanSound8K.train import build_model, inference
 from HuBERT.VocalSound.ttda import load_weigth
 
-def us8_corrupt_data(args:argparse.Namespace) -> tuple[Dataset, Dataset]:
-    from lib.corruption import corrupt_data
-    if args.corruption_type == 'TST':
-        test_set = corrupt_data(
-            orgin_set=UrbanSound8K(
-                root_path=args.dataset_root_path, folds=[8, 9, 10], sample_rate=args.sample_rate, include_rate=False, 
-                data_tf=Stereo2Mono()
-            ), corruption_level=args.corruption_level, corruption_type=args.corruption_type, enq_path=args.noise_path,
-            sample_rate=args.sample_rate, end_path=args.noise_path, ensc_path=args.noise_path
-        )
-        test_set = MultiTFDataset(
-            dataset=test_set, tfs=[
-                Components(transforms=[
-                    AudioPadding(max_length=args.audio_length, sample_rate=args.sample_rate, random_shift=False),
-                    AudioClip(max_length=args.audio_length, mode='head', is_random=False)
-                ])
-            ]
-        )
-    else:
-        test_set = corrupt_data(
-            orgin_set=UrbanSound8K(
-                root_path=args.dataset_root_path, folds=[8, 9, 10], sample_rate=args.sample_rate, include_rate=False,
-                data_tf=Components(transforms=[
-                    Stereo2Mono(),
-                    AudioPadding(max_length=args.audio_length, sample_rate=args.sample_rate, random_shift=False),
-                    AudioClip(max_length=args.audio_length, mode='head', is_random=False)
-                ])
-            ), corruption_level=args.corruption_level, corruption_type=args.corruption_type, enq_path=args.noise_path,
-            sample_rate=args.sample_rate, end_path=args.noise_path, ensc_path=args.noise_path
-        )
-    dataset_root_path = os.path.join(args.cache_path, args.dataset)
-    index_file_name = 'metaInfo.csv'
-    if args.corruption_type == 'PSH':
-        mlt_store_to(
-            dataset=test_set, root_path=dataset_root_path, index_file_name=index_file_name, data_tfs=[DoNothing()],
-            is_one_hot_label=False
-        )
-    else:
-        batch_store_to(
-            data_loader=DataLoader(dataset=test_set, batch_size=32, shuffle=False, drop_last=False, num_workers=8), 
-            root_path=dataset_root_path, index_file_name=index_file_name, f_num=1, is_one_hot_label=False
-        )
-    test_set = mlt_load_from(
-        root_path=dataset_root_path, index_file_name=index_file_name, 
-        data_tfs=[ ReduceChannel() ], is_one_hot_label=False
-    )
-    adapt_set = MultiTFDataset(
-        dataset=mlt_load_from(
-            root_path=dataset_root_path, index_file_name=index_file_name, is_one_hot_label=False
-        ), tfs=[
-            Components(transforms=[
-                time_shift(shift_limit=.17, is_random=True, is_bidirection=False),
-                ReduceChannel()
-            ]),
-            Components(transforms=[
-                time_shift(shift_limit=-.17, is_random=True, is_bidirection=False),
-                ReduceChannel()
-            ])
-        ]
-    )
-    return test_set, adapt_set
+# def us8_corrupt_data(args:argparse.Namespace) -> tuple[Dataset, Dataset]:
+#     from lib.corruption import corrupt_data
+#     if args.corruption_type == 'TST':
+#         test_set = corrupt_data(
+#             orgin_set=UrbanSound8K(
+#                 root_path=args.dataset_root_path, folds=[8, 9, 10], sample_rate=args.sample_rate, include_rate=False, 
+#                 data_tf=Stereo2Mono()
+#             ), corruption_level=args.corruption_level, corruption_type=args.corruption_type, enq_path=args.noise_path,
+#             sample_rate=args.sample_rate, end_path=args.noise_path, ensc_path=args.noise_path
+#         )
+#         test_set = MultiTFDataset(
+#             dataset=test_set, tfs=[
+#                 Components(transforms=[
+#                     AudioPadding(max_length=args.audio_length, sample_rate=args.sample_rate, random_shift=False),
+#                     AudioClip(max_length=args.audio_length, mode='head', is_random=False)
+#                 ])
+#             ]
+#         )
+#     else:
+#         test_set = corrupt_data(
+#             orgin_set=UrbanSound8K(
+#                 root_path=args.dataset_root_path, folds=[8, 9, 10], sample_rate=args.sample_rate, include_rate=False,
+#                 data_tf=Components(transforms=[
+#                     Stereo2Mono(),
+#                     AudioPadding(max_length=args.audio_length, sample_rate=args.sample_rate, random_shift=False),
+#                     AudioClip(max_length=args.audio_length, mode='head', is_random=False)
+#                 ])
+#             ), corruption_level=args.corruption_level, corruption_type=args.corruption_type, enq_path=args.noise_path,
+#             sample_rate=args.sample_rate, end_path=args.noise_path, ensc_path=args.noise_path
+#         )
+#     dataset_root_path = os.path.join(args.cache_path, args.dataset)
+#     index_file_name = 'metaInfo.csv'
+#     if args.corruption_type == 'PSH':
+#         mlt_store_to(
+#             dataset=test_set, root_path=dataset_root_path, index_file_name=index_file_name, data_tfs=[DoNothing()],
+#             is_one_hot_label=False
+#         )
+#     else:
+#         batch_store_to(
+#             data_loader=DataLoader(dataset=test_set, batch_size=32, shuffle=False, drop_last=False, num_workers=8), 
+#             root_path=dataset_root_path, index_file_name=index_file_name, f_num=1, is_one_hot_label=False
+#         )
+#     test_set = mlt_load_from(
+#         root_path=dataset_root_path, index_file_name=index_file_name, 
+#         data_tfs=[ ReduceChannel() ], is_one_hot_label=False
+#     )
+#     adapt_set = MultiTFDataset(
+#         dataset=mlt_load_from(
+#             root_path=dataset_root_path, index_file_name=index_file_name, is_one_hot_label=False
+#         ), tfs=[
+#             Components(transforms=[
+#                 time_shift(shift_limit=.17, is_random=True, is_bidirection=False),
+#                 ReduceChannel()
+#             ]),
+#             Components(transforms=[
+#                 time_shift(shift_limit=-.17, is_random=True, is_bidirection=False),
+#                 ReduceChannel()
+#             ])
+#         ]
+#     )
+#     return test_set, adapt_set
 
 if __name__ == '__main__':
     ap = argparse.ArgumentParser()
@@ -117,6 +119,7 @@ if __name__ == '__main__':
     if args.dataset == 'UrbanSound8K':
         args.class_num = 10
         args.sample_rate = 16000
+        args.orig_sample_rate = 44100
         args.audio_length = int(4 * 16000)
     else:
         raise Exception('No support!')
@@ -139,7 +142,33 @@ if __name__ == '__main__':
         name=f'{constants.architecture_dic[args.arch]}-{constants.hubert_level_dic[args.model_level]}-{constants.dataset_dic[args.dataset]}-{args.corruption_type}-{args.corruption_level}', 
         mode='online' if args.wandb else 'disabled', config=args, tags=['Audio Classification', args.dataset, 'Test-time Adaptation'])
 
-    test_set, adapt_set = us8_corrupt_data(args)
+    test_set = UrbanSound8KC(
+        root_path=args.dataset_root_path, corruption_level=args.corruption_level, corruption_type=args.corruption_type,
+        data_tf=Components(transforms=[
+            Resample(orig_freq=args.orig_sample_rate, new_freq=args.sample_rate),
+            AudioClip(max_length=args.audio_length, mode='head', is_random=False),
+            ReduceChannel()
+        ])
+    )
+    adapt_set = MultiTFDataset(
+        dataset=UrbanSound8KC(
+            root_path=args.dataset_root_path, corruption_level=args.corruption_level, corruption_type=args.corruption_type,
+            data_tf=Components(transforms=[
+                Resample(orig_freq=args.orig_sample_rate, new_freq=args.sample_rate),
+                AudioClip(max_length=args.audio_length, mode='head', is_random=False),
+            ])
+        ), 
+        tfs=[
+            Components(transforms=[
+                time_shift(shift_limit=.17, is_random=True, is_bidirection=False),
+                ReduceChannel()
+            ]),
+            Components(transforms=[
+                time_shift(shift_limit=-.17, is_random=True, is_bidirection=False),
+                ReduceChannel()
+            ])
+        ]
+    )
     test_loader = DataLoader(
         dataset=test_set, batch_size=args.batch_size, shuffle=False, drop_last=False, num_workers=args.num_workers,
         pin_memory=True
