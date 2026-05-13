@@ -189,6 +189,7 @@ if __name__ == '__main__':
         ), 
         tfs=[
             Components(transforms=[
+                AudioClip(max_length=args.audio_length, is_random=False, mode='head'),
                 time_shift(shift_limit=.17, is_random=True, is_bidirection=False),
                 MelSpectrogram(
                     sample_rate=args.sample_rate, n_fft=n_fft, win_length=win_length, hop_length=hop_length,
@@ -198,6 +199,7 @@ if __name__ == '__main__':
                 FrequenceTokenTransformer()
             ]),
             Components(transforms=[
+                AudioClip(max_length=args.audio_length, is_random=False, mode='head'),
                 time_shift(shift_limit=-.17, is_random=True, is_bidirection=False),
                 MelSpectrogram(
                     sample_rate=args.sample_rate, n_fft=n_fft, win_length=win_length, hop_length=hop_length,
