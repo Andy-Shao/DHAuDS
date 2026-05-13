@@ -17,96 +17,97 @@ from lib.enDataset import UrbanSound8K
 from lib.component import Stereo2Mono, Components, AudioPadding, AudioClip, AmplitudeToDB, DoNothing
 from lib.component import FrequenceTokenTransformer, time_shift
 from lib.dataset import MultiTFDataset, mlt_load_from, mlt_store_to, batch_store_to
+from lib.corruption import UrbanSound8KC
 from AuT.ReefSet.ttda import load_weight
 from AuT.UrbanSound8K.train import build_model, inference
 
-def us8_corrupt_data(args:argparse.Namespace) -> tuple[Dataset, Dataset]:
-    from lib.corruption import corrupt_data
-    args.n_mels=64
-    n_fft=2048
-    win_length=800
-    hop_length=300
-    mel_scale='slaney'
-    args.target_length=589
+# def us8_corrupt_data(args:argparse.Namespace) -> tuple[Dataset, Dataset]:
+#     from lib.corruption import corrupt_data
+#     args.n_mels=64
+#     n_fft=2048
+#     win_length=800
+#     hop_length=300
+#     mel_scale='slaney'
+#     args.target_length=589
 
-    if args.corruption_type == 'TST':
-        test_set = corrupt_data(
-            orgin_set=UrbanSound8K(
-                root_path=args.dataset_root_path, folds=[8, 9, 10], sample_rate=args.sample_rate, include_rate=False, 
-                data_tf=Stereo2Mono()
-            ), corruption_level=args.corruption_level, corruption_type=args.corruption_type, enq_path=args.noise_path,
-            sample_rate=args.sample_rate, end_path=args.noise_path, ensc_path=args.noise_path
-        )
-        test_set = MultiTFDataset(
-            dataset=test_set, tfs=[
-                Components(transforms=[
-                    AudioPadding(max_length=args.audio_length, sample_rate=args.sample_rate, random_shift=False),
-                    AudioClip(max_length=args.audio_length, mode='head', is_random=False)
-                ])
-            ]
-        )
-    else:
-        test_set = corrupt_data(
-            orgin_set=UrbanSound8K(
-                root_path=args.dataset_root_path, folds=[8, 9, 10], sample_rate=args.sample_rate, include_rate=False,
-                data_tf=Components(transforms=[
-                    Stereo2Mono(),
-                    AudioPadding(max_length=args.audio_length, sample_rate=args.sample_rate, random_shift=False),
-                    AudioClip(max_length=args.audio_length, mode='head', is_random=False)
-                ])
-            ), corruption_level=args.corruption_level, corruption_type=args.corruption_type, enq_path=args.noise_path,
-            sample_rate=args.sample_rate, end_path=args.noise_path, ensc_path=args.noise_path
-        )
-    dataset_root_path = os.path.join(args.cache_path, args.dataset)
-    index_file_name = 'metaInfo.csv'
-    if args.corruption_type == 'PSH':
-        mlt_store_to(
-            dataset=test_set, root_path=dataset_root_path, index_file_name=index_file_name, data_tfs=[DoNothing()],
-            is_one_hot_label=False
-        )
-    else:
-        batch_store_to(
-            data_loader=DataLoader(dataset=test_set, batch_size=32, shuffle=False, drop_last=False, num_workers=8), 
-            root_path=dataset_root_path, index_file_name=index_file_name, f_num=1, is_one_hot_label=False
-        )
-    test_set = mlt_load_from(
-        root_path=dataset_root_path, index_file_name=index_file_name, 
-        data_tfs=[
-            Components(transforms=[
-                MelSpectrogram(
-                    sample_rate=args.sample_rate, n_fft=n_fft, win_length=win_length, hop_length=hop_length,
-                    mel_scale=mel_scale, n_mels=args.n_mels
-                ),
-                AmplitudeToDB(top_db=80., max_out=2.),
-                FrequenceTokenTransformer()
-            ])
-        ], is_one_hot_label=False
-    )
-    adapt_set = MultiTFDataset(
-        dataset=mlt_load_from(
-            root_path=dataset_root_path, index_file_name=index_file_name, is_one_hot_label=False
-        ), tfs=[
-            Components(transforms=[
-                time_shift(shift_limit=.17, is_random=True, is_bidirection=False),
-                MelSpectrogram(
-                    sample_rate=args.sample_rate, n_fft=n_fft, win_length=win_length, hop_length=hop_length,
-                    mel_scale=mel_scale, n_mels=args.n_mels
-                ),
-                AmplitudeToDB(top_db=80., max_out=2.),
-                FrequenceTokenTransformer()
-            ]),
-            Components(transforms=[
-                time_shift(shift_limit=-.17, is_random=True, is_bidirection=False),
-                MelSpectrogram(
-                    sample_rate=args.sample_rate, n_fft=n_fft, win_length=win_length, hop_length=hop_length,
-                    mel_scale=mel_scale, n_mels=args.n_mels
-                ),
-                AmplitudeToDB(top_db=80., max_out=2.),
-                FrequenceTokenTransformer()
-            ])
-        ]
-    )
-    return test_set, adapt_set
+#     if args.corruption_type == 'TST':
+#         test_set = corrupt_data(
+#             orgin_set=UrbanSound8K(
+#                 root_path=args.dataset_root_path, folds=[8, 9, 10], sample_rate=args.sample_rate, include_rate=False, 
+#                 data_tf=Stereo2Mono()
+#             ), corruption_level=args.corruption_level, corruption_type=args.corruption_type, enq_path=args.noise_path,
+#             sample_rate=args.sample_rate, end_path=args.noise_path, ensc_path=args.noise_path
+#         )
+#         test_set = MultiTFDataset(
+#             dataset=test_set, tfs=[
+#                 Components(transforms=[
+#                     AudioPadding(max_length=args.audio_length, sample_rate=args.sample_rate, random_shift=False),
+#                     AudioClip(max_length=args.audio_length, mode='head', is_random=False)
+#                 ])
+#             ]
+#         )
+#     else:
+#         test_set = corrupt_data(
+#             orgin_set=UrbanSound8K(
+#                 root_path=args.dataset_root_path, folds=[8, 9, 10], sample_rate=args.sample_rate, include_rate=False,
+#                 data_tf=Components(transforms=[
+#                     Stereo2Mono(),
+#                     AudioPadding(max_length=args.audio_length, sample_rate=args.sample_rate, random_shift=False),
+#                     AudioClip(max_length=args.audio_length, mode='head', is_random=False)
+#                 ])
+#             ), corruption_level=args.corruption_level, corruption_type=args.corruption_type, enq_path=args.noise_path,
+#             sample_rate=args.sample_rate, end_path=args.noise_path, ensc_path=args.noise_path
+#         )
+#     dataset_root_path = os.path.join(args.cache_path, args.dataset)
+#     index_file_name = 'metaInfo.csv'
+#     if args.corruption_type == 'PSH':
+#         mlt_store_to(
+#             dataset=test_set, root_path=dataset_root_path, index_file_name=index_file_name, data_tfs=[DoNothing()],
+#             is_one_hot_label=False
+#         )
+#     else:
+#         batch_store_to(
+#             data_loader=DataLoader(dataset=test_set, batch_size=32, shuffle=False, drop_last=False, num_workers=8), 
+#             root_path=dataset_root_path, index_file_name=index_file_name, f_num=1, is_one_hot_label=False
+#         )
+#     test_set = mlt_load_from(
+#         root_path=dataset_root_path, index_file_name=index_file_name, 
+#         data_tfs=[
+#             Components(transforms=[
+#                 MelSpectrogram(
+#                     sample_rate=args.sample_rate, n_fft=n_fft, win_length=win_length, hop_length=hop_length,
+#                     mel_scale=mel_scale, n_mels=args.n_mels
+#                 ),
+#                 AmplitudeToDB(top_db=80., max_out=2.),
+#                 FrequenceTokenTransformer()
+#             ])
+#         ], is_one_hot_label=False
+#     )
+#     adapt_set = MultiTFDataset(
+#         dataset=mlt_load_from(
+#             root_path=dataset_root_path, index_file_name=index_file_name, is_one_hot_label=False
+#         ), tfs=[
+#             Components(transforms=[
+#                 time_shift(shift_limit=.17, is_random=True, is_bidirection=False),
+#                 MelSpectrogram(
+#                     sample_rate=args.sample_rate, n_fft=n_fft, win_length=win_length, hop_length=hop_length,
+#                     mel_scale=mel_scale, n_mels=args.n_mels
+#                 ),
+#                 AmplitudeToDB(top_db=80., max_out=2.),
+#                 FrequenceTokenTransformer()
+#             ]),
+#             Components(transforms=[
+#                 time_shift(shift_limit=-.17, is_random=True, is_bidirection=False),
+#                 MelSpectrogram(
+#                     sample_rate=args.sample_rate, n_fft=n_fft, win_length=win_length, hop_length=hop_length,
+#                     mel_scale=mel_scale, n_mels=args.n_mels
+#                 ),
+#                 AmplitudeToDB(top_db=80., max_out=2.),
+#                 FrequenceTokenTransformer()
+#             ])
+#         ]
+#     )
+#     return test_set, adapt_set
 
 if __name__ == '__main__':
     ap = argparse.ArgumentParser()
@@ -164,7 +165,49 @@ if __name__ == '__main__':
         name=f'{constants.architecture_dic[args.arch]}-{constants.dataset_dic[args.dataset]}-{args.corruption_type}-{args.corruption_level}', 
         mode='online' if args.wandb else 'disabled', config=args, tags=['Audio Classification', args.dataset, 'Test-time Adaptation'])
         
-    test_set, adapt_set = us8_corrupt_data(args=args)
+    args.n_mels=64
+    n_fft=2048
+    win_length=800
+    hop_length=300
+    mel_scale='slaney'
+    args.target_length=589
+    test_set = UrbanSound8KC(
+        root_path=args.dataset_root_path, corruption_level=args.corruption_level, corruption_type=args.corruption_type,
+        data_tf=Components(transforms=[
+            AudioClip(max_length=args.audio_length, mode='head', is_random=False),
+            MelSpectrogram(
+                sample_rate=args.sample_rate, n_fft=n_fft, win_length=win_length, hop_length=hop_length,
+                mel_scale=mel_scale, n_mels=args.n_mels
+            ), # 64 x 589
+            AmplitudeToDB(top_db=80., max_out=2.),
+            FrequenceTokenTransformer()
+        ])
+    )
+    adapt_set = MultiTFDataset(
+        dataset=UrbanSound8KC(
+            root_path=args.dataset_root_path, corruption_level=args.corruption_level, corruption_type=args.corruption_type
+        ), 
+        tfs=[
+            Components(transforms=[
+                time_shift(shift_limit=.17, is_random=True, is_bidirection=False),
+                MelSpectrogram(
+                    sample_rate=args.sample_rate, n_fft=n_fft, win_length=win_length, hop_length=hop_length,
+                    mel_scale=mel_scale, n_mels=args.n_mels
+                ),
+                AmplitudeToDB(top_db=80., max_out=2.),
+                FrequenceTokenTransformer()
+            ]),
+            Components(transforms=[
+                time_shift(shift_limit=-.17, is_random=True, is_bidirection=False),
+                MelSpectrogram(
+                    sample_rate=args.sample_rate, n_fft=n_fft, win_length=win_length, hop_length=hop_length,
+                    mel_scale=mel_scale, n_mels=args.n_mels
+                ),
+                AmplitudeToDB(top_db=80., max_out=2.),
+                FrequenceTokenTransformer()
+            ])
+        ]
+    )
     test_loader = DataLoader(
         dataset=test_set, batch_size=args.batch_size, shuffle=False, drop_last=False, pin_memory=True,
         pin_memory_device=args.device, num_workers=args.num_workers
