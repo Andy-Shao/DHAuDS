@@ -18,7 +18,7 @@ pip install jupyter==1.1.1
 pip install soundfile==0.13.1
 pip install wandb==0.21.0
 ```
-### For CoNMix++
+<!-- ### For CoNMix++
 #### Additional Installment
 ```shell
 pip install ml-collections==1.1.0
@@ -28,7 +28,7 @@ pip install ml-collections==1.1.0
 wget https://storage.googleapis.com/vit_models/imagenet21k/R50+ViT-B_16.npz
 mkdir -p model/vit_checkpoint/imagenet21k
 mv R50+ViT-B_16.npz model/vit_checkpoint/imagenet21k/R50+ViT-B_16.npz
-```
+``` -->
 
 ## Processing
 ```shell
@@ -42,11 +42,12 @@ cd DHAuDS
 sh HuBERT/SpeechCommandsV2/train.sh
 ```
 ### Adaptation
+You should run all experiment of <code>tta.sh</code>.
 ```shell
 sh HuBERT/SpeechCommandsV2/tta.sh
 ```
 ### Analysis
-[Trained weight (tar.gz file)](https://drive.google.com/file/d/1MlPAJlsFBCLL6-Z0XZBP3iw52l-t6Yhh/view)
+[Trained weight (tar.gz file)](https://drive.google.com/file/d/1Q-GA1CtpdEu-8S_pFP0cqMKzHI9OpvpY/view)
 ```shell
 sh HuBERT/SpeechCommandsV2/analysis.sh
 ```
