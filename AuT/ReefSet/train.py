@@ -5,8 +5,10 @@ import random
 import wandb
 from tqdm import tqdm
 from sklearn.metrics import roc_auc_score
+import copy
 
 import torch
+from torch import nn
 from torch.utils.data import DataLoader
 from torchaudio.transforms import MelSpectrogram
 
@@ -29,14 +31,17 @@ def inference(args:argparse.Namespace, aut:FCETransform, clsf:AudioClassifier, d
 
         with torch.inference_mode():
             outputs, _ = clsf(aut(features)[0])
+            outputs = outputs.detach().cpu()
 
         if idx == 0:
-            y_true = indexes2oneHot(labels=labels, class_num=args.class_num)
-            y_score = outputs.detach().cpu()
+            y_true = [copy.deepcopy(labels.detach().cpu())]
+            y_score = [nn.functional.softmax(outputs, dim=1)]
         else:
-            y_true = torch.cat([y_true, indexes2oneHot(labels=labels, class_num=args.class_num)], dim=0)
-            y_score = torch.cat([y_score, outputs.detach().cpu()], dim=0)
-    val_roc_auc = roc_auc_score(y_true=y_true.numpy(), y_score=y_score.numpy(), average='macro')
+            y_true.append(copy.deepcopy(labels.detach().cpu()))
+            y_score.append(nn.functional.softmax(outputs, dim=1))
+    y_true = torch.concat(y_true, dim=0)
+    y_score = torch.concat(y_score, dim=0)
+    val_roc_auc = roc_auc_score(y_true=y_true.numpy(), y_score=y_score.numpy(), average='macro', multi_class='ovr')
     return val_roc_auc
 
 def build_model(args:argparse.Namespace) -> tuple[FCETransform, AudioClassifier]:
@@ -190,13 +195,15 @@ if __name__ == '__main__':
             optimizer.step()
             
             if idx == 0:
-                y_true = indexes2oneHot(labels=labels, class_num=args.class_num)
-                y_score = outputs.detach().cpu()
+                y_true = [copy.deepcopy(labels.detach().cpu())]
+                y_score = [nn.functional.softmax(outputs.detach().cpu(), dim=1)]
             else:
-                y_true = torch.cat([y_true, indexes2oneHot(labels=labels, class_num=args.class_num)], dim=0)
-                y_score = torch.cat([y_score, outputs.detach().cpu()], dim=0)
+                y_true.append(copy.deepcopy(labels.detach().cpu()))
+                y_score.append(nn.functional.softmax(outputs.detach().cpu(), dim=1))
             train_loss += loss.cpu().item()
-        train_roc_auc = roc_auc_score(y_true=y_true.numpy(), y_score=y_score.numpy(), average='macro')
+        y_true = torch.cat(y_true, dim=0)
+        y_score = torch.cat(y_score, dim=0)
+        train_roc_auc = roc_auc_score(y_true=y_true.numpy(), y_score=y_score.numpy(), average='macro', multi_class='ovr')
         print(f'Training Mean ROC-AUC is: {train_roc_auc:.4f}, sample size is: {len(train_set)}')
         y_true = None; y_score = None
 
