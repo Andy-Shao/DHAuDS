@@ -15,68 +15,69 @@ from lib.dataset import MultiTFDataset, batch_store_to, mlt_load_from, mlt_store
 from lib.component import AudioPadding, ReduceChannel, Components, AudioClip, DoNothing, time_shift
 from lib.lr_utils import build_optimizer, lr_scheduler
 from lib.loss import nucnm, g_entropy, entropy, mse
+from lib.corruption import ReefSetC
 from HuBERT.VocalSound.ttda import load_weigth
 from HuBERT.ReefSet.train import build_model, inference
 
-def rs_corrupt_data(args:argparse.Namespace) -> tuple[Dataset, Dataset]:
-    from lib.corruption import corrupt_data
-    if args.corruption_type == 'TST':
-        test_set = corrupt_data(
-            orgin_set=ReefSet(
-                root_path=args.dataset_root_path, mode='test', include_rate=False
-            ), corruption_level=args.corruption_level, corruption_type=args.corruption_type, enq_path=args.noise_path,
-            sample_rate=args.sample_rate, end_path=args.noise_path, ensc_path=args.noise_path
-        )
-        test_set = MultiTFDataset(
-            dataset=test_set, tfs=[
-                Components(transforms=[
-                    AudioPadding(max_length=args.audio_length, sample_rate=args.sample_rate, random_shift=False),
-                    AudioClip(max_length=args.audio_length, mode='head', is_random=False)
-                ])
-            ]
-        )
-    else: 
-        test_set = corrupt_data(
-            orgin_set=ReefSet(
-                root_path=args.dataset_root_path, mode='test', include_rate=False,
-                data_tf=Components(transforms=[
-                    AudioPadding(max_length=args.audio_length, sample_rate=args.sample_rate, random_shift=False),
-                    AudioClip(max_length=args.audio_length, mode='head', is_random=False)
-                ])
-            ), corruption_level=args.corruption_level, corruption_type=args.corruption_type, enq_path=args.noise_path,
-            sample_rate=args.sample_rate, end_path=args.noise_path, ensc_path=args.noise_path
-        )
-    dataset_root_path = os.path.join(args.cache_path, args.dataset)
-    index_file_name = 'metaInfo.csv'
-    if args.corruption_type == 'PSH':
-        mlt_store_to(
-            dataset=test_set, root_path=dataset_root_path, index_file_name=index_file_name, data_tfs=[DoNothing()],
-            is_one_hot_label=True
-        )
-    else:
-        batch_store_to(
-            data_loader=DataLoader(dataset=test_set, batch_size=32, shuffle=False, drop_last=False, num_workers=8), 
-            root_path=dataset_root_path, index_file_name=index_file_name, f_num=1, is_one_hot_label=True
-        )
-    test_set = mlt_load_from(
-        root_path=dataset_root_path, index_file_name=index_file_name, 
-        data_tfs=[ ReduceChannel() ], is_one_hot_label=True, class_num=args.class_num
-    )
-    adapt_set = MultiTFDataset(
-        dataset=mlt_load_from(
-            root_path=dataset_root_path, index_file_name=index_file_name, is_one_hot_label=True, class_num=args.class_num
-        ), tfs=[
-            Components(transforms=[
-                time_shift(shift_limit=.17, is_random=True, is_bidirection=False),
-                ReduceChannel()
-            ]),
-            Components(transforms=[
-                time_shift(shift_limit=-.17, is_random=True, is_bidirection=False),
-                ReduceChannel()
-            ])
-        ]
-    )
-    return test_set, adapt_set
+# def rs_corrupt_data(args:argparse.Namespace) -> tuple[Dataset, Dataset]:
+#     from lib.corruption import corrupt_data
+#     if args.corruption_type == 'TST':
+#         test_set = corrupt_data(
+#             orgin_set=ReefSet(
+#                 root_path=args.dataset_root_path, mode='test', include_rate=False
+#             ), corruption_level=args.corruption_level, corruption_type=args.corruption_type, enq_path=args.noise_path,
+#             sample_rate=args.sample_rate, end_path=args.noise_path, ensc_path=args.noise_path
+#         )
+#         test_set = MultiTFDataset(
+#             dataset=test_set, tfs=[
+#                 Components(transforms=[
+#                     AudioPadding(max_length=args.audio_length, sample_rate=args.sample_rate, random_shift=False),
+#                     AudioClip(max_length=args.audio_length, mode='head', is_random=False)
+#                 ])
+#             ]
+#         )
+#     else: 
+#         test_set = corrupt_data(
+#             orgin_set=ReefSet(
+#                 root_path=args.dataset_root_path, mode='test', include_rate=False,
+#                 data_tf=Components(transforms=[
+#                     AudioPadding(max_length=args.audio_length, sample_rate=args.sample_rate, random_shift=False),
+#                     AudioClip(max_length=args.audio_length, mode='head', is_random=False)
+#                 ])
+#             ), corruption_level=args.corruption_level, corruption_type=args.corruption_type, enq_path=args.noise_path,
+#             sample_rate=args.sample_rate, end_path=args.noise_path, ensc_path=args.noise_path
+#         )
+#     dataset_root_path = os.path.join(args.cache_path, args.dataset)
+#     index_file_name = 'metaInfo.csv'
+#     if args.corruption_type == 'PSH':
+#         mlt_store_to(
+#             dataset=test_set, root_path=dataset_root_path, index_file_name=index_file_name, data_tfs=[DoNothing()],
+#             is_one_hot_label=True
+#         )
+#     else:
+#         batch_store_to(
+#             data_loader=DataLoader(dataset=test_set, batch_size=32, shuffle=False, drop_last=False, num_workers=8), 
+#             root_path=dataset_root_path, index_file_name=index_file_name, f_num=1, is_one_hot_label=True
+#         )
+#     test_set = mlt_load_from(
+#         root_path=dataset_root_path, index_file_name=index_file_name, 
+#         data_tfs=[ ReduceChannel() ], is_one_hot_label=True, class_num=args.class_num
+#     )
+#     adapt_set = MultiTFDataset(
+#         dataset=mlt_load_from(
+#             root_path=dataset_root_path, index_file_name=index_file_name, is_one_hot_label=True, class_num=args.class_num
+#         ), tfs=[
+#             Components(transforms=[
+#                 time_shift(shift_limit=.17, is_random=True, is_bidirection=False),
+#                 ReduceChannel()
+#             ]),
+#             Components(transforms=[
+#                 time_shift(shift_limit=-.17, is_random=True, is_bidirection=False),
+#                 ReduceChannel()
+#             ])
+#         ]
+#     )
+#     return test_set, adapt_set
     
 
 if __name__ == '__main__':
@@ -138,7 +139,29 @@ if __name__ == '__main__':
         name=f'{constants.architecture_dic[args.arch]}-{constants.hubert_level_dic[args.model_level]}-{constants.dataset_dic[args.dataset]}-{args.corruption_type}-{args.corruption_level}', 
         mode='online' if args.wandb else 'disabled', config=args, tags=['Audio Classification', args.dataset, 'Test-time Adaptation'])
     
-    test_set, adapt_set = rs_corrupt_data(args)
+    test_set = ReefSetC(
+        root_path=args.dataset_root_path, corruption_level=args.corruption_level, corruption_type=args.corruption_type,
+        data_tf=Components(transforms=[
+            AudioClip(max_length=args.audio_length, mode='head', is_random=False),
+            ReduceChannel()
+        ])
+    )
+    adapt_set = MultiTFDataset(
+        dataset=ReefSetC(
+            root_path=args.dataset_root_path, corruption_level=args.corruption_level, corruption_type=args.corruption_type,
+            data_tf=AudioClip(max_length=args.audio_length, mode='head', is_random=False)
+        ), 
+        tfs=[
+            Components(transforms=[
+                time_shift(shift_limit=.17, is_random=True, is_bidirection=False),
+                ReduceChannel()
+            ]),
+            Components(transforms=[
+                time_shift(shift_limit=-.17, is_random=True, is_bidirection=False),
+                ReduceChannel()
+            ])
+        ]
+    )
     test_loader = DataLoader(
         dataset=test_set, batch_size=args.batch_size, shuffle=False, drop_last=False, num_workers=args.num_workers,
         pin_memory=True
@@ -153,7 +176,7 @@ if __name__ == '__main__':
     optimizer = build_optimizer(lr=args.lr, auT=hubert, auC=clsf, auT_decay=args.hub_lr_decay, auC_decay=args.clsf_lr_decay)
 
     def inferecing(max_roc_auc:float) -> tuple[float, float]:
-        val_roc_auc = inference(args=args, hubert=hubert, clsModel=clsf, data_loader=test_loader)
+        val_roc_auc = inference(args=args, hub=hubert, clsf=clsf, loader=test_loader)
         print(f'ROC-AUC is: {val_roc_auc:.4f}, sample size is: {len(adapt_set)}')
         if val_roc_auc >= max_roc_auc:
             max_roc_auc = val_roc_auc
