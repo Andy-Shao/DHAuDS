@@ -1,10 +1,10 @@
 import argparse
+import os
 import numpy as np
 import random
 import wandb
-import os
-from tqdm import tqdm
 from sklearn.metrics import roc_auc_score
+from tqdm import tqdm
 
 import torch
 from torch import nn
@@ -12,28 +12,32 @@ from torch.utils.data import DataLoader
 import torchaudio
 
 from lib import constants
-from lib.utils import print_argparse, make_unless_exits, ConfigDict, store_model_structure_to_txt
+from lib.utils import print_argparse, make_unless_exits, store_model_structure_to_txt, ConfigDict
 from lib.acousticDataset import ReefSet
-from lib.component import Components, AudioClip, AudioPadding, ReduceChannel, time_shift
+from lib.component import Components, AudioPadding, AudioClip, time_shift, ReduceChannel, OneHot2Index
 from lib.lr_utils import build_optimizer, lr_scheduler
 from AuT.lib.model import AudioClassifier
+from AuT.lib.loss import CrossEntropyLabelSmooth
 
-def inference(args:argparse.Namespace, hubert:nn.Module, clsModel:nn.Module, data_loader:DataLoader):
-    hubert.eval(); clsModel.eval()
-    for idx, (features, labels) in tqdm(enumerate(data_loader), total=len(data_loader)):
-        features, labels = features.to(args.device), labels.to(args.device)
+def inference(args:argparse.Namespace, hub:nn.Module, clsf:nn.Module, loader:DataLoader):
+    hub.eval(); clsf.eval()
+    for i, (features, labels) in tqdm(enumerate(loader), total=len(loader)):
+        features = features.to(args.device)
 
         with torch.inference_mode():
-            outputs, _ = clsModel(hubert(features)[0])
-        
-        if idx == 0:
-            y_true = labels.detach().cpu()
-            y_score = outputs.detach().cpu()
+            outputs, _ = clsf(hub(features)[0])
+            outputs = outputs.detach().cpu()
+        if i == 0:
+            y_t = [labels.detach()]
+            y_s = [nn.functional.softmax(outputs, dim=1)]
         else:
-            y_true = torch.cat([y_true, labels.detach().cpu()], dim=0)
-            y_score = torch.cat([y_score, outputs.detach().cpu()], dim=0)
-    val_roc_auc = roc_auc_score(y_true=y_true.numpy(), y_score=y_score.numpy(), average='macro')
-    return val_roc_auc
+            y_t.append(labels.detach())
+            y_s.append(nn.functional.softmax(outputs, dim=1))
+    eval_roc_auc = roc_auc_score(
+        y_true=torch.concat(y_t, dim=0).numpy(), y_score=torch.concat(y_s, dim=0).numpy(),
+        average='macro', multi_class='ovr'
+    )
+    return eval_roc_auc
 
 def build_model(args:argparse.Namespace, pre_weight:bool=True) -> tuple[torchaudio.models.Wav2Vec2Model, AudioClassifier]:
     bundle = torchaudio.pipelines.HUBERT_BASE
@@ -97,7 +101,7 @@ if __name__ == '__main__':
 
     wandb_run = wandb.init(
         project=f'{constants.PROJECT_TITLE}-{constants.TRAIN_TAG}', 
-        name=f'{constants.architecture_dic[args.arch]}-{constants.hubert_level_dic[args.model_level]}-{constants.dataset_dic[args.dataset]}', mode='online' if args.wandb else 'disabled', 
+        name=f'{constants.architecture_dic[args.arch]}-{constants.dataset_dic[args.dataset]}', mode='online' if args.wandb else 'disabled', 
         config=args, tags=['Audio Classification', 'Test-time Adaptation', args.dataset]
     )
 
@@ -108,7 +112,7 @@ if __name__ == '__main__':
             AudioClip(max_length=args.audio_length, is_random=True),
             time_shift(shift_limit=.17, is_random=True, is_bidirection=True),
             ReduceChannel()
-        ])
+        ]), label_tf=OneHot2Index()
     )
     val_set = ReefSet(
         root_path=args.dataset_root_path, mode='test', include_rate=False,
@@ -116,7 +120,7 @@ if __name__ == '__main__':
             AudioPadding(max_length=args.audio_length, sample_rate=args.sample_rate, random_shift=False),
             AudioClip(max_length=args.audio_length, is_random=False, mode='head'),
             ReduceChannel()
-        ])
+        ]), label_tf=OneHot2Index()
     )
     train_loader = DataLoader(
         dataset=train_set, batch_size=args.batch_size, shuffle=True, drop_last=False, pin_memory=True,
@@ -131,7 +135,7 @@ if __name__ == '__main__':
     store_model_structure_to_txt(model=hubert, output_path=os.path.join(args.output_path, f'hubert-{args.model_level}-{constants.dataset_dic[args.dataset]}.txt'))
     store_model_structure_to_txt(model=clsModel, output_path=os.path.join(args.output_path, f'clsModel-{args.model_level}-{constants.dataset_dic[args.dataset]}.txt'))
     optimizer = build_optimizer(lr=args.lr, auT=hubert, auC=clsModel, auT_decay=args.hub_lr_decay, auC_decay=args.clsf_lr_decay)
-    loss_fn = nn.BCEWithLogitsLoss().to(device=args.device)
+    loss_fn = CrossEntropyLabelSmooth(num_classes=args.class_num, reduction=True, use_gpu=torch.cuda.is_available(), epsilon=.1)
 
     max_roc_auc = 0.
     for epoch in range(args.max_epoch):
@@ -149,13 +153,16 @@ if __name__ == '__main__':
             optimizer.step()
 
             if idx == 0:
-                y_true = labels.detach().cpu()
-                y_score = outputs.detach().cpu()
+                y_true = [labels.detach().cpu()]
+                y_score = [nn.functional.softmax(outputs.detach().cpu(), dim=1)]
             else:
-                y_true = torch.concat([y_true, labels.detach().cpu()], dim=0)
-                y_score = torch.concat([y_score, outputs.detach().cpu()], dim=0)
+                y_true.append(labels.detach().cpu())
+                y_score.append(nn.functional.softmax(outputs.detach().cpu(), dim=1))
             train_loss += loss.cpu().item()
-        train_roc_auc = roc_auc_score(y_true=y_true.numpy(), y_score=y_score.numpy(), average='macro')
+        train_roc_auc = roc_auc_score(
+            y_true=torch.concat(y_true, dim=0).numpy(), y_score=torch.concat(y_score, dim=0).numpy(), 
+            average='macro', multi_class='ovr'
+        )
         print(f'Training Mean ROC-AUC is: {train_roc_auc:.4f}, sample size is: {len(train_set)}')
         y_true = None; y_score = None
 
@@ -164,7 +171,7 @@ if __name__ == '__main__':
             lr_scheduler(optimizer=optimizer, epoch=epoch, lr_cardinality=args.lr_cardinality, gamma=args.lr_gamma, threshold=args.lr_threshold)
 
         print('Validating...')
-        val_roc_auc = inference(args=args, hubert=hubert, clsModel=clsModel, data_loader=val_loader)
+        val_roc_auc = inference(args=args, hub=hubert, clsf=clsModel, loader=val_loader)
         print(f'Validation Mean ROC-AUC is: {val_roc_auc:.4f}, sample size is: {len(val_set)}')
 
         wandb_run.log(data={
@@ -178,3 +185,4 @@ if __name__ == '__main__':
             max_roc_auc == val_roc_auc
             torch.save(obj=clsModel.state_dict(), f=os.path.join(args.output_path, f'clsModel-{args.model_level}-{constants.dataset_dic[args.dataset]}.pt'))
             torch.save(obj=hubert.state_dict(), f=os.path.join(args.output_path, f'hubert-{args.model_level}-{constants.dataset_dic[args.dataset]}.pt'))
+    wandb_run.finish()
