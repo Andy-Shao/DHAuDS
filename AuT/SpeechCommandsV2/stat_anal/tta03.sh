@@ -4,6 +4,7 @@ export SEED_VAL=654321
 export LOG_FILE=$BASE_PATH'/DHAuDS.log'
 export ANAL_FILE='SpeechCommandsV2_analysis-03.csv'
 
+> $LOG_FILE
 printf 'Processing Log\n' >> $LOG_FILE
 printf 'TTA on SC2-C, seed is:'$SEED_VAL'\n' >> $LOG_FILE
 printf '================================\n' >> $LOG_FILE
