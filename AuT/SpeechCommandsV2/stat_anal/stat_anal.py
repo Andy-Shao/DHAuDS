@@ -8,7 +8,7 @@ from lib.utils import make_unless_exits, print_argparse
 def static_analyze(
         corruption_types:list[str], corruption_levels:list[str], report_ls:list[str], dataset:str, algorithm:str
     ) -> pd.DataFrame:
-    records = pd.DataFrame(columns=['Dataset',  'Algorithm', 'Corruption', 'Before-mean', 'Before-std', 'After-mean', 'After-std'])
+    records = pd.DataFrame(columns=['Dataset',  'Algorithm', 'Corruption-type', 'Corruption-level', 'Before-mean', 'Before-std', 'After-mean', 'After-std'])
     for i, report_addr in enumerate(report_ls):
         report = pd.read_csv(report_addr)
         if i == 0: reports = [report]
@@ -21,15 +21,17 @@ def static_analyze(
         B_std = round(tmp['Non-adapted'].std(), ndigits=4)
         A_mean = round(tmp['Adapted'].mean(), ndigits=4)
         A_std = round(tmp['Adapted'].std(), ndigits=4)
-        records.loc[len(records)] = [dataset, algorithm, corruption, B_mean, B_std, A_mean, A_std]
+        records.loc[len(records)] = [dataset, algorithm, type, level, B_mean, B_std, A_mean, A_std]
 
-    glb_record = [
-        dataset, algorithm, 'Global', 
-        round(records['Before-mean'].mean(), ndigits=4), round(records['Before-std'].mean(), ndigits=4),
-        round(records['After-mean'].mean(), ndigits=4), round(records['After-std'].mean(), ndigits=4)
-    ]
-    records.loc[len(records)] = glb_record
-    return records
+    glb_records = pd.DataFrame(columns=['Dataset',  'Algorithm', 'Corruption-type', 'Corruption-level', 'Before-mean', 'Before-std', 'After-mean', 'After-std'])
+    for level in corruption_levels:
+        level_records = records[records['Corruption-level']==level]
+        glb_records.loc[len(glb_records)] = [
+            dataset, algorithm, 'Global', level,
+            round(level_records['Before-mean'].mean(), ndigits=4), round(level_records['Before-std'].mean(), ndigits=4),
+            round(level_records['After-mean'].mean(), ndigits=4), round(level_records['After-std'].mean(), ndigits=4)
+        ]
+    return pd.concat([records, glb_records], ignore_index=True)
 
 if __name__ == '__main__':
     ap = argparse.ArgumentParser()
