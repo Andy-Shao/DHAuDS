@@ -1,0 +1,2 @@
+,Dataset,Algorithm,Before-mean,Before-std,After-mean,After-std,Improve-mean,Improve-std
+0,SpeechCommandsV2,HuBERT,0.9554,0.0,0.9635,0.0002,0.0081,0.0
