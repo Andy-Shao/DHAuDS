@@ -8,7 +8,7 @@ from lib.utils import make_unless_exits, print_argparse
 def static_analyze(
         corruption_types:list[str], corruption_levels:list[str], report_ls:list[str], dataset:str, algorithm:str
     ) -> pd.DataFrame:
-    records = pd.DataFrame(columns=['Dataset',  'Algorithm', 'Corruption-type', 'Corruption-level', 'Before-mean', 'Before-std', 'After-mean', 'After-std'])
+    records = pd.DataFrame(columns=['Dataset',  'Algorithm', 'Corruption-type', 'Corruption-level', 'Before-mean', 'Before-std', 'After-mean', 'After-std', 'Improve-mean', 'Improve-std'])
     for i, report_addr in enumerate(report_ls):
         report = pd.read_csv(report_addr)
         if i == 0: reports = [report]
@@ -21,15 +21,18 @@ def static_analyze(
         B_std = round(tmp['Non-adapted'].std(), ndigits=4)
         A_mean = round(tmp['Adapted'].mean(), ndigits=4)
         A_std = round(tmp['Adapted'].std(), ndigits=4)
-        records.loc[len(records)] = [dataset, algorithm, type, level, B_mean, B_std, A_mean, A_std]
+        I_mean = round((tmp['Adapted']-tmp['Non-adapted']).mean(), ndigits=4)
+        I_std = round((tmp['Adapted']-tmp['Non-adapted']).std(), ndigits=4)
+        records.loc[len(records)] = [dataset, algorithm, type, level, B_mean, B_std, A_mean, A_std, I_mean, I_std]
 
-    glb_records = pd.DataFrame(columns=['Dataset',  'Algorithm', 'Corruption-type', 'Corruption-level', 'Before-mean', 'Before-std', 'After-mean', 'After-std'])
+    glb_records = pd.DataFrame(columns=['Dataset',  'Algorithm', 'Corruption-type', 'Corruption-level', 'Before-mean', 'Before-std', 'After-mean', 'After-std', 'Improve-mean', 'Improve-std'])
     for level in corruption_levels:
         level_records = records[records['Corruption-level']==level]
         glb_records.loc[len(glb_records)] = [
             dataset, algorithm, 'Global', level,
             round(level_records['Before-mean'].mean(), ndigits=4), round(level_records['Before-std'].mean(), ndigits=4),
-            round(level_records['After-mean'].mean(), ndigits=4), round(level_records['After-std'].mean(), ndigits=4)
+            round(level_records['After-mean'].mean(), ndigits=4), round(level_records['After-std'].mean(), ndigits=4),
+            round(level_records['Improve-mean'].mean(), ndigits=4), round(level_records['Improve-std'].mean(), ndigits=4)
         ]
     return pd.concat([records, glb_records], ignore_index=True)
 
