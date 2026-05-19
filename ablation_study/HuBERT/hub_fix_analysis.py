@@ -25,7 +25,7 @@ from HuBERT.ReefSet.analysis import load_weight
 def build_noise_set(args:argparse.Namespace) -> Dataset:
     index_file_name='meta_info.csv'
     set_path = os.path.join(args.output_path, 'fix_clip_set')
-    noise = DEMAND(root_path=args.background_path, mode='DLIVING', include_rate=False)[0]
+    noise = DEMAND(root_path=args.background_path, mode='PSTATION', include_rate=False)[0]
     sc2 = SpeechCommandsV2(root_path=args.dataset_root_path, mode='testing', download=True,)
     mlt_store_to(
         dataset=sc2, root_path=set_path, index_file_name=index_file_name,
