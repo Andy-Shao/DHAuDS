@@ -2,7 +2,7 @@
 
 ## Software Environment
 
-+ Docker image: nvidia/cuda:12.8.0-cudnn-runtime-ubuntu22.04
++ Docker image: nvidia/cuda:12.8.0-cudnn-runtime-ubuntu22.04 or nvidia/cuda:12.8.0-cudnn-runtime-ubuntu22.04-jupyter
 + GPU: RTX 5090 / A100 SXM4 80GB / RTX 4090 / RTX PRO 6000 WS
 ```shell
 conda create --name DHAuDS python==3.13.9 -y
