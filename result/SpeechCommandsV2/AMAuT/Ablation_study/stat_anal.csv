@@ -1,0 +1,2 @@
+,Dataset,Algorithm,Before-mean,Before-std,After-mean,After-std,Improve-mean,Improve-std
+0,SpeechCommandsV2,AMAuT,0.8883,0.0,0.9107,0.0013,0.0224,0.0
