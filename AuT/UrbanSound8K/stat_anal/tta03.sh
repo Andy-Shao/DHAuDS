@@ -2,7 +2,7 @@
 export BASE_PATH=${BASE_PATH:-'/root'}
 export SEED_VAL=654321
 export LOG_FILE=$BASE_PATH'/DHAuDS.log'
-export ANAL_FILE='SpeechCommandsV2_analysis-03.csv'
+export ANAL_FILE='US8_AuT-03.csv'
 
 > $LOG_FILE
 printf 'Processing Log\n' >> $LOG_FILE
