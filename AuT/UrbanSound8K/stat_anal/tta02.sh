@@ -16,7 +16,7 @@ python -m AuT.UrbanSound8K.ttda --dataset 'UrbanSound8K' --dataset_root_path $BA
     --max_epoch 30 --lr '1e-4' --aut_lr_decay 0.55 --lr_momentum 0.70 \
     --nucnm_rate 1.0 --ent_rate 1.0 --gent_rate 1.0 --gent_q 1.1 --mse_rate 0.1 \
     --aut_wght_pth './result/UrbanSound8K/AMAuT/train/aut-US8.pt' \
-    --clsf_wght_pth './result/UrbanSound8K/AMAuT/train/clsf-US8.pt' --wandb
+    --clsf_wght_pth './result/UrbanSound8K/AMAuT/train/clsf-US8.pt' --seed $SEED_VAL
 
 printf 'ENSC-L2\n' >> $LOG_FILE
 python -m AuT.UrbanSound8K.ttda --dataset 'UrbanSound8K' --dataset_root_path $BASE_PATH'/data/Ada-UrbanSound8K-C' \
@@ -25,7 +25,7 @@ python -m AuT.UrbanSound8K.ttda --dataset 'UrbanSound8K' --dataset_root_path $BA
     --max_epoch 30 --lr '1e-4' --aut_lr_decay 0.55 --lr_momentum 0.70 \
     --nucnm_rate 1.0 --ent_rate 1.0 --gent_rate 1.0 --gent_q 1.1 --mse_rate 0.1 \
     --aut_wght_pth './result/UrbanSound8K/AMAuT/train/aut-US8.pt' \
-    --clsf_wght_pth './result/UrbanSound8K/AMAuT/train/clsf-US8.pt' --wandb
+    --clsf_wght_pth './result/UrbanSound8K/AMAuT/train/clsf-US8.pt' --seed $SEED_VAL
 
 printf 'WHN-L1\n' >> $LOG_FILE
 python -m AuT.UrbanSound8K.ttda --dataset 'UrbanSound8K' --dataset_root_path $BASE_PATH'/data/Ada-UrbanSound8K-C' \
@@ -33,7 +33,7 @@ python -m AuT.UrbanSound8K.ttda --dataset 'UrbanSound8K' --dataset_root_path $BA
     --max_epoch 15 --lr '1e-4' --aut_lr_decay 1.0 --lr_momentum 0.90 \
     --nucnm_rate 1.0 --ent_rate 0.0 --gent_rate 1.0 --gent_q 1.6 --mse_rate 1.0 \
     --aut_wght_pth './result/UrbanSound8K/AMAuT/train/aut-US8.pt' \
-    --clsf_wght_pth './result/UrbanSound8K/AMAuT/train/clsf-US8.pt' --wandb
+    --clsf_wght_pth './result/UrbanSound8K/AMAuT/train/clsf-US8.pt' --seed $SEED_VAL
 
 printf 'WHN-L2\n' >> $LOG_FILE
 python -m AuT.UrbanSound8K.ttda --dataset 'UrbanSound8K' --dataset_root_path $BASE_PATH'/data/Ada-UrbanSound8K-C' \
@@ -41,7 +41,7 @@ python -m AuT.UrbanSound8K.ttda --dataset 'UrbanSound8K' --dataset_root_path $BA
     --max_epoch 15 --lr '1e-4' --aut_lr_decay 0.55 --lr_momentum 0.70 \
     --nucnm_rate 1.0 --ent_rate 1.0 --gent_rate 1.0 --gent_q 1.1 --mse_rate 0.1 \
     --aut_wght_pth './result/UrbanSound8K/AMAuT/train/aut-US8.pt' \
-    --clsf_wght_pth './result/UrbanSound8K/AMAuT/train/clsf-US8.pt' --wandb
+    --clsf_wght_pth './result/UrbanSound8K/AMAuT/train/clsf-US8.pt' --seed $SEED_VAL
 
 printf 'TST-L1\n' >> $LOG_FILE
 python -m AuT.UrbanSound8K.ttda --dataset 'UrbanSound8K' --dataset_root_path $BASE_PATH'/data/Ada-UrbanSound8K-C' \
@@ -49,7 +49,7 @@ python -m AuT.UrbanSound8K.ttda --dataset 'UrbanSound8K' --dataset_root_path $BA
     --max_epoch 15 --lr '1e-4' --aut_lr_decay 0.55 --lr_momentum 0.70 \
     --nucnm_rate 1.0 --ent_rate 1.0 --gent_rate 1.0 --gent_q 1.1 --mse_rate 0.1 \
     --aut_wght_pth './result/UrbanSound8K/AMAuT/train/aut-US8.pt' \
-    --clsf_wght_pth './result/UrbanSound8K/AMAuT/train/clsf-US8.pt' --wandb
+    --clsf_wght_pth './result/UrbanSound8K/AMAuT/train/clsf-US8.pt' --seed $SEED_VAL
 
 printf 'TST-L2\n' >> $LOG_FILE
 python -m AuT.UrbanSound8K.ttda --dataset 'UrbanSound8K' --dataset_root_path $BASE_PATH'/data/Ada-UrbanSound8K-C' \
@@ -57,7 +57,7 @@ python -m AuT.UrbanSound8K.ttda --dataset 'UrbanSound8K' --dataset_root_path $BA
     --max_epoch 15 --lr '1e-4' --aut_lr_decay 0.55 --lr_momentum 0.70 \
     --nucnm_rate 1.0 --ent_rate 1.0 --gent_rate 1.0 --gent_q 1.1 --mse_rate 0.1 \
     --aut_wght_pth './result/UrbanSound8K/AMAuT/train/aut-US8.pt' \
-    --clsf_wght_pth './result/UrbanSound8K/AMAuT/train/clsf-US8.pt' --wandb
+    --clsf_wght_pth './result/UrbanSound8K/AMAuT/train/clsf-US8.pt' --seed $SEED_VAL
 
 printf 'PSH-L1\n' >> $LOG_FILE
 python -m AuT.UrbanSound8K.ttda --dataset 'UrbanSound8K' --dataset_root_path $BASE_PATH'/data/Ada-UrbanSound8K-C' \
@@ -65,7 +65,7 @@ python -m AuT.UrbanSound8K.ttda --dataset 'UrbanSound8K' --dataset_root_path $BA
     --max_epoch 15 --lr '1e-4' --aut_lr_decay 0.55 --lr_momentum 0.70 \
     --nucnm_rate 1.0 --ent_rate 1.0 --gent_rate 1.0 --gent_q 1.1 --mse_rate 0.1 \
     --aut_wght_pth './result/UrbanSound8K/AMAuT/train/aut-US8.pt' \
-    --clsf_wght_pth './result/UrbanSound8K/AMAuT/train/clsf-US8.pt' --wandb
+    --clsf_wght_pth './result/UrbanSound8K/AMAuT/train/clsf-US8.pt' --seed $SEED_VAL
 
 printf 'PSH-L2\n' >> $LOG_FILE
 python -m AuT.UrbanSound8K.ttda --dataset 'UrbanSound8K' --dataset_root_path $BASE_PATH'/data/Ada-UrbanSound8K-C' \
@@ -73,7 +73,7 @@ python -m AuT.UrbanSound8K.ttda --dataset 'UrbanSound8K' --dataset_root_path $BA
     --max_epoch 30 --lr '1e-4' --lr_momentum 0.70 \
     --nucnm_rate 1.0 --ent_rate 1.0 --gent_rate 1.0 --gent_q 1.1 --mse_rate 1.0 \
     --aut_wght_pth './result/UrbanSound8K/AMAuT/train/aut-US8.pt' \
-    --clsf_wght_pth './result/UrbanSound8K/AMAuT/train/clsf-US8.pt' --wandb
+    --clsf_wght_pth './result/UrbanSound8K/AMAuT/train/clsf-US8.pt' --seed $SEED_VAL
 
 printf 'TTA processing is finished\n' >> $LOG_FILE
 printf '================================\n' >> $LOG_FILE
