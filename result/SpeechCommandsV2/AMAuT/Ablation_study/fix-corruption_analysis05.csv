@@ -1,0 +1,2 @@
+,dataset,algorithm,type,before-adaptation,after-adaptation
+0,SpeechCommandsV2,AMAuT,Fix-corruption,0.8884143571104044,0.9110404361653793
