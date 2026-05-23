@@ -38,9 +38,9 @@ def analyzing(args:argparse.Namespace, corruption_types:list[str], corruption_le
         )
 
         print('Non-adaptation analyzing...')
-        orig_roc_auc = inference(args=args, hubert=hubert, clsModel=clsf, data_loader=adpt_loader)
+        orig_roc_auc = inference(args=args, hub=hubert, clsf=clsf, loader=adpt_loader)
         print('Adaptation analyzing...')
-        adpt_roc_auc = inference(args=args, hubert=adpt_hubert, clsModel=adpt_clsf, data_loader=adpt_loader)
+        adpt_roc_auc = inference(args=args, hub=adpt_hubert, clsf=adpt_clsf, loader=adpt_loader)
         print(f'{args.dataset} {cmeta.type}-{cmeta.level} non-adapted roc-auc: {orig_roc_auc:.4f}, adapted roc-auc: {adpt_roc_auc:.4f}')
         records.loc[len(records)] = [args.dataset, args.arch, param_no, f'{cmeta.type}-{cmeta.level}', orig_roc_auc, adpt_roc_auc, adpt_roc_auc - orig_roc_auc]
     records.to_csv(os.path.join(args.output_path, args.output_file_name))
