@@ -17,6 +17,7 @@ from lib.dataset import batch_store_to, mlt_load_from, MultiTFDataset, mlt_store
 from lib.component import Components, AudioPadding, AudioClip, ReduceChannel, time_shift, DoNothing
 from lib.loss import entropy, g_entropy, nucnm, mse
 from lib.lr_utils import build_optimizer, lr_scheduler
+from lib.corruption import VocalSoundC
 from HuBERT.VocalSound.train import build_model, inference
 
 def load_weigth(args:argparse.Namespace, hubert:nn.Module, clsf:nn.Module, mode:str='origin') -> None:
@@ -29,65 +30,65 @@ def load_weigth(args:argparse.Namespace, hubert:nn.Module, clsf:nn.Module, mode:
     hubert.load_state_dict(state_dict=torch.load(hub_pth, weights_only=True))
     clsf.load_state_dict(state_dict=torch.load(clsf_pth, weights_only=True))
 
-def vs_corruption_data(args:argparse.Namespace) -> Dataset:
-    from lib.corruption import corrupt_data
-    if args.corruption_type == 'TST':
-        test_set = corrupt_data(
-            orgin_set=VocalSound(
-                root_path=args.dataset_root_path, mode='test', include_rate=False, version='16k',
-            ), corruption_level=args.corruption_level, corruption_type=args.corruption_type, enq_path=args.noise_path,
-            sample_rate=args.sample_rate, end_path=args.noise_path, ensc_path=args.noise_path
-        )
-        test_set = MultiTFDataset(
-            dataset=test_set, 
-            tfs=[
-                Components(transforms=[
-                    AudioPadding(max_length=10*args.sample_rate, sample_rate=args.sample_rate, random_shift=False),
-                    AudioClip(max_length=10*args.sample_rate, mode='head', is_random=False),
-                ])
-            ]
-        )
-    else:
-        test_set = corrupt_data(
-            orgin_set=VocalSound(
-                root_path=args.dataset_root_path, mode='test', include_rate=False, version='16k',
-                data_tf=Components(transforms=[
-                    AudioPadding(max_length=10*args.sample_rate, sample_rate=args.sample_rate, random_shift=False),
-                    AudioClip(max_length=10*args.sample_rate, mode='head', is_random=False),
-                ])
-            ), corruption_level=args.corruption_level, corruption_type=args.corruption_type, enq_path=args.noise_path,
-            sample_rate=args.sample_rate, end_path=args.noise_path, ensc_path=args.noise_path
-        )
-    dataset_root_path = os.path.join(args.cache_path, args.dataset)
-    index_file_name = 'metaInfo.csv'
-    if args.corruption_type == 'PSH':
-        mlt_store_to(
-            dataset=test_set, root_path=dataset_root_path, index_file_name=index_file_name, 
-            data_tfs=[DoNothing()]
-        )
-    else:
-        batch_store_to(
-            data_loader=DataLoader(dataset=test_set, batch_size=32, shuffle=False, drop_last=False, num_workers=8),
-            root_path=dataset_root_path, index_file_name=index_file_name, f_num=1
-        )
-    test_set = mlt_load_from(
-        root_path=dataset_root_path, index_file_name=index_file_name, 
-        data_tfs=[ ReduceChannel() ]
-    )
-    adapt_set = MultiTFDataset(
-        dataset=mlt_load_from(root_path=dataset_root_path, index_file_name=index_file_name),
-        tfs=[
-            Components(transforms=[
-                time_shift(shift_limit=.17, is_random=True, is_bidirection=False),
-                ReduceChannel()
-            ]),
-            Components(transforms=[
-                time_shift(shift_limit=-.17, is_random=True, is_bidirection=False),
-                ReduceChannel()
-            ])
-        ]
-    )
-    return test_set, adapt_set
+# def vs_corruption_data(args:argparse.Namespace) -> Dataset:
+#     from lib.corruption import corrupt_data
+#     if args.corruption_type == 'TST':
+#         test_set = corrupt_data(
+#             orgin_set=VocalSound(
+#                 root_path=args.dataset_root_path, mode='test', include_rate=False, version='16k',
+#             ), corruption_level=args.corruption_level, corruption_type=args.corruption_type, enq_path=args.noise_path,
+#             sample_rate=args.sample_rate, end_path=args.noise_path, ensc_path=args.noise_path
+#         )
+#         test_set = MultiTFDataset(
+#             dataset=test_set, 
+#             tfs=[
+#                 Components(transforms=[
+#                     AudioPadding(max_length=10*args.sample_rate, sample_rate=args.sample_rate, random_shift=False),
+#                     AudioClip(max_length=10*args.sample_rate, mode='head', is_random=False),
+#                 ])
+#             ]
+#         )
+#     else:
+#         test_set = corrupt_data(
+#             orgin_set=VocalSound(
+#                 root_path=args.dataset_root_path, mode='test', include_rate=False, version='16k',
+#                 data_tf=Components(transforms=[
+#                     AudioPadding(max_length=10*args.sample_rate, sample_rate=args.sample_rate, random_shift=False),
+#                     AudioClip(max_length=10*args.sample_rate, mode='head', is_random=False),
+#                 ])
+#             ), corruption_level=args.corruption_level, corruption_type=args.corruption_type, enq_path=args.noise_path,
+#             sample_rate=args.sample_rate, end_path=args.noise_path, ensc_path=args.noise_path
+#         )
+#     dataset_root_path = os.path.join(args.cache_path, args.dataset)
+#     index_file_name = 'metaInfo.csv'
+#     if args.corruption_type == 'PSH':
+#         mlt_store_to(
+#             dataset=test_set, root_path=dataset_root_path, index_file_name=index_file_name, 
+#             data_tfs=[DoNothing()]
+#         )
+#     else:
+#         batch_store_to(
+#             data_loader=DataLoader(dataset=test_set, batch_size=32, shuffle=False, drop_last=False, num_workers=8),
+#             root_path=dataset_root_path, index_file_name=index_file_name, f_num=1
+#         )
+#     test_set = mlt_load_from(
+#         root_path=dataset_root_path, index_file_name=index_file_name, 
+#         data_tfs=[ ReduceChannel() ]
+#     )
+#     adapt_set = MultiTFDataset(
+#         dataset=mlt_load_from(root_path=dataset_root_path, index_file_name=index_file_name),
+#         tfs=[
+#             Components(transforms=[
+#                 time_shift(shift_limit=.17, is_random=True, is_bidirection=False),
+#                 ReduceChannel()
+#             ]),
+#             Components(transforms=[
+#                 time_shift(shift_limit=-.17, is_random=True, is_bidirection=False),
+#                 ReduceChannel()
+#             ])
+#         ]
+#     )
+#     return test_set, adapt_set
 
 if __name__ == '__main__':
     ap = argparse.ArgumentParser()
@@ -146,7 +147,26 @@ if __name__ == '__main__':
         name=f'{constants.architecture_dic[args.arch]}-{constants.hubert_level_dic[args.model_level]}-{constants.dataset_dic[args.dataset]}-{args.corruption_type}-{args.corruption_level}', 
         mode='online' if args.wandb else 'disabled', config=args, tags=['Audio Classification', args.dataset, 'Test-time Adaptation'])
     
-    test_set, adapt_set = vs_corruption_data(args)
+    test_set = VocalSoundC(
+        root_path=args.dataset_root_path, corruption_level=args.corruption_level, corruption_type=args.corruption_type,
+        data_tf=ReduceChannel()
+    )
+    adapt_set = MultiTFDataset(
+        dataset=VocalSoundC(
+            root_path=args.dataset_root_path, corruption_level=args.corruption_level, 
+            corruption_type=args.corruption_type
+        ),
+        tfs=[
+            Components(transforms=[
+                time_shift(shift_limit=.17, is_random=True, is_bidirection=False),
+                ReduceChannel()
+            ]),
+            Components(transforms=[
+                time_shift(shift_limit=-.17, is_random=True, is_bidirection=False),
+                ReduceChannel()
+            ])
+        ]
+    )
     test_loader = DataLoader(
         dataset=test_set, batch_size=args.batch_size, shuffle=False, drop_last=False, pin_memory=True,
         num_workers=args.num_workers
