@@ -5,7 +5,7 @@ python -m HuBERT.VocalSound.ttda --dataset 'VocalSound' --dataset_root_path $BAS
     --cache_path $BASE_PATH'/tmp' \
     --max_epoch 15 --lr_cardinality 50 --batch_size 32 --lr '1e-4' --hub_lr_decay 1.0 --num_workers 16 \
     --nucnm_rate 1.0 --lr_gamma 10 --lr_threshold 15 --mse_rate 0.1 \
-    --ent_rate 0.0 --gent_rate 0.0 --gent_q 1.1 --corruption_type 'WHN' --corruption_level 'L2' \
+    --ent_rate 0.1 --gent_rate 0.0 --gent_q 1.1 --corruption_type 'WHN' --corruption_level 'L2' \
     --hub_wght_pth './result/VocalSound/HuBERT/train/hubert-base-VS.pt' \
     --clsf_wght_pth './result/VocalSound/HuBERT/train/clsModel-base-VS.pt' --wandb
 
