@@ -9,6 +9,7 @@ printf 'Processing Log\n' >> $LOG_FILE
 printf 'TTA on SC2-C, seed is:'$SEED_VAL'\n' >> $LOG_FILE
 printf '================================\n' >> $LOG_FILE
 
+printf 'WHN-L2\n' >> $LOG_FILE
 python -m HuBERT.ReefSet.ttda --dataset 'ReefSet' --dataset_root_path $BASE_PATH'/data/Ada-ReefSet-C' \
     --cache_path $BASE_PATH'/tmp' \
     --max_epoch 15 --lr_cardinality 50 --batch_size 70 --lr '5e-5' --hub_lr_decay 0.55 --num_workers 16 \
@@ -17,6 +18,7 @@ python -m HuBERT.ReefSet.ttda --dataset 'ReefSet' --dataset_root_path $BASE_PATH
     --hub_wght_pth './result/ReefSet/HuBERT/train/hubert-base-RS.pt' \
     --clsf_wght_pth './result/ReefSet/HuBERT/train/clsModel-base-RS.pt' --seed $SEED_VAL
 
+printf 'WHN-L1\n' >> $LOG_FILE
 python -m HuBERT.ReefSet.ttda --dataset 'ReefSet' --dataset_root_path $BASE_PATH'/data/Ada-ReefSet-C' \
     --cache_path $BASE_PATH'/tmp' \
     --max_epoch 15 --lr_cardinality 50 --batch_size 70 --lr '1e-4' --hub_lr_decay 0.35 --num_workers 16 \
@@ -25,6 +27,7 @@ python -m HuBERT.ReefSet.ttda --dataset 'ReefSet' --dataset_root_path $BASE_PATH
     --hub_wght_pth './result/ReefSet/HuBERT/train/hubert-base-RS.pt' \
     --clsf_wght_pth './result/ReefSet/HuBERT/train/clsModel-base-RS.pt' --seed $SEED_VAL
 
+printf 'ENSC-L2\n' >> $LOG_FILE
 python -m HuBERT.ReefSet.ttda --dataset 'ReefSet' --dataset_root_path $BASE_PATH'/data/Ada-ReefSet-C' \
     --cache_path $BASE_PATH'/tmp' --noise_path $BASE_PATH'/data' \
     --max_epoch 15 --lr_cardinality 50 --batch_size 70 --lr '1e-5' --hub_lr_decay 0.35 --num_workers 16 \
@@ -33,6 +36,7 @@ python -m HuBERT.ReefSet.ttda --dataset 'ReefSet' --dataset_root_path $BASE_PATH
     --hub_wght_pth './result/ReefSet/HuBERT/train/hubert-base-RS.pt' \
     --clsf_wght_pth './result/ReefSet/HuBERT/train/clsModel-base-RS.pt' --seed $SEED_VAL
 
+printf 'ENSC-L1\n' >> $LOG_FILE
 python -m HuBERT.ReefSet.ttda --dataset 'ReefSet' --dataset_root_path $BASE_PATH'/data/Ada-ReefSet-C' \
     --cache_path $BASE_PATH'/tmp' --noise_path $BASE_PATH'/data' \
     --max_epoch 15 --lr_cardinality 50 --batch_size 70 --lr '1e-5' --hub_lr_decay 0.35 --num_workers 16 \
@@ -41,6 +45,7 @@ python -m HuBERT.ReefSet.ttda --dataset 'ReefSet' --dataset_root_path $BASE_PATH
     --hub_wght_pth './result/ReefSet/HuBERT/train/hubert-base-RS.pt' \
     --clsf_wght_pth './result/ReefSet/HuBERT/train/clsModel-base-RS.pt' --seed $SEED_VAL
 
+printf 'PSH-L2\n' >> $LOG_FILE
 python -m HuBERT.ReefSet.ttda --dataset 'ReefSet' --dataset_root_path $BASE_PATH'/data/Ada-ReefSet-C' \
     --cache_path $BASE_PATH'/tmp' \
     --max_epoch 20 --lr_cardinality 50 --batch_size 70 --lr '1e-5' --hub_lr_decay 0.35 --num_workers 16 \
@@ -49,6 +54,7 @@ python -m HuBERT.ReefSet.ttda --dataset 'ReefSet' --dataset_root_path $BASE_PATH
     --hub_wght_pth './result/ReefSet/HuBERT/train/hubert-base-RS.pt' \
     --clsf_wght_pth './result/ReefSet/HuBERT/train/clsModel-base-RS.pt' --seed $SEED_VAL
 
+printf 'PSH-L1\n' >> $LOG_FILE
 python -m HuBERT.ReefSet.ttda --dataset 'ReefSet' --dataset_root_path $BASE_PATH'/data/Ada-ReefSet-C' \
     --cache_path $BASE_PATH'/tmp' \
     --max_epoch 30 --lr_cardinality 50 --batch_size 70 --lr '1e-5' --hub_lr_decay 0.35 --num_workers 16 \
@@ -57,6 +63,7 @@ python -m HuBERT.ReefSet.ttda --dataset 'ReefSet' --dataset_root_path $BASE_PATH
     --hub_wght_pth './result/ReefSet/HuBERT/train/hubert-base-RS.pt' \
     --clsf_wght_pth './result/ReefSet/HuBERT/train/clsModel-base-RS.pt' --seed $SEED_VAL
 
+printf 'TST-L2\n' >> $LOG_FILE
 python -m HuBERT.ReefSet.ttda --dataset 'ReefSet' --dataset_root_path $BASE_PATH'/data/Ada-ReefSet-C' \
     --cache_path $BASE_PATH'/tmp' \
     --max_epoch 15 --lr_cardinality 50 --batch_size 70 --lr '1e-4' --hub_lr_decay 0.35 --num_workers 16 \
@@ -65,6 +72,7 @@ python -m HuBERT.ReefSet.ttda --dataset 'ReefSet' --dataset_root_path $BASE_PATH
     --hub_wght_pth './result/ReefSet/HuBERT/train/hubert-base-RS.pt' \
     --clsf_wght_pth './result/ReefSet/HuBERT/train/clsModel-base-RS.pt' --seed $SEED_VAL
 
+printf 'TST-L1\n' >> $LOG_FILE
 python -m HuBERT.ReefSet.ttda --dataset 'ReefSet' --dataset_root_path $BASE_PATH'/data/Ada-ReefSet-C' \
     --cache_path $BASE_PATH'/tmp' \
     --max_epoch 15 --lr_cardinality 50 --batch_size 70 --lr '1e-4' --hub_lr_decay 0.35 --num_workers 16 \
@@ -73,6 +81,7 @@ python -m HuBERT.ReefSet.ttda --dataset 'ReefSet' --dataset_root_path $BASE_PATH
     --hub_wght_pth './result/ReefSet/HuBERT/train/hubert-base-RS.pt' \
     --clsf_wght_pth './result/ReefSet/HuBERT/train/clsModel-base-RS.pt' --seed $SEED_VAL
 
+printf 'ENQ-L2\n' >> $LOG_FILE
 python -m HuBERT.ReefSet.ttda --dataset 'ReefSet' --dataset_root_path $BASE_PATH'/data/Ada-ReefSet-C' \
     --cache_path $BASE_PATH'/tmp' --noise_path $BASE_PATH'/data/QUT-NOISE' \
     --max_epoch 15 --lr_cardinality 50 --batch_size 70 --lr '1e-5' --hub_lr_decay 0.35 --num_workers 16 \
@@ -81,6 +90,7 @@ python -m HuBERT.ReefSet.ttda --dataset 'ReefSet' --dataset_root_path $BASE_PATH
     --hub_wght_pth './result/ReefSet/HuBERT/train/hubert-base-RS.pt' \
     --clsf_wght_pth './result/ReefSet/HuBERT/train/clsModel-base-RS.pt' --seed $SEED_VAL
 
+printf 'ENQ-L1\n' >> $LOG_FILE
 python -m HuBERT.ReefSet.ttda --dataset 'ReefSet' --dataset_root_path $BASE_PATH'/data/Ada-ReefSet-C' \
     --cache_path $BASE_PATH'/tmp' --noise_path $BASE_PATH'/data/QUT-NOISE' \
     --max_epoch 20 --lr_cardinality 50 --batch_size 70 --lr '1e-5' --hub_lr_decay 0.35 --num_workers 16 \
@@ -89,6 +99,7 @@ python -m HuBERT.ReefSet.ttda --dataset 'ReefSet' --dataset_root_path $BASE_PATH
     --hub_wght_pth './result/ReefSet/HuBERT/train/hubert-base-RS.pt' \
     --clsf_wght_pth './result/ReefSet/HuBERT/train/clsModel-base-RS.pt' --seed $SEED_VAL
 
+printf 'END1-L2\n' >> $LOG_FILE
 python -m HuBERT.ReefSet.ttda --dataset 'ReefSet' --dataset_root_path $BASE_PATH'/data/Ada-ReefSet-C' \
     --cache_path $BASE_PATH'/tmp' --noise_path $BASE_PATH'/data/DEMAND_16k' \
     --max_epoch 15 --lr_cardinality 50 --batch_size 70 --lr '1e-5' --hub_lr_decay 0.35 --num_workers 16 \
@@ -97,6 +108,7 @@ python -m HuBERT.ReefSet.ttda --dataset 'ReefSet' --dataset_root_path $BASE_PATH
     --hub_wght_pth './result/ReefSet/HuBERT/train/hubert-base-RS.pt' \
     --clsf_wght_pth './result/ReefSet/HuBERT/train/clsModel-base-RS.pt' --seed $SEED_VAL
 
+printf 'END1-L1\n' >> $LOG_FILE
 python -m HuBERT.ReefSet.ttda --dataset 'ReefSet' --dataset_root_path $BASE_PATH'/data/Ada-ReefSet-C' \
     --cache_path $BASE_PATH'/tmp' --noise_path $BASE_PATH'/data/DEMAND_16k' \
     --max_epoch 15 --lr_cardinality 50 --batch_size 70 --lr '1e-5' --hub_lr_decay 0.35 --num_workers 16 \
@@ -105,6 +117,7 @@ python -m HuBERT.ReefSet.ttda --dataset 'ReefSet' --dataset_root_path $BASE_PATH
     --hub_wght_pth './result/ReefSet/HuBERT/train/hubert-base-RS.pt' \
     --clsf_wght_pth './result/ReefSet/HuBERT/train/clsModel-base-RS.pt' --seed $SEED_VAL
 
+printf 'END2-L2\n' >> $LOG_FILE
 python -m HuBERT.ReefSet.ttda --dataset 'ReefSet' --dataset_root_path $BASE_PATH'/data/Ada-ReefSet-C' \
     --cache_path $BASE_PATH'/tmp' --noise_path $BASE_PATH'/data/DEMAND_16k' \
     --max_epoch 15 --lr_cardinality 50 --batch_size 70 --lr '5e-5' --hub_lr_decay 0.35 --num_workers 16 \
@@ -113,6 +126,7 @@ python -m HuBERT.ReefSet.ttda --dataset 'ReefSet' --dataset_root_path $BASE_PATH
     --hub_wght_pth './result/ReefSet/HuBERT/train/hubert-base-RS.pt' \
     --clsf_wght_pth './result/ReefSet/HuBERT/train/clsModel-base-RS.pt' --seed $SEED_VAL
 
+printf 'END2-L1\n' >> $LOG_FILE
 python -m HuBERT.ReefSet.ttda --dataset 'ReefSet' --dataset_root_path $BASE_PATH'/data/Ada-ReefSet-C' \
     --cache_path $BASE_PATH'/tmp' --noise_path $BASE_PATH'/data/DEMAND_16k' \
     --max_epoch 30 --lr_cardinality 50 --batch_size 70 --lr '1e-5' --hub_lr_decay 0.35 --num_workers 16 \
