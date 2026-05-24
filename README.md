@@ -284,8 +284,13 @@ ReefSet is a multi-labeled and imbalanced dataset. ReefSet compiled a diverse me
 [Official Link](https://zenodo.org/records/11071202)
 
 ### ReefSet-C
-The corrupted version of the test set of ReefSet
-+ Sample size: 479,836 (17,137 per corruption level)
+ReefSet-C (RS-C) serves as a benchmark for DHAuDS in the context of test-time adaptation for audio classification. 
+RS-C, a subset of [ReefSet](https://zenodo.org/records/11071202), utilizes only test-set samples to address domain shift. Each sample in RS-C has a duration 
+of 1.88 seconds, a sample rate of 16 kHz, and belongs to one of 37 classes. The dataset comprises two sets: adaptation and evaluation sets. Each set comprises 
+seven corruption categories and two levels. Seven corruption categories are defined: WHN, ENQ, END1, END2, ENSC, TST, and PSH. Two levels are defined: L1 and 
+L2, where L2 indicates a higher degree of complexity. As for evaluation and adaptation sets, each comprises 239,918 samples. In total, RS-C consists of 
+479,836 samples, with each category-level, such as WHN-L1 or WHN-L2, containing 17,137 samples.
++ Sample size: 479,836 (17,137 per category-level)
 + Sample rate: 16 kHz
 + One sample length: 1.88s
 
