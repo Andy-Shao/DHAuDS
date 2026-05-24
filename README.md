@@ -214,8 +214,14 @@ wget -O vocalsound_16k.zip https://www.dropbox.com/s/c5ace70qh1vbyzb/vs_release_
 ```
 
 ### VocalSound-C
-The corrupted version of the test set on VocalSound
-+ Sample size: 100,548 (3,591 per corruption level)
+VocalSound-C (VS-C) serves as a benchmark for [DHAuDS](https://arxiv.org/abs/2511.18421) in the context of test-time adaptation for audio classification. 
+VS-C, a subset of [VocalSound](https://sls.csail.mit.edu/downloads/vocalsound), utilizes only 
+test-set samples to address domain shift. Each sample in VS-C has a duration of 10 seconds, a sample rate of 16 kHz, and belongs to one of 6 classes. 
+The dataset comprises two sets: adaptation and evaluation sets. Each set comprises seven corruption categories and two levels. Seven corruption categories 
+are defined: WHN, ENQ, END1, END2, ENSC, TST, and PSH. Two levels are defined: L1 and L2, where L2 indicates a higher degree of complexity. As for evaluation 
+and adaptation sets, each comprises 50,274 samples. In total, VS-C consists of 100,548 samples, with each category-level, such as WHN-L1 or WHN-L2, containing 
+3,591 samples.
++ Sample size: 100,548 (3,591 per category-level)
 + Sample rate: 16 kHz
 + One sample length: 10s
 + Class number: 6
