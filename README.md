@@ -258,9 +258,14 @@ y, sr = example_clip.audio
 ```
 
 ### UrbanSound8K-C
-The corrupted version of the test set of UrbanSound8K. Note: UrbanSound8K-C excludes ENQ, END1, 
-and END2 since the class type overlaps the noise type in QUT-NOISE and DEMAND, such as street, car, traffic, and station noise.
-+ Sample size: 19,672 (2,459 per corruption level)
+UrbanSound8K-C (US8-C) serves as a benchmark for DHAuDS in the context of 
+test-time adaptation for audio classification. US8-C, a subset of [UrbanSound8K](https://urbansounddataset.weebly.com/urbansound8k.html), 
+utilizes only test-set samples to address domain shift. Each sample in US8-C has a duration of 4 seconds, a sample rate of 44.1 kHz, 
+and belongs to one of 10 classes. The dataset comprises two sets: adaptation and evaluation sets. Each set comprises four corruption categories and two levels. 
+Four corruption categories are defined: WHN, ENSC, TST, and PSH. Two levels are defined: L1 and L2, where L2 indicates a higher degree of complexity. 
+As for evaluation and adaptation sets, each comprises 9,836 samples. In total, US8-C consists of 19,672 samples, with each category-level, such as WHN-L1 or 
+WHN-L2, containing 2,459 samples.
++ Sample size: 19,672 (2,459 per category-level)
 + Sample rate: 44.1 kHz
 + One sample length: 4s
 + Class Number: 10
