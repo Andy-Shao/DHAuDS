@@ -214,7 +214,7 @@ wget -O vocalsound_16k.zip https://www.dropbox.com/s/c5ace70qh1vbyzb/vs_release_
 ```
 
 ### VocalSound-C
-VocalSound-C (VS-C) serves as a benchmark for [DHAuDS](https://arxiv.org/abs/2511.18421) in the context of test-time adaptation for audio classification. 
+VocalSound-C (VS-C) serves as a benchmark for DHAuDS in the context of test-time adaptation for audio classification. 
 VS-C, a subset of [VocalSound](https://sls.csail.mit.edu/downloads/vocalsound), utilizes only 
 test-set samples to address domain shift. Each sample in VS-C has a duration of 10 seconds, a sample rate of 16 kHz, and belongs to one of 6 classes. 
 The dataset comprises two sets: adaptation and evaluation sets. Each set comprises seven corruption categories and two levels. Seven corruption categories 
