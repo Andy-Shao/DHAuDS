@@ -186,8 +186,13 @@ The SpeechCommands V2 (2.26GB) is a speech audio set that includes 35 English wo
 [Pytorch Document](https://pytorch.org/audio/main/generated/torchaudio.datasets.SPEECHCOMMANDS.html)
 
 ### SpeechCommands V2-C
-The corrupted version of the test set on Speech Commands V2.
-+ Sample size: 308,140 (11,005 per corruption level)
+SpeechCommandsV2-C (SC2-C) serves as a benchmark for DHAuDS in the context of test-time adaptation for audio classification. 
+SC2-C, a subset of [SpeechCommands V2](https://research.google/blog/launching-the-speech-commands-dataset), utilizes only test-set samples to address domain shift. 
+Each sample in SC2-C has a duration of 1 second, a sample rate of 16 kHz, and belongs to one of 35 classes. The dataset comprises two sets: adaptation and 
+evaluation sets. Each set comprises seven corruption categories and two levels. Seven corruption categories are defined: WHN, ENQ, END1, END2, ENSC, TST, and PSH. 
+Two levels are defined: L1 and L2, where L2 indicates a higher degree of complexity. As for the evaluation and adaptation sets, each comprises 154,070 samples. 
+In total, SC2-C consists of 308,140 samples, with each category-level, such as WHN-L1 or WHN-L2, containing 11,005 samples.
++ Sample size: 308,140 (11,005 per category-level)
 + Sample rate: 16 kHz
 + Class number: 35
 + One sample length: 1s
