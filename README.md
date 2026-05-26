@@ -318,6 +318,7 @@ A database of 16-channel environmental noise recordings.
 ## Code Reference
 + [AMAuT](https://github.com/Andy-Shao/AMAuT)
 + [HuBERT](https://github.com/facebookresearch/fairseq/tree/main/examples/hubert)
++ [PANNs](https://github.com/qiuqiangkong/audioset_tagging_cnn)
 + [TTA in Audio Classification](https://github.com/Andy-Shao/TTA-in-AC.git)
 
 ## Citation
