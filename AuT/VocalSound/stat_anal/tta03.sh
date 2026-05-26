@@ -1,8 +1,8 @@
 #!bin/bash
 export BASE_PATH=${BASE_PATH:-'/root'}
-export SEED_VAL=123456
+export SEED_VAL=654321
 export LOG_FILE=$BASE_PATH'/DHAuDS.log'
-export ANAL_FILE='VocalSound_analysis-02.csv'
+export ANAL_FILE='VocalSound_analysis-03.csv'
 
 > $LOG_FILE
 printf 'Processing Log\n' >> $LOG_FILE
