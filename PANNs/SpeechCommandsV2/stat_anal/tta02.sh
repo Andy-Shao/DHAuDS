@@ -9,7 +9,7 @@ printf 'Processing Log\n' >> $LOG_FILE
 printf 'TTA on SC2-C, seed is:'$SEED_VAL'\n' >> $LOG_FILE
 printf '================================\n' >> $LOG_FILE
 
-printf 'WHN-L1\n' >> $LOG_FILE
+printf 'WHN-L2\n' >> $LOG_FILE
 python -m PANNs.SpeechCommandsV2.ttda --dataset 'SpeechCommandsV2' \
     --adpt_set_path $BASE_PATH'/data/Ada-SpeechCommandsV2-C' \
     --eval_set_path $BASE_PATH'/data/SpeechCommandsV2-C' \
