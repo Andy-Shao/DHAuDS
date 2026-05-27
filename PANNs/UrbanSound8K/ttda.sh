@@ -38,12 +38,12 @@ export BASE_PATH=${BASE_PATH:-'/root'}
 #     --nucnm_rate 1.0 --ent_rate 0.1 --gent_rate 0.1 --gent_q 1.6 --mse_rate 0.1 \
 #     --orig_wght_pth './result/UrbanSound8K/PANNs/train' --wandb
 
-python -m PANNs.UrbanSound8K.ttda --dataset 'UrbanSound8K' \
-    --adpt_set_path $BASE_PATH'/data/Ada-UrbanSound8K-C' \
-    --eval_set_path $BASE_PATH'/data/UrbanSound8K-C' \
-    --corruption_type 'PSH' --corruption_level 'L1' --batch_size 70 --max_epoch 30 --lr 1e-4 \
-    --nucnm_rate 1.0 --ent_rate 0.1 --gent_rate 0.1 --gent_q 1.6 --mse_rate 0.1 \
-    --orig_wght_pth './result/UrbanSound8K/PANNs/train' --wandb
+# python -m PANNs.UrbanSound8K.ttda --dataset 'UrbanSound8K' \
+#     --adpt_set_path $BASE_PATH'/data/Ada-UrbanSound8K-C' \
+#     --eval_set_path $BASE_PATH'/data/UrbanSound8K-C' \
+#     --corruption_type 'PSH' --corruption_level 'L1' --batch_size 70 --max_epoch 30 --lr 1e-4 \
+#     --nucnm_rate 1.0 --ent_rate 0.1 --gent_rate 0.1 --gent_q 1.6 --mse_rate 0.1 \
+#     --orig_wght_pth './result/UrbanSound8K/PANNs/train' --wandb
 
 # python -m PANNs.UrbanSound8K.ttda --dataset 'UrbanSound8K' \
 #     --adpt_set_path $BASE_PATH'/data/Ada-UrbanSound8K-C' \
@@ -51,3 +51,10 @@ python -m PANNs.UrbanSound8K.ttda --dataset 'UrbanSound8K' \
 #     --corruption_type 'TST' --corruption_level 'L2' --batch_size 70 --max_epoch 25 --lr 1e-4 \
 #     --nucnm_rate 1.0 --ent_rate 0.1 --gent_rate 0.1 --gent_q 1.6 --mse_rate 0.1 --freeze_pan \
 #     --orig_wght_pth './result/UrbanSound8K/PANNs/train' --wandb
+
+python -m PANNs.UrbanSound8K.ttda --dataset 'UrbanSound8K' \
+    --adpt_set_path $BASE_PATH'/data/Ada-UrbanSound8K-C' \
+    --eval_set_path $BASE_PATH'/data/UrbanSound8K-C' \
+    --corruption_type 'TST' --corruption_level 'L1' --batch_size 70 --max_epoch 25 --lr 1e-4 \
+    --nucnm_rate 1.0 --ent_rate 0.1 --gent_rate 0.1 --gent_q 1.6 --mse_rate 0.1 --freeze_pan \
+    --orig_wght_pth './result/UrbanSound8K/PANNs/train' --wandb
