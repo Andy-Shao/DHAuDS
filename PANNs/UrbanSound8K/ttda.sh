@@ -11,7 +11,7 @@ export BASE_PATH=${BASE_PATH:-'/root'}
 python -m PANNs.UrbanSound8K.ttda --dataset 'UrbanSound8K' \
     --adpt_set_path $BASE_PATH'/data/Ada-UrbanSound8K-C' \
     --eval_set_path $BASE_PATH'/data/UrbanSound8K-C' \
-    --corruption_type 'WHN' --corruption_level 'L1' --batch_size 70 --max_epoch 20 --lr 1e-4 \
+    --corruption_type 'WHN' --corruption_level 'L1' --batch_size 70 --max_epoch 20 --lr 5e-5 \
     --nucnm_rate 1.0 --ent_rate 0.1 --gent_rate 0.1 --gent_q 1.6 --mse_rate 0.1 \
     --orig_wght_pth './result/UrbanSound8K/PANNs/train' --wandb
 
