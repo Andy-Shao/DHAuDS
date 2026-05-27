@@ -12,11 +12,11 @@ from torch.utils.data import DataLoader
 from lib import constants
 from lib.utils import make_unless_exits, print_argparse, store_model_structure_to_txt
 from lib.lr_utils import build_optimizer, lr_scheduler
-from lib.loss import CrossEntropyLabelSmooth
 from lib.enDataset import UrbanSound8K
 from lib.component import Components, AudioPadding, ReduceChannel, Stereo2Mono, AudioClip
 from PANNs.lib.utils import __cal_model_path__, store_weight, build_model
-from .util import inference
+from .utils import inference
+from AuT.lib.loss import CrossEntropyLabelSmooth
 
 if __name__ == '__main__':
     ap = argparse.ArgumentParser()
