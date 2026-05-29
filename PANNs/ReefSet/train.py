@@ -15,7 +15,7 @@ from lib import constants
 from lib.utils import print_argparse, make_unless_exits, store_model_structure_to_txt
 from lib.lr_utils import build_optimizer, lr_scheduler
 from lib.acousticDataset import ReefSet
-from lib.component import Components, AudioPadding, ReduceChannel, OneHot2Index
+from lib.component import Components, AudioPadding, ReduceChannel, OneHot2Index, AudioClip
 from PANNs.lib.utils import __cal_model_path__, store_weight, build_model
 from .utils import inference
 from AuT.lib.loss import CrossEntropyLabelSmooth
@@ -82,6 +82,7 @@ if __name__ == '__main__':
         data_tf=Components(transforms=[
             Resample(orig_freq=args.sample_rate, new_freq=constants.pann_sample_rate),
             AudioPadding(max_length=args.audio_length, sample_rate=constants.pann_sample_rate, random_shift=False),
+            AudioClip(max_length=args.audio_length, mode='head', is_random=False),
             ReduceChannel()
         ]),
         label_tf=OneHot2Index()
@@ -94,6 +95,7 @@ if __name__ == '__main__':
         data_tf=Components(transforms=[
             Resample(orig_freq=args.sample_rate, new_freq=constants.pann_sample_rate),
             AudioPadding(max_length=args.audio_length, sample_rate=constants.pann_sample_rate, random_shift=False),
+            AudioClip(max_length=args.audio_length, mode='head', is_random=False),
             ReduceChannel()
         ]),
         label_tf=OneHot2Index()
