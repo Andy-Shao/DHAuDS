@@ -110,7 +110,7 @@ if __name__ == '__main__':
             Resample(orig_freq=args.sample_rate, new_freq=constants.pann_sample_rate),
             AudioPadding(max_length=args.audio_length, sample_rate=constants.pann_sample_rate, random_shift=False),
             ReduceChannel()
-        ])
+        ]), label_tf=OneHot2Index()
     )
     adpt_cp_loader = DataLoader(
         dataset=adpt_cp_rsc_set, batch_size=args.batch_size, shuffle=True, drop_last=False, 
