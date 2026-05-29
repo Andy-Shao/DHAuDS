@@ -9,7 +9,7 @@ from torchaudio.transforms import Resample
 from lib import constants
 from lib.utils import print_argparse, make_unless_exits, count_ttl_params
 from lib.corruption import ReefSetC, corruption_meta
-from lib.component import Components, AudioPadding, ReduceChannel, OneHot2Index
+from lib.component import Components, AudioPadding, ReduceChannel, OneHot2Index, AudioClip
 from PANNs.lib.utils import build_model, inference, load_weight
 
 def analyzing(args:argparse.Namespace, corruption_types:list[str], corruption_levels:list[str]) -> None:
@@ -26,6 +26,7 @@ def analyzing(args:argparse.Namespace, corruption_types:list[str], corruption_le
         data_tf=Components(transforms=[
             Resample(orig_freq=args.sample_rate, new_freq=constants.pann_sample_rate),
             AudioPadding(max_length=args.audio_length, sample_rate=constants.pann_sample_rate, random_shift=False),
+            AudioClip(max_length=args.audio_length, mode='head', is_random=False),
             ReduceChannel()
         ]),
         label_tf=OneHot2Index()

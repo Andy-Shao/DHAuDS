@@ -13,7 +13,7 @@ from lib import constants
 from lib.utils import print_argparse, make_unless_exits
 from lib.corruption import ReefSetC
 from lib.dataset import MultiTFDataset
-from lib.component import Components, ReduceChannel, OneHot2Index, AudioPadding, time_shift
+from lib.component import Components, ReduceChannel, OneHot2Index, AudioPadding, time_shift, AudioClip
 from lib.lr_utils import build_optimizer, lr_scheduler
 from lib.corruption import CorruptionMeta
 from lib.loss import nucnm, entropy, g_entropy, mse
@@ -85,12 +85,14 @@ if __name__ == '__main__':
                 time_shift(shift_limit=.17, is_random=True, is_bidirection=False),
                 Resample(orig_freq=args.sample_rate, new_freq=constants.pann_sample_rate),
                 AudioPadding(max_length=args.audio_length, sample_rate=constants.pann_sample_rate, random_shift=False),
+                AudioClip(max_length=args.audio_length, mode='head', is_random=False),
                 ReduceChannel()
             ]),
             Components(transforms=[
                 time_shift(shift_limit=-.17, is_random=True, is_bidirection=False),
                 Resample(orig_freq=args.sample_rate, new_freq=constants.pann_sample_rate),
                 AudioPadding(max_length=args.audio_length, sample_rate=constants.pann_sample_rate, random_shift=False),
+                AudioClip(max_length=args.audio_length, mode='head', is_random=False),
                 ReduceChannel()
             ]),
         ]
@@ -100,6 +102,7 @@ if __name__ == '__main__':
         data_tf=Components(transforms=[
             Resample(orig_freq=args.sample_rate, new_freq=constants.pann_sample_rate),
             AudioPadding(max_length=args.audio_length, sample_rate=constants.pann_sample_rate, random_shift=False),
+            AudioClip(max_length=args.audio_length, mode='head', is_random=False),
             ReduceChannel()
         ]),
         label_tf=OneHot2Index()
@@ -109,6 +112,7 @@ if __name__ == '__main__':
         data_tf=Components(transforms=[
             Resample(orig_freq=args.sample_rate, new_freq=constants.pann_sample_rate),
             AudioPadding(max_length=args.audio_length, sample_rate=constants.pann_sample_rate, random_shift=False),
+            AudioClip(max_length=args.audio_length, mode='head', is_random=False),
             ReduceChannel()
         ]), label_tf=OneHot2Index()
     )
