@@ -37,7 +37,7 @@ if __name__ == '__main__':
     ap.add_argument('--interval', type=int, default=1, help='interval number')
     ap.add_argument('--output_path', type=str, default='./result')
     ap.add_argument('--wandb', action='store_true')
-    ap.add_argument('--seed', type=int, default='2026')
+    ap.add_argument('--seed', type=int, default='2025')
     ap.add_argument('--smooth', type=float, default=.1)
 
     args = ap.parse_args()
