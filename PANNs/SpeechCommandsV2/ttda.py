@@ -44,7 +44,7 @@ if __name__ == '__main__':
     ap.add_argument('--mse_rate', type=float, default=1.0)
     ap.add_argument('--interval', type=int, default=1, help='interval number')
     ap.add_argument('--wandb', action='store_true')
-    ap.add_argument('--seed', type=int, default=2026, help='random seed')
+    ap.add_argument('--seed', type=int, default=2025, help='random seed')
     ap.add_argument('--orig_wght_pth', type=str)
 
     args = ap.parse_args()
