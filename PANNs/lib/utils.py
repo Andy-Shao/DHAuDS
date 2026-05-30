@@ -96,3 +96,12 @@ def inference(
         ttl_corr += (preds == labels).sum().item()
         ttl_size += labels.shape[0]
     return ttl_corr / ttl_size
+
+def is_stored(max_val:float, curr_val:float, max_mode:bool) -> tuple[float, bool]:
+    if max_val <= curr_val:
+        max_val = curr_val
+        new_max_val = True
+    else: new_max_val = False
+    if max_mode:
+        return max_val, new_max_val
+    else: return max_val, True
