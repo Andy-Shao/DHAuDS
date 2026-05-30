@@ -19,7 +19,7 @@ if __name__ == '__main__':
     print_argparse(args)
     ##########################################
     records = static_analyze(
-        corruption_types=['WHN', 'ENSC', 'PSH', 'TST'], corruption_levels=['L1', 'L2'],
+        corruption_types=['WHN', 'ENQ', 'END1', 'END2', 'ENSC', 'PSH', 'TST'], corruption_levels=['L1', 'L2'],
         report_ls= args.report_list, dataset=args.dataset, algorithm=args.arch
     )
     records.to_csv(os.path.join(args.output_path, args.output_file_name))
