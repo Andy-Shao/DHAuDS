@@ -105,3 +105,12 @@ def is_stored(max_val:float, curr_val:float, max_mode:bool) -> tuple[float, bool
     if max_mode:
         return max_val, new_max_val
     else: return max_val, True
+
+class TentPANNs(nn.Module):
+    def __init__(self, pan:nn.Module, clsf:nn.Module):
+        super().__init__()
+        self.pan = pan
+        self.clsf = clsf
+
+    def forward(self, x:torch.Tensor) -> torch.Tensor:
+        return self.clsf(self.pan(x)['embedding'])

@@ -86,7 +86,7 @@ printf '================================\n' >> $LOG_FILE
 printf 'Output analysis file to '$ANAL_FILE'\n' >> $LOG_FILE
 
 python -m HuBERT.UrbanSound8K.analysis --dataset 'UrbanSound8K' --dataset_root_path $BASE_PATH'/data/UrbanSound8K-C' \
-    --batch_size 33 --output_file_name $ANAL_FILE --use_pre_trained_weigth --model_level 'base' \
+    --batch_size 32 --output_file_name $ANAL_FILE --use_pre_trained_weigth --model_level 'base' \
     --orig_wght_pth './result/UrbanSound8K/HuBERT/train' \
     --adpt_wght_path './result/UrbanSound8K/HuBERT/TTDA'
 
