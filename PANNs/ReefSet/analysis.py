@@ -22,7 +22,7 @@ def analyzing(args:argparse.Namespace, corruption_types:list[str], corruption_le
         print(f'{idx+1}/{len(corruption_metas)}: {args.dataset} {cmeta.type}-{cmeta.level} analyzing...')
 
         adpt_set = ReefSetC(
-        root_path=args.dataset_root_path, corruption_level=args.corruption_level, corruption_type=args.corruption_type,
+        root_path=args.dataset_root_path, corruption_level=cmeta.level, corruption_type=cmeta.type,
         data_tf=Components(transforms=[
             Resample(orig_freq=args.sample_rate, new_freq=constants.pann_sample_rate),
             AudioPadding(max_length=args.audio_length, sample_rate=constants.pann_sample_rate, random_shift=False),
