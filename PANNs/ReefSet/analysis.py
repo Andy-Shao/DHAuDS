@@ -10,7 +10,8 @@ from lib import constants
 from lib.utils import print_argparse, make_unless_exits, count_ttl_params
 from lib.corruption import ReefSetC, corruption_meta
 from lib.component import Components, AudioPadding, ReduceChannel, OneHot2Index, AudioClip
-from PANNs.lib.utils import build_model, inference, load_weight
+from PANNs.lib.utils import build_model, load_weight
+from .utils import inference
 
 def analyzing(args:argparse.Namespace, corruption_types:list[str], corruption_levels:list[str]) -> None:
     records = pd.DataFrame(columns=['Dataset',  'Algorithm', 'Param No.', 'Corruption', 'Non-adapted', 'Adapted', 'Improved'])
@@ -22,15 +23,15 @@ def analyzing(args:argparse.Namespace, corruption_types:list[str], corruption_le
         print(f'{idx+1}/{len(corruption_metas)}: {args.dataset} {cmeta.type}-{cmeta.level} analyzing...')
 
         adpt_set = ReefSetC(
-        root_path=args.dataset_root_path, corruption_level=cmeta.level, corruption_type=cmeta.type,
-        data_tf=Components(transforms=[
-            Resample(orig_freq=args.sample_rate, new_freq=constants.pann_sample_rate),
-            AudioPadding(max_length=args.audio_length, sample_rate=constants.pann_sample_rate, random_shift=False),
-            AudioClip(max_length=args.audio_length, mode='head', is_random=False),
-            ReduceChannel()
-        ]),
-        label_tf=OneHot2Index()
-    )
+            root_path=args.dataset_root_path, corruption_level=cmeta.level, corruption_type=cmeta.type,
+            data_tf=Components(transforms=[
+                Resample(orig_freq=args.sample_rate, new_freq=constants.pann_sample_rate),
+                AudioPadding(max_length=args.audio_length, sample_rate=constants.pann_sample_rate, random_shift=False),
+                AudioClip(max_length=args.audio_length, mode='head', is_random=False),
+                ReduceChannel()
+            ]),
+            label_tf=OneHot2Index()
+        )
         adpt_loader = DataLoader(
             dataset=adpt_set, batch_size=args.batch_size, shuffle=False, drop_last=False, pin_memory=True,
             num_workers=args.num_workers
