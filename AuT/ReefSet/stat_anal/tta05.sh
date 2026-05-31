@@ -134,7 +134,7 @@ printf '================================\n' >> $LOG_FILE
 printf 'Output analysis file to '$ANAL_FILE'\n' >> $LOG_FILE
 
 python -m AuT.ReefSet.analysis --dataset 'ReefSet' --dataset_root_path $BASE_PATH'/data/ReefSet-C' \
-    --batch_size 33 --output_file_name $ANAL_FILE \
+    --batch_size 32 --output_file_name $ANAL_FILE \
     --orig_wght_pth './result/ReefSet/AMAuT/train' \
     --adpt_wght_path './result/ReefSet/AMAuT/TTDA'
 
