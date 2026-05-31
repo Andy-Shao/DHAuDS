@@ -36,12 +36,12 @@ export BASE_PATH=${BASE_PATH:-'/root'}
 #     --nucnm_rate 1.0 --ent_rate 0.0 --gent_rate 0.1 --gent_q 20.6 --mse_rate 0.1 --lr_momentum 0.75 \
 #     --orig_wght_pth './result/ReefSet/PANNs/train' --freeze_pan --wandb
 
-python -m PANNs.ReefSet.ttda --dataset 'ReefSet' \
-    --adpt_set_path $BASE_PATH'/data/Ada-ReefSet-C' \
-    --eval_set_path $BASE_PATH'/data/ReefSet-C' \
-    --batch_size 70 --corruption_level 'L1' --corruption_type 'END1' --lr 1e-5 --max_epoch 20 \
-    --nucnm_rate 1.0 --ent_rate 0.0 --gent_rate 0.1 --gent_q 20.6 --mse_rate 0.1 --lr_momentum 0.70 \
-    --orig_wght_pth './result/ReefSet/PANNs/train' --freeze_pan --wandb
+# python -m PANNs.ReefSet.ttda --dataset 'ReefSet' \
+#     --adpt_set_path $BASE_PATH'/data/Ada-ReefSet-C' \
+#     --eval_set_path $BASE_PATH'/data/ReefSet-C' \
+#     --batch_size 70 --corruption_level 'L1' --corruption_type 'END1' --lr 1e-5 --max_epoch 20 \
+#     --nucnm_rate 1.0 --ent_rate 0.0 --gent_rate 0.1 --gent_q 20.6 --mse_rate 0.1 --lr_momentum 0.70 \
+#     --orig_wght_pth './result/ReefSet/PANNs/train' --freeze_pan --wandb
 
 # python -m PANNs.ReefSet.ttda --dataset 'ReefSet' \
 #     --adpt_set_path $BASE_PATH'/data/Ada-ReefSet-C' \
@@ -71,12 +71,12 @@ python -m PANNs.ReefSet.ttda --dataset 'ReefSet' \
 #     --nucnm_rate 1.0 --ent_rate 0.0 --gent_rate 0.1 --gent_q 20.6 --mse_rate 0.1 --lr_momentum 0.75 \
 #     --orig_wght_pth './result/ReefSet/PANNs/train' --freeze_pan --wandb
 
-# python -m PANNs.ReefSet.ttda --dataset 'ReefSet' \
-#     --adpt_set_path $BASE_PATH'/data/Ada-ReefSet-C' \
-#     --eval_set_path $BASE_PATH'/data/ReefSet-C' \
-#     --batch_size 70 --corruption_level 'L2' --corruption_type 'PSH' --lr 1e-4 --max_epoch 20 \
-#     --nucnm_rate 1.0 --ent_rate 0.1 --gent_rate 0.1 --gent_q 2.1 --mse_rate 0.1 \
-#     --orig_wght_pth './result/ReefSet/PANNs/train' --wandb
+python -m PANNs.ReefSet.ttda --dataset 'ReefSet' \
+    --adpt_set_path $BASE_PATH'/data/Ada-ReefSet-C' \
+    --eval_set_path $BASE_PATH'/data/ReefSet-C' \
+    --batch_size 70 --corruption_level 'L2' --corruption_type 'PSH' --lr 1e-4 --max_epoch 20 \
+    --nucnm_rate 1.0 --ent_rate 0.1 --gent_rate 0.1 --gent_q 2.1 --mse_rate 0.1 --lr_momentum 0.75 \
+    --orig_wght_pth './result/ReefSet/PANNs/train' --wandb
 
 # python -m PANNs.ReefSet.ttda --dataset 'ReefSet' \
 #     --adpt_set_path $BASE_PATH'/data/Ada-ReefSet-C' \
