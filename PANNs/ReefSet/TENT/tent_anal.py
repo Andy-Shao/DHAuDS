@@ -38,7 +38,7 @@ def analyzing(args:argparse.Namespace, corruption_types:list[str], corruption_le
             label_tf=OneHot2Index()
         )
         adpt_loader = DataLoader(
-            dataset=adpt_set, batch_size=args.batch_size, shuffle=False, drop_last=False, pin_memory=True,
+            dataset=adpt_set, batch_size=args.adpt_batch_size, shuffle=False, drop_last=False, pin_memory=True,
             num_workers=args.num_workers
         )
         eval_set = ReefSetC(
@@ -87,6 +87,7 @@ if __name__ == '__main__':
     ap.add_argument('--output_path', type=str, default='./result')
     ap.add_argument('--output_file_name', type=str, default='analysis.csv')
     ap.add_argument('--batch_size', type=int, default=64)
+    ap.add_argument('--adpt_batch_size', type=int, default=64)
 
     ap.add_argument('--lr', type=float, default=1e-2, help='learning rate')
     ap.add_argument('--lr_momentum', type=float, default=.9)
