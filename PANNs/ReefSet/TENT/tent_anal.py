@@ -64,7 +64,7 @@ def analyzing(args:argparse.Namespace, corruption_types:list[str], corruption_le
         print('TENT adapting...')
         tp_model = TentPANNs(pan=pan, clsf=clsf)
         tent_params, tent_param_names = get_params(model=tp_model)
-        tent_optimizer = optim.Adam(params=tent_params, lr=args.lr, betas=(.9,.99), weight_decay=0.)
+        tent_optimizer = optim.SGD(params=tent_params, lr=args.lr, weight_decay=1e-4, momentum=.9)
         tent_model = TentAdapt(model=tp_model, optimizer=tent_optimizer, steps=1, resetable=False).to(device=args.device)
         verify_model(model=tent_model)
         for features, labels in tqdm(adpt_loader):
