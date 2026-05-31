@@ -65,7 +65,7 @@ if __name__ == '__main__':
     if args.dataset == 'ReefSet':
         args.class_num = 37
         args.sample_rate = 16000
-        args.audio_length = int(1.88 * 16000)
+        args.audio_length = int(1.88 * constants.pann_sample_rate)
     else:
         raise Exception('No support!')
     args.device = 'cuda' if torch.cuda.is_available() else 'cpu'
