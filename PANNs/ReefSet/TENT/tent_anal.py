@@ -38,7 +38,7 @@ def analyzing(args:argparse.Namespace, corruption_types:list[str], corruption_le
             label_tf=OneHot2Index()
         )
         adpt_loader = DataLoader(
-            dataset=adpt_set, batch_size=args.adpt_batch_size, shuffle=False, drop_last=False, pin_memory=True,
+            dataset=adpt_set, batch_size=args.adpt_batch_size, shuffle=True, drop_last=False, pin_memory=True,
             num_workers=args.num_workers
         )
         eval_set = ReefSetC(
