@@ -114,7 +114,7 @@ if __name__ == '__main__':
         raise Exception('No support!')
     args.device = 'cuda' if torch.cuda.is_available() else 'cpu'
     args.arch = 'AMAuT'
-    args.output_path = os.path.join(args.output_path, args.dataset, args.arch, 'TTN')
+    args.output_path = os.path.join(args.output_path, args.dataset, args.arch, 'TENT')
     make_unless_exits(args.output_path)
     torch.backends.cudnn.benchmark = True
 
