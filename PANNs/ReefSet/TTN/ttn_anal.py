@@ -61,7 +61,7 @@ def analyzing(args:argparse.Namespace, corruption_types:list[str], corruption_le
         load_weight(args=args, panns=pan, clsf=clsf, mode='origin')
         orig_roc_auc = inference(args=args, pan=pan, clsf=clsf, data_loader=eval_loader)
 
-        print('TENT adapting...')
+        print('TTN adapting...')
         tp_model = TentPANNs(pan=pan, clsf=clsf)
         ttn_model = NormAdapt(model=tp_model, momentum=.1, reset_states=False).to(device=args.device)
         for features, labels in tqdm(adpt_loader):
