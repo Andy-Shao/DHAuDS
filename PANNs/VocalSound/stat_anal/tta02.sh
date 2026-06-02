@@ -33,7 +33,7 @@ python -m PANNs.VocalSound.ttda --dataset 'VocalSound' \
     --lr 1e-4 --nucnm_rate 1.0 --ent_rate 0.1 --gent_rate 0.1 --gent_q 1.6 --mse_rate 0.1 \
     --orig_wght_pth './result/VocalSound/PANNs/train' --freeze_pan --max_mode --seed $SEED_VAL
 
-printf 'ENDQ-L1\n' >> $LOG_FILE
+printf 'ENQ-L1\n' >> $LOG_FILE
 python -m PANNs.VocalSound.ttda --dataset 'VocalSound' \
     --adpt_set_path $BASE_PATH'/data/Ada-VocalSound-C' \
     --eval_set_path $BASE_PATH'/data/VocalSound-C' \
@@ -67,7 +67,7 @@ python -m PANNs.VocalSound.ttda --dataset 'VocalSound' \
     --lr 5e-5 --nucnm_rate 1.0 --ent_rate 0.1 --gent_rate 0.0 --gent_q 1.6 --mse_rate 0.1 \
     --orig_wght_pth './result/VocalSound/PANNs/train' --freeze_pan --seed $SEED_VAL
 
-prinft 'END2-L1\n' >> $LOG_FILE
+printf 'END2-L1\n' >> $LOG_FILE
 python -m PANNs.VocalSound.ttda --dataset 'VocalSound' \
     --adpt_set_path $BASE_PATH'/data/Ada-VocalSound-C' \
     --eval_set_path $BASE_PATH'/data/VocalSound-C' \
@@ -83,7 +83,7 @@ python -m PANNs.VocalSound.ttda --dataset 'VocalSound' \
     --lr 1e-4 --nucnm_rate 1.0 --ent_rate 0.1 --gent_rate 0.1 --gent_q 1.6 --mse_rate 0.1 \
     --orig_wght_pth './result/VocalSound/PANNs/train' --freeze_pan --max_mode --seed $SEED_VAL
 
-prinft 'ENSC-L1\n' >> $LOG_FILE
+printf 'ENSC-L1\n' >> $LOG_FILE
 python -m PANNs.VocalSound.ttda --dataset 'VocalSound' \
     --adpt_set_path $BASE_PATH'/data/Ada-VocalSound-C' \
     --eval_set_path $BASE_PATH'/data/VocalSound-C' \
@@ -91,7 +91,7 @@ python -m PANNs.VocalSound.ttda --dataset 'VocalSound' \
     --lr 1e-4 --nucnm_rate 1.0 --ent_rate 0.1 --gent_rate 0.1 --gent_q 1.6 --mse_rate 0.1 \
     --orig_wght_pth './result/VocalSound/PANNs/train' --freeze_pan --max_mode --seed $SEED_VAL
 
-prinft 'PSH-L2\n' >> $LOG_FILE
+printf 'PSH-L2\n' >> $LOG_FILE
 python -m PANNs.VocalSound.ttda --dataset 'VocalSound' \
     --adpt_set_path $BASE_PATH'/data/Ada-VocalSound-C' \
     --eval_set_path $BASE_PATH'/data/VocalSound-C' \
