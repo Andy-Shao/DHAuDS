@@ -24,8 +24,6 @@ if __name__ == '__main__':
     ap.add_argument('--dataset', type=str, default='SpeechCommandsV2', choices=['SpeechCommandsV2'])
     ap.add_argument('--dataset_root_path', type=str)
     ap.add_argument('--background_path', type=str)
-    ap.add_argument('--corruption_type', type=str, choices=['WHN', 'ENQ', 'END1', 'END2', 'ENSC', 'PSH', 'TST'])
-    ap.add_argument('--corruption_level', type=str, choices=['L1', 'L2'])
     ap.add_argument('--num_workers', type=int, default=16)
     ap.add_argument('--output_path', type=str, default='./result')
     ap.add_argument('--batch_size', type=int, default=64)
@@ -55,7 +53,6 @@ if __name__ == '__main__':
         raise Exception('No support!')
     args.device = 'cuda' if torch.cuda.is_available() else 'cpu'
     args.arch = 'PANNs'
-    args.output_path = os.path.join(args.output_path, args.dataset, args.arch, 'TTDA')
     make_unless_exits(args.output_path)
     torch.backends.cudnn.benchmark = True
 
@@ -148,7 +145,7 @@ if __name__ == '__main__':
             max_accu = accu
             store_weight(
                 args=args, panns=pan, clsf=clsf, mode='adaptation', 
-                metaInfo=CorruptionMeta(type=args.corruption_type, level=args.corruption_level),
+                metaInfo=CorruptionMeta(type='PSTATION', level='fix'),
                 root_path=args.output_path
             )
 
