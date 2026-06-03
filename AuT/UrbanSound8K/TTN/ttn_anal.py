@@ -121,4 +121,4 @@ if __name__ == '__main__':
 
     print_argparse(args)
     ##########################################
-    analyzing(args=args, corruption_types=['WHN', 'ENQ', 'END1', 'END2', 'ENSC', 'PSH', 'TST'], corruption_levels=['L1', 'L2']) 
+    analyzing(args=args, corruption_types=['WHN', 'ENSC', 'PSH', 'TST'], corruption_levels=['L1', 'L2']) 
