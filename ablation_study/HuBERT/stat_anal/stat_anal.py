@@ -9,8 +9,8 @@ if __name__ == '__main__':
     ap.add_argument('--output_path', type=str)
     ap.add_argument('--output_file_name', type=str, default='analysis.csv')
     ap.add_argument('--report_list', type=str)
+    ap.add_argument('--dataset', type=str, default='SpeechCommandsV2')
     args = ap.parse_args()
-    args.dataset = 'SpeechCommandsV2'
     args.arch = 'HuBERT'
     args.output_path = os.path.join(args.output_path, args.dataset, args.arch, 'Ablation_study')
     args.report_list = [it.strip() for it in args.report_list.split(',')]

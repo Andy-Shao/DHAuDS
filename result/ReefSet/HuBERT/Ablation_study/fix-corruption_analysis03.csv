@@ -1,0 +1,2 @@
+,dataset,algorithm,type,before-adaptation,after-adaptation
+0,ReefSet,HuBERT,Fix-corruption,0.7099629227347818,0.8105474276311813
