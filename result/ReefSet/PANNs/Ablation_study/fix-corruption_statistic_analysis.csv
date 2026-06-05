@@ -1,0 +1,3 @@
+,Dataset,Algorithm,Corruption-type,Corruption-level,Before-mean,Before-std,After-mean,After-std,Improve-mean,Improve-std
+0,ReefSet,PANNs,PSTATION,fix,0.7728,0.0,0.9025,0.0027,0.1297,0.0027
+1,ReefSet,PANNs,Global,fix,0.7728,0.0,0.9025,0.0027,0.1297,0.0027

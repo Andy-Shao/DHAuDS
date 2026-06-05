@@ -1,0 +1,2 @@
+,Dataset,Algorithm,Param No.,Corruption,Non-adapted,Adapted,Improved
+0,ReefSet,PANNs,84794009,PSTATION-fix,0.7727457773434687,0.8995103027557326,0.1267645254122639
