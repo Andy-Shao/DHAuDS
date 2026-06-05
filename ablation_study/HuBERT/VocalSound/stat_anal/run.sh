@@ -5,5 +5,5 @@ export BASE_PATH=${BASE_PATH:-'/root'}
 python -m ablation_study.HuBERT.VocalSound.hub_fix_analysis --dataset 'VocalSound' \
     --dataset_root_path $BASE_PATH'/data/vocalsound_16k' \
     --background_path $BASE_PATH'/data/DEMAND_16k' --output_path $BASE_PATH'/tmp' --batch_size 70 \
-    --max_epoch 10 --lr 1e-4 --nucnm_rate 1.0 --ent_rate 0.0 --gent_rate 0.0 --gent_q 1.6 --mse_rate 0.1 \
+    --max_epoch 15 --lr 1e-4 --nucnm_rate 1.0 --ent_rate 0.0 --gent_rate 0.0 --gent_q 1.6 --mse_rate 0.5 \
     --orig_wght_pth './result/VocalSound/HuBERT/train' --wandb
