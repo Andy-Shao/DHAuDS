@@ -1,0 +1,2 @@
+,Dataset,Algorithm,Before-mean,Before-std,After-mean,After-std,Improve-mean,Improve-std
+0,VocalSound,AMAuT,0.7683,0.0,0.8804,0.0033,0.1121,0.0
