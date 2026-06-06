@@ -1,0 +1,3 @@
+,Dataset,Algorithm,Corruption-type,Corruption-level,Before-mean,Before-std,After-mean,After-std,Improve-mean,Improve-std
+0,VocalSound,PANNs,PSTATION,fix,0.8708,0.0,0.9021,0.0018,0.0313,0.0018
+1,VocalSound,PANNs,Global,fix,0.8708,0.0,0.9021,0.0018,0.0313,0.0018

@@ -9,10 +9,10 @@ if __name__ == '__main__':
     ap.add_argument('--report_list', type=str)
     ap.add_argument('--output_path', type=str, default='Analysis')
     ap.add_argument('--output_file_name')
+    ap.add_argument('--dataset', type=str, default='SpeechCommandsV2')
     args = ap.parse_args()
 
     args.arch = 'PANNs'
-    args.dataset = 'SpeechCommandsV2'
     args.output_path = os.path.join('./result', args.dataset, args.arch, args.output_path)
     args.report_list = [it.strip() for it in args.report_list.split(',')]
     make_unless_exits(args.output_path)
