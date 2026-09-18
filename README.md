@@ -334,12 +334,15 @@ A database of 16-channel environmental noise recordings.
 [![Dataset](https://img.shields.io/badge/Official%20Link-zenodo-ffcc4d)](https://zenodo.org/records/1227121)
 
 ## Code Reference
-+ [AMAuT](https://github.com/Andy-Shao/AMAuT)
+<!--+ [AMAuT](https://github.com/Andy-Shao/AMAuT)
 + [HuBERT](https://github.com/facebookresearch/fairseq/tree/main/examples/hubert)
 + [PANNs](https://github.com/qiuqiangkong/audioset_tagging_cnn)
-+ [TTA in Audio Classification](https://github.com/Andy-Shao/TTA-in-AC.git)
++ [TTA in Audio Classification](https://github.com/Andy-Shao/TTA-in-AC.git)-->
 
 [![Code Reference](https://img.shields.io/badge/Github-AMAuT-blue)](https://github.com/Andy-Shao/AMAuT)
+[![Code Reference](https://img.shields.io/badge/Github-HuBERT-blue)](https://github.com/facebookresearch/fairseq/tree/main/examples/hubert)
+[![Code Reference](https://img.shields.io/badge/Github-PANNs-blue)](https://github.com/qiuqiangkong/audioset_tagging_cnn)
+[![Code Reference](https://img.shields.io/badge/Github-TTA%20in%20Audio%20Classification-blue)](https://github.com/Andy-Shao/TTA-in-AC.git)
 
 ## Citation
 ```text
