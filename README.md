@@ -209,7 +209,7 @@ In total, SC2-C consists of 308,140 samples, with each category-level, such as W
 
 <!--[SC2-C Dataset Link](https://drive.google.com/drive/folders/1wBCadjjcA-n7fCAvf82uYBR6q5z_uXRm)
 [Hugging Face Backup](https://huggingface.co/datasets/AndyShao90/SpeechCommandsV2-C)-->
-[![Dataset](https://img.shields.io/badge/Dataset-Hugging%20Face-ffcc4d)](https://huggingface.co/datasets/AndyShao90/SpeechCommandsV2-C)
+[![Dataset](https://img.shields.io/badge/Download-Hugging%20Face-ffcc4d)](https://huggingface.co/datasets/AndyShao90/SpeechCommandsV2-C)
 
 ### VocalSound
 VocalSound is a free dataset consisting of 21,024 crowdsourced recordings of laughter, sighs, coughs, throat clearing, sneezes, and sniffs from 3,365 unique subjects. The VocalSound dataset also contains meta-information such as speaker age, gender, native language, country, and health condition.
