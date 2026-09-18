@@ -333,6 +333,16 @@ A database of 16-channel environmental noise recordings.
 <!--[Official Link](https://zenodo.org/records/1227121)-->
 [![Dataset](https://img.shields.io/badge/Official%20Link-zenodo-ffcc4d)](https://zenodo.org/records/1227121)
 
+## Citation
+```text
+@article{shao2025dhauds,
+  title={DHAuDS: A Dynamic and Heterogeneous Audio Benchmark for Test-Time Adaptation},
+  author={Shao, Weichuang and Liao, Iman Yi and Maul, Tomas Henrique Bode and Chandesa, Tissa},
+  journal={arXiv preprint arXiv:2511.18421},
+  year={2025}
+}
+```
+
 ## Code Reference
 <!--+ [AMAuT](https://github.com/Andy-Shao/AMAuT)
 + [HuBERT](https://github.com/facebookresearch/fairseq/tree/main/examples/hubert)
@@ -343,13 +353,3 @@ A database of 16-channel environmental noise recordings.
 [![Code Reference](https://img.shields.io/badge/Github-HuBERT-blue)](https://github.com/facebookresearch/fairseq/tree/main/examples/hubert)
 [![Code Reference](https://img.shields.io/badge/Github-PANNs-blue)](https://github.com/qiuqiangkong/audioset_tagging_cnn)
 [![Code Reference](https://img.shields.io/badge/Github-TTA%20in%20Audio%20Classification-blue)](https://github.com/Andy-Shao/TTA-in-AC.git)
-
-## Citation
-```text
-@article{shao2025dhauds,
-  title={DHAuDS: A Dynamic and Heterogeneous Audio Benchmark for Test-Time Adaptation},
-  author={Shao, Weichuang and Liao, Iman Yi and Maul, Tomas Henrique Bode and Chandesa, Tissa},
-  journal={arXiv preprint arXiv:2511.18421},
-  year={2025}
-}
-```
