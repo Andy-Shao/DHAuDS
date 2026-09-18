@@ -3,7 +3,7 @@
 # DHAuDS
 ### A Dynamic and Heterogeneous Audio Benchmark for Test-Time Adaptation
 
-[![Paper](https://img.shields.io/badge/Paper-arXiv%3A2603.27667-b31b1b)](https://arxiv.org/abs/2603.27667)
+[![arXiv](https://img.shields.io/badge/Paper-arXiv%3A2603.27667-b31b1b)](https://arxiv.org/abs/2511.18421)
 
 </div>
 
