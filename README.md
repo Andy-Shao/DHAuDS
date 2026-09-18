@@ -309,8 +309,9 @@ L2, where L2 indicates a higher degree of complexity. As for evaluation and adap
 + Sample rate: 16 kHz
 + One sample length: 1.88s
 
-[RS-C Dataset Link](https://drive.google.com/drive/folders/1W9GGOZTq3XSSsOlpJOQueDksHkCn3Fj4)<br/>
-[Hugging Face Backup](https://huggingface.co/datasets/AndyShao90/ReefSet-C)
+<!--[RS-C Dataset Link](https://drive.google.com/drive/folders/1W9GGOZTq3XSSsOlpJOQueDksHkCn3Fj4)
+[Hugging Face Backup](https://huggingface.co/datasets/AndyShao90/ReefSet-C)-->
+[![Dataset](https://img.shields.io/badge/Download-Hugging%20Face-ffcc4d)](https://huggingface.co/datasets/AndyShao90/ReefSet-C)
 
 ### QUT-NOISE
 QUT-NOISE is an environmental acoustic dataset for environmental background noise. QUT-NOISE comprises five distinct types of background noise: CAFE, CAR, HOME, REVERB, and STREET. Each type of noise includes five noise files.
@@ -319,7 +320,8 @@ QUT-NOISE is an environmental acoustic dataset for environmental background nois
 + One sample length: greater than 1990s (33m 10s)
 + Class Number: 5
   
-[Official Link](https://research.qut.edu.au/saivt/databases/qut-noise-databases-and-protocols/)
+<!--[Official Link](https://research.qut.edu.au/saivt/databases/qut-noise-databases-and-protocols/)-->
+[![Dataset](https://img.shields.io/badge/Official%20Link-zenodo-ffcc4d)](https://research.qut.edu.au/saivt/databases/qut-noise-databases-and-protocols/)
 
 ### DEMAND
 A database of 16-channel environmental noise recordings. 
@@ -328,7 +330,8 @@ A database of 16-channel environmental noise recordings.
 + One sample length: 300s
 + Class Number: 16
   
-[Official Link](https://zenodo.org/records/1227121)
+<!--[Official Link](https://zenodo.org/records/1227121)-->
+[![Dataset](https://img.shields.io/badge/Official%20Link-zenodo-ffcc4d)](https://zenodo.org/records/1227121)
 
 ## Code Reference
 + [AMAuT](https://github.com/Andy-Shao/AMAuT)
