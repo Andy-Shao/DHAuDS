@@ -4,6 +4,7 @@
 ### A Dynamic and Heterogeneous Audio Benchmark for Test-Time Adaptation
 
 [![arXiv](https://img.shields.io/badge/Paper-arXiv%3A2603.27667-b31b1b)](https://arxiv.org/abs/2511.18421)
+![GitHub License](https://img.shields.io/github/license/Andy-Shao/DHAuDS)
 
 </div>
 
