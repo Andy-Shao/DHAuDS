@@ -1,4 +1,6 @@
+<div align="center">
 # DHAuDS: A Dynamic and Heterogeneous Audio Benchmark for Test-Time Adaptation
+</div>
 
 ## Software Environment
 
