@@ -339,6 +339,8 @@ A database of 16-channel environmental noise recordings.
 + [PANNs](https://github.com/qiuqiangkong/audioset_tagging_cnn)
 + [TTA in Audio Classification](https://github.com/Andy-Shao/TTA-in-AC.git)
 
+[![Code Reference](https://img.shields.io/badge/Github-AMAuT-blue)](https://github.com/Andy-Shao/AMAuT)
+
 ## Citation
 ```text
 @article{shao2025dhauds,
