@@ -283,8 +283,9 @@ WHN-L2, containing 2,459 samples.
 + One sample length: 4s
 + Class Number: 10
 
-[US8K-C Dataset Link](https://drive.google.com/drive/folders/1kUzBwwrRO5sIq8GUhGf8FP4HbCnb7KTh)<br/>
-[Hugging face backup](https://huggingface.co/datasets/AndyShao90/UrbanSound8K-C)
+<!--[US8K-C Dataset Link](https://drive.google.com/drive/folders/1kUzBwwrRO5sIq8GUhGf8FP4HbCnb7KTh)
+[Hugging face backup](https://huggingface.co/datasets/AndyShao90/UrbanSound8K-C)-->
+[![Dataset](https://img.shields.io/badge/Download-Hugging%20Face-ffcc4d)](https://huggingface.co/datasets/AndyShao90/UrbanSound8K-C)
 
 ### ReefSet
 ReefSet is a multi-labeled and imbalanced dataset. ReefSet compiled a diverse meta-dataset of 57084 labelled coral reef bioacoustic recordings across 37 classes and from 16 individual datasets over 12 countries. During the annotation of each dataset, longer recording periods were segmented into samples of shorter windows (1.88 s) to fit within the two window lengths of the industry-standard networks. The final meta-dataset of 57074 labelled samples, split across the four primary labels: biophony (79.20%), anthrophony (10.39%), geophony (0.09%), and ambient (10.32%), with 33 secondary labels.
@@ -294,7 +295,8 @@ ReefSet is a multi-labeled and imbalanced dataset. ReefSet compiled a diverse me
 + One sample length: 1.88s
 + Class Number: 37 (4 primary labels and 33 secondary labels)
 
-[Official Link](https://zenodo.org/records/11071202)
+<!--[Official Link](https://zenodo.org/records/11071202)-->
+[![Dataset](https://img.shields.io/badge/Official%20Link-zenodo-ffcc4d)](https://zenodo.org/records/11071202)
 
 ### ReefSet-C
 ReefSet-C (RS-C) serves as a benchmark for DHAuDS in the context of test-time adaptation for audio classification. 
