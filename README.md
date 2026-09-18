@@ -218,7 +218,8 @@ VocalSound is a free dataset consisting of 21,024 crowdsourced recordings of lau
 + One sample length: less than 12s
 + Class number: 6
 
-[![Dataset](https://img.shields.io/badge/Download-Hugging%20Face-ffcc4d)](https://sls.csail.mit.edu/downloads/vocalsound/)
+[![Dataset](https://img.shields.io/badge/Download-MIT%20edu-ffcc4d)](https://sls.csail.mit.edu/downloads/vocalsound/)
+
 Download command:
 ```shell
 wget -O vocalsound_16k.zip https://www.dropbox.com/s/c5ace70qh1vbyzb/vs_release_16k.zip?dl=1
