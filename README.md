@@ -3,7 +3,7 @@
 # DHAuDS
 ### A Dynamic and Heterogeneous Audio Benchmark for Test-Time Adaptation
 
-[![Dataset:SC2-C]([https://img.shields.io/badge/Dataset-Hugging%20Face-ffcc4d]))]([https://huggingface.co/datasets/SatsukiVie/EvidenceFirst-Audio])(https://huggingface.co/datasets/AndyShao90/SpeechCommandsV2-C)
+[![Paper](https://img.shields.io/badge/Paper-arXiv%3A2603.27667-b31b1b)](https://arxiv.org/abs/2603.27667)
 
 </div>
 
