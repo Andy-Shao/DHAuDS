@@ -15,8 +15,8 @@ HuBERT
 PANNs
 ablation_study
 |---- AuT
-|     |---- ReefSet
-|     |---- VocalSound
+|     |---- ReefSet             # Ablation study for AMAuT model on ReefSet
+|     |---- VocalSound          # Ablation study for AMAuT model on VocalSound
 |---- HuBERT
 |---- PANNs
 data
