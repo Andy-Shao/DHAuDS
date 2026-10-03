@@ -11,15 +11,36 @@
 ## Repository Layout
 ```text
 AuT
+|---- ReefSet.                 # Experiments for AMAuT model on ReefSet
+|---- SpeechCommandsV2         # Experiments for AMAuT model on SpeechCommands V2
+|---- UrbanSound8K             # Experiments for AMAuT model on UrbanSound8K
+|---- VocalSound               # Experiments for AMAuT model on VocalSound
+|---- lib                      # Toolkits for AMAuT model
 HuBERT
+|---- ReefSet.                 # Experiments for HuBERT model on ReefSet
+|---- SpeechCommandsV2         # Experiments for HuBERT model on SpeechCommands V2
+|---- UrbanSound8K             # Experiments for HuBERT model on UrbanSound8K
+|---- VocalSound               # Experiments for HuBERT model on VocalSound
+|---- lib                      # Toolkits for HuBERT model
 PANNs
+|---- ReefSet.                 # Experiments for PANNs model on ReefSet
+|---- SpeechCommandsV2         # Experiments for PANNs model on SpeechCommands V2
+|---- UrbanSound8K             # Experiments for PANNs model on UrbanSound8K
+|---- VocalSound               # Experiments for PANNs model on VocalSound
+|---- lib                      # Toolkits for PANNs model
 ablation_study
 |---- AuT
 |     |---- ReefSet             # Ablation study for AMAuT model on ReefSet
 |     |---- VocalSound          # Ablation study for AMAuT model on VocalSound
 |     |---- stat_anal           # Ablation study for AMAuT model on SpeechCommands V2
 |---- HuBERT
+|     |---- ReefSet             # Ablation study for HuBERT model on ReefSet
+|     |---- VocalSound          # Ablation study for HuBERT model on VocalSound
+|     |---- stat_anal           # Ablation study for HuBERT model on SpeechCommands V2
 |---- PANNs
+|     |---- ReefSet             # Ablation study for PANNs model on ReefSet
+|     |---- VocalSound          # Ablation study for PANNs model on VocalSound
+|     |---- stat_anal           # Ablation study for PANNs model on SpeechCommands V2
 data                            # Dataset config for generating DHAuDS benchmarks
 lib                             # General toolkits
 result                          # Experiment results
