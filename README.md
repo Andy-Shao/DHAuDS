@@ -8,6 +8,22 @@
 
 </div>
 
+## Repository Layout
+```text
+AuT
+HuBERT
+PANNs
+ablation_study
+|---- AuT
+|.    |---- ReefSet
+|.    |---- VocalSound
+|---- HuBERT
+|---- PANNs
+data
+lib
+result
+```
+
 ## Installation
 
 + Docker image: nvidia/cuda:12.8.0-cudnn-runtime-ubuntu22.04
