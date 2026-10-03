@@ -17,11 +17,12 @@ ablation_study
 |---- AuT
 |     |---- ReefSet             # Ablation study for AMAuT model on ReefSet
 |     |---- VocalSound          # Ablation study for AMAuT model on VocalSound
+|     |---- stat_anal           # Ablation study for AMAuT model on SpeechCommands V2
 |---- HuBERT
 |---- PANNs
-data
-lib
-result
+data                            # Dataset config for generating DHAuDS benchmarks
+lib                             # General toolkits
+result                          # Experiment results
 ```
 
 ## Installation
